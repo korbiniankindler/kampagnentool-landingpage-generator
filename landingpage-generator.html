@@ -93,6 +93,28 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
 .export-btn{flex:1;min-width:140px;padding:10px 14px;border:.5px solid var(--border-medium);border-radius:var(--radius-md);background:var(--bg-primary);font-size:13px;font-weight:500;cursor:pointer;color:var(--text-primary);font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:7px;transition:background .15s}
 .export-btn:hover{background:var(--bg-secondary)}
 .export-btn.primary{background:#111;color:#fff;border-color:#111}.export-btn.primary:hover{opacity:.85}
+.tab-row{display:flex;gap:0;margin-bottom:1.25rem;border:.5px solid var(--border-light);border-radius:var(--radius-md);overflow:hidden;background:var(--bg-secondary)}
+.tab-btn{flex:1;padding:9px 14px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:transparent;color:var(--text-secondary);font-family:var(--font);transition:background .15s,color .15s}
+.tab-btn.active{background:var(--bg-primary);color:var(--text-primary);box-shadow:inset 0 0 0 .5px var(--border-light)}
+.tab-panel{display:none}.tab-panel.active{display:block}
+.hf-detail{margin-top:8px;padding-top:8px;border-top:.5px solid var(--border-light)}
+.hf-detail-label{font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px}
+.hf-detail-val{font-size:12px;color:var(--text-secondary);line-height:1.5}
+.hf-bullets{list-style:none;padding:0;margin:0}
+.hf-bullets li{font-size:12px;color:var(--text-secondary);padding:2px 0 2px 12px;position:relative}
+.hf-bullets li:before{content:'–';position:absolute;left:0;color:var(--text-tertiary)}
+.preset-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1rem}
+.preset-card{border:.5px solid var(--border-light);border-radius:var(--radius-md);padding:12px 14px;cursor:pointer;background:var(--bg-primary);transition:border-color .15s,background .15s;position:relative}
+.preset-card:hover{border-color:var(--border-medium);background:var(--bg-secondary)}
+.preset-card.selected{border-color:#111;background:#f8f8f6}
+.preset-card-name{font-size:13px;font-weight:500;margin-bottom:3px;display:flex;align-items:center;gap:6px}
+.preset-card-desc{font-size:11px;color:var(--text-tertiary);line-height:1.4}
+.preset-card-count{font-size:10px;color:var(--text-tertiary);margin-top:5px}
+.preset-check{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--border-medium);flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.preset-card.selected .preset-check{background:#111;border-color:#111}
+.ai-suggest-box{border:.5px solid var(--border-light);border-radius:var(--radius-md);padding:14px;background:var(--bg-secondary);margin-bottom:1rem}
+.ai-suggest-loading{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text-secondary);padding:8px 0}
+.sec-mode-hint{font-size:12px;color:var(--text-tertiary);margin-bottom:10px}
 </style>
 </head>
 <body>
@@ -116,20 +138,94 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
 <!-- PHASE IMPORT -->
 <div id="phase-import">
   <div class="page-title">Landingpage generieren <span class="modul-badge">Modul 2</span></div>
-  <p class="page-desc">Hardfacts laden und Landingpage-Sections festlegen.</p>
+  <p class="page-desc">Kampagnen-Infos laden und Landingpage-Sections festlegen.</p>
   <div id="import-err"></div>
-  <div class="import-banner" id="import-banner" style="display:none">
-    <div class="section-label" style="margin-top:0">Hardfacts aus Modul 1 importieren</div>
-    <p style="font-size:13px;color:var(--text-secondary)">Keine Session-Daten gefunden. Exportiere die JSON-Datei in Modul 1 und lade sie hier hoch.</p>
-    <div class="import-upload" onclick="document.getElementById('json-inp').click()">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-      hardfacts.json hochladen
-    </div>
-    <input type="file" id="json-inp" accept=".json" style="display:none" onchange="loadJSON(this)">
+
+  <div class="tab-row">
+    <button class="tab-btn active" id="tab-json-btn" onclick="switchTab('json')">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:5px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      JSON Import (Modul 1)
+    </button>
+    <button class="tab-btn" id="tab-free-btn" onclick="switchTab('free')">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:5px"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="13" y1="18" x2="3" y2="18"/></svg>
+      Freitext eingeben
+    </button>
   </div>
-  <div id="hf-display" style="display:none">
-    <div class="hf-box" id="hf-preview"></div>
-    <button class="primary-btn" onclick="goSections()">
+
+  <!-- TAB: JSON -->
+  <div class="tab-panel active" id="tab-json">
+    <div class="import-banner" id="import-banner">
+      <div class="section-label" style="margin-top:0">Hardfacts aus Modul 1 importieren</div>
+      <p style="font-size:13px;color:var(--text-secondary)">Exportiere die JSON-Datei in Modul 1 und lade sie hier hoch. Alternativ: Session-Daten werden automatisch erkannt.</p>
+      <div class="import-upload" onclick="document.getElementById('json-inp').click()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        hardfacts.json hochladen
+      </div>
+      <input type="file" id="json-inp" accept=".json" style="display:none" onchange="loadJSON(this)">
+    </div>
+    <div id="hf-display" style="display:none">
+      <div class="hf-box" id="hf-preview"></div>
+      <button class="primary-btn" onclick="goSections()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 12 11 14 15 10"/></svg>
+        Bestaetigt - weiter zu Sections
+      </button>
+    </div>
+  </div>
+
+  <!-- TAB: FREITEXT -->
+  <div class="tab-panel" id="tab-free">
+    <div class="card">
+      <div class="card-header"><div class="card-num">1</div><div class="card-label">Webinar-Grunddaten</div></div>
+      <div style="display:grid;gap:12px">
+        <div>
+          <label class="field-label">Kampagnenname / Webinar-Titel *</label>
+          <input type="text" id="ft-titel" placeholder="z.B. Ayurveda Webinar September 2026">
+        </div>
+        <div>
+          <label class="field-label">Pre-Headline</label>
+          <input type="text" id="ft-pre" placeholder="z.B. WAS IHNEN NIEMAND ERKLAERT">
+        </div>
+        <div>
+          <label class="field-label">Haupt-Headline (H1)</label>
+          <input type="text" id="ft-h1" placeholder="z.B. Warum Ihr Koerper ab 45 eine andere Sprache spricht">
+        </div>
+        <div>
+          <label class="field-label">Sub-Headline (H2)</label>
+          <input type="text" id="ft-h2" placeholder="z.B. Das kostenfreie Live-Webinar fuer Frauen, die ihre Gesundheit wirklich verstehen wollen">
+        </div>
+        <div>
+          <label class="field-label">Live-Termin</label>
+          <input type="text" id="ft-termin" placeholder="z.B. 20.09.26 um 11 Uhr">
+        </div>
+        <div>
+          <label class="field-label">Offer / Was erhalten Teilnehmer</label>
+          <input type="text" id="ft-offer" placeholder="z.B. Kostenloses Live-Webinar mit Q&A">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div class="card-num">2</div><div class="card-label">Webinar-Inhalte (Bulletpoints)</div></div>
+      <p style="font-size:12px;color:var(--text-tertiary);margin-bottom:10px">Ein Punkt pro Zeile. Diese werden 1:1 in die Hero-Section uebernommen.</p>
+      <textarea id="ft-bullets" style="min-height:140px" placeholder="Warum der Koerper ab 45 auf Stress anders reagiert&#10;Welche Ayurveda-Typen besonders gefaehrdet sind&#10;Die 3 haeufigsten Fehler bei der Selbstbehandlung&#10;Wie Sie Ihren persoenlichen Reset-Plan erstellen"></textarea>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div class="card-num">3</div><div class="card-label">Zielgruppe &amp; Strategie</div></div>
+      <div style="display:grid;gap:12px">
+        <div>
+          <label class="field-label">Zielgruppe</label>
+          <textarea id="ft-zielgruppe" style="min-height:80px" placeholder="z.B. Frauen 45-65, gesundheitsbewusst, erste Wechseljahresbeschwerden, suchen nach ganzheitlichen Loesungen statt Medikamenten"></textarea>
+        </div>
+        <div>
+          <label class="field-label">Strategie / Positionierung (optional)</label>
+          <textarea id="ft-strategie" style="min-height:80px" placeholder="z.B. Positionierung ueber Wissen und Vertrauen, nicht ueber Angst. Ayurveda als Ergaenzung zur Schulmedizin, nicht als Ersatz."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div id="ft-err"></div>
+    <button class="primary-btn" onclick="submitFreitext()">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 12 11 14 15 10"/></svg>
       Bestaetigt - weiter zu Sections
     </button>
@@ -138,32 +234,115 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
 
 <!-- PHASE SECTIONS -->
 <div id="phase-sections" style="display:none">
-  <div class="page-title">Sections auswaehlen <span class="modul-badge">Schritt 2</span></div>
-  <p class="page-desc">Sections an/abwaehlen, per Drag &amp; Drop neu anordnen oder eigene Section hinzufuegen.</p>
+  <div class="page-title">Sections festlegen <span class="modul-badge">Schritt 2</span></div>
+  <p class="page-desc">Wähle ein Preset oder lass die Sections von der KI vorschlagen.</p>
 
-  <div class="card">
-    <div id="sec-list" class="sec-list"></div>
-    <div class="add-section-zone">
-      <div class="add-section-row" onclick="toggleAddForm()">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        Eigene Section hinzufuegen
-      </div>
-      <div class="add-section-form" id="add-form">
-        <input type="text" id="new-sec-name" placeholder="Name der Section, z.B. FAQ">
-        <textarea id="new-sec-desc" placeholder="Was soll diese Section enthalten?" style="min-height:48px"></textarea>
-        <div class="add-section-actions">
-          <button class="mini-btn" onclick="addCustomSection()">Hinzufuegen</button>
-          <button class="mini-btn" onclick="toggleAddForm()">Abbrechen</button>
+  <!-- MODE PICKER -->
+  <div id="sec-mode-picker">
+    <div class="tab-row" style="margin-bottom:1.25rem">
+      <button class="tab-btn active" id="secmode-preset-btn" onclick="switchSecMode('preset')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:5px"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Preset waehlen
+      </button>
+      <button class="tab-btn" id="secmode-ai-btn" onclick="switchSecMode('ai')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:5px"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        KI-Vorschlag
+      </button>
+    </div>
+
+    <!-- PRESET MODE -->
+    <div id="secmode-preset" class="tab-panel active">
+      <div class="preset-grid">
+        <div class="preset-card selected" id="preset-webinar" onclick="selectPreset('webinar')">
+          <div class="preset-card-name">
+            <div class="preset-check" id="pc-webinar"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+            Webinar Standard
+          </div>
+          <div class="preset-card-desc">Bewaehrte Struktur fuer kostenfreie Live-Webinare mit Anmeldung. Announcement, Hero, Social Proof, Authority, CTA.</div>
+          <div class="preset-card-count">11 Sections</div>
         </div>
+        <div class="preset-card" id="preset-leadgen" onclick="selectPreset('leadgen')">
+          <div class="preset-card-name">
+            <div class="preset-check" id="pc-leadgen"></div>
+            Lead Gen Kompakt
+          </div>
+          <div class="preset-card-desc">Kuerzere Variante fuer schnelle Anmeldeseiten. Fokus auf Hero, Problem und CTA – ohne lange Erklaerblock.</div>
+          <div class="preset-card-count">6 Sections</div>
+        </div>
+        <div class="preset-card" id="preset-sales" onclick="selectPreset('sales')">
+          <div class="preset-card-name">
+            <div class="preset-check" id="pc-sales"></div>
+            Sales / Produkt
+          </div>
+          <div class="preset-card-desc">Fuer Paid-Produkt-Landingpages. Hero, Problem-Loop, Framework, Testimonials, Benefit Stack, Preis, Garantie, CTA.</div>
+          <div class="preset-card-count">9 Sections</div>
+        </div>
+        <div class="preset-card" id="preset-custom" onclick="selectPreset('custom')">
+          <div class="preset-card-name">
+            <div class="preset-check" id="pc-custom"></div>
+            Leere Liste
+          </div>
+          <div class="preset-card-desc">Starte mit leerer Section-Liste und fuege alles manuell per Drag &amp; Drop und eigenen Sections zusammen.</div>
+          <div class="preset-card-count">0 Sections</div>
+        </div>
+      </div>
+      <button class="primary-btn" style="margin-top:0" onclick="applyPresetAndShow()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 12 11 14 15 10"/></svg>
+        Preset uebernehmen &amp; anpassen
+      </button>
+    </div>
+
+    <!-- AI MODE -->
+    <div id="secmode-ai" class="tab-panel">
+      <div class="ai-suggest-box">
+        <p style="font-size:13px;color:var(--text-secondary);margin-bottom:10px">Die KI analysiert deine Kampagnen-Infos und schlaegt eine massgeschneiderte Section-Struktur vor. Du kannst den Vorschlag danach noch anpassen.</p>
+        <label class="field-label">Zusaetzliche Hinweise fuer die KI (optional)</label>
+        <textarea id="ai-sec-hint" placeholder="z.B. Seite soll sehr kurz sein, nur 5-6 Sections. Oder: FAQ-Section erwaenscht. Oder: Kein Trust Bar, wir haben keine Presselogos." style="min-height:72px;margin-bottom:10px"></textarea>
+        <button class="primary-btn" style="margin-top:0" onclick="suggestSectionsAI()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          Sections von KI vorschlagen lassen
+        </button>
+        <div id="ai-sec-loading" class="ai-suggest-loading" style="display:none">
+          <div class="spinner"></div> KI analysiert Kampagne und schlaegt Sections vor...
+        </div>
+        <div id="ai-sec-error"></div>
       </div>
     </div>
   </div>
 
-  <div id="sec-error"></div>
-  <button class="primary-btn" onclick="startGeneration()">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-    Landingpage generieren
-  </button>
+  <!-- SECTION EDITOR (shown after preset or AI suggest) -->
+  <div id="sec-editor" style="display:none">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
+      <div style="font-size:13px;font-weight:500" id="sec-editor-label">Sections bearbeiten</div>
+      <button class="mini-btn" onclick="showSecModePicker()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        Anderes Preset / KI-Vorschlag
+      </button>
+    </div>
+    <p class="sec-mode-hint">An/abwaehlen, per Drag &amp; Drop neu anordnen oder eigene Section hinzufuegen.</p>
+    <div class="card">
+      <div id="sec-list" class="sec-list"></div>
+      <div class="add-section-zone">
+        <div class="add-section-row" onclick="toggleAddForm()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Eigene Section hinzufuegen
+        </div>
+        <div class="add-section-form" id="add-form">
+          <input type="text" id="new-sec-name" placeholder="Name der Section, z.B. FAQ">
+          <textarea id="new-sec-desc" placeholder="Was soll diese Section enthalten?" style="min-height:48px"></textarea>
+          <div class="add-section-actions">
+            <button class="mini-btn" onclick="addCustomSection()">Hinzufuegen</button>
+            <button class="mini-btn" onclick="toggleAddForm()">Abbrechen</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="sec-error"></div>
+    <button class="primary-btn" onclick="startGeneration()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      Landingpage generieren
+    </button>
+  </div>
 </div>
 
 <!-- PHASE REVIEW -->
@@ -213,20 +392,6 @@ var sectionData = {};
 var customCounter = 0;
 var dragSrcIdx = null;
 
-var DEFAULT_SECTIONS = [
-  {id:'announcement', name:'Announcement Bar', desc:'Termin-Hinweis mit Live-Badge', active:true, custom:false},
-  {id:'hero', name:'Hero', desc:'Pre-Headline, H1, H2, CTA, Dozenten-Zeile', active:true, custom:false},
-  {id:'trustbar', name:'Trust Bar', desc:'Presselogo-Platzhalter', active:true, custom:false},
-  {id:'introtext', name:'Intro Text', desc:'Kontext-Story, Warum-jetzt-Narrativ, Referenten-Bruecke', active:true, custom:false},
-  {id:'problem', name:'Problem / Mirror Effect', desc:'Selbstreflexions-Checkliste', active:true, custom:false},
-  {id:'framework', name:'Educational Gap', desc:'Erklaer-Block mit Kontext und Hintergrund-Wissen', active:true, custom:false},
-  {id:'social', name:'Social Proof', desc:'3 Testimonials', active:true, custom:false},
-  {id:'authority', name:'Authority / Speaker', desc:'Experten-Bio, Webinar-Rolle', active:true, custom:false},
-  {id:'benefits', name:'Benefit Stack', desc:'3 Gruende teilzunehmen', active:true, custom:false},
-  {id:'finalcta', name:'Final CTA / Scarcity', desc:'Abschluss mit Verknappung', active:true, custom:false},
-  {id:'footer', name:'Footer', desc:'Rechtliche Links (Platzhalter)', active:true, custom:false}
-];
-
 var GMSG = ['Landingpage wird generiert...','Sections werden geschrieben...','Tonalitaet wird abgestimmt...','Fast fertig...'];
 
 window.addEventListener('DOMContentLoaded', function() {
@@ -234,8 +399,15 @@ window.addEventListener('DOMContentLoaded', function() {
     var raw = sessionStorage.getItem('wkt_hardfacts');
     if (raw) { HF = JSON.parse(raw); renderHF(); return; }
   } catch(e) {}
-  document.getElementById('import-banner').style.display = 'block';
+  // No session data – show JSON tab (already visible by default)
 });
+
+function switchTab(tab) {
+  document.getElementById('tab-json-btn').classList.toggle('active', tab === 'json');
+  document.getElementById('tab-free-btn').classList.toggle('active', tab === 'free');
+  document.getElementById('tab-json').classList.toggle('active', tab === 'json');
+  document.getElementById('tab-free').classList.toggle('active', tab === 'free');
+}
 
 function loadJSON(inp) {
   var f = inp.files[0]; if (!f) return;
@@ -247,24 +419,188 @@ function loadJSON(inp) {
   r.readAsText(f);
 }
 
+function submitFreitext() {
+  var titel = document.getElementById('ft-titel').value.trim();
+  if (!titel) { document.getElementById('ft-err').innerHTML = '<div class="error-box">Bitte mindestens Kampagnenname / Webinar-Titel eingeben.</div>'; return; }
+  document.getElementById('ft-err').innerHTML = '';
+  var rawBullets = document.getElementById('ft-bullets').value.trim();
+  var bullets = rawBullets ? rawBullets.split('\n').map(function(l){return l.trim();}).filter(Boolean) : [];
+  HF = {
+    kampagnenname: titel,
+    titel: document.getElementById('ft-h1').value.trim() || titel,
+    pre_headline: document.getElementById('ft-pre').value.trim(),
+    sub_headline: document.getElementById('ft-h2').value.trim(),
+    live_termin: document.getElementById('ft-termin').value.trim(),
+    offer: document.getElementById('ft-offer').value.trim(),
+    bulletpoints: bullets,
+    zielgruppe: document.getElementById('ft-zielgruppe').value.trim(),
+    strategie_titel: document.getElementById('ft-strategie').value.trim()
+  };
+  goSections();
+}
+
 function renderHF() {
   document.getElementById('import-banner').style.display = 'none';
   document.getElementById('hf-display').style.display = 'block';
+
+  var bullets = (HF.bulletpoints||[]);
+  var bulletHTML = bullets.length
+    ? '<ul class="hf-bullets">' + bullets.map(function(b){return '<li>'+ex(b)+'</li>';}).join('') + '</ul>'
+    : '<span style="color:var(--text-tertiary);font-size:12px">Keine Bulletpoints im JSON</span>';
+
+  var zielgruppe = HF.zielgruppe || '';
+  var strategie = HF.strategie || HF.strategie_titel || '';
+
   document.getElementById('hf-preview').innerHTML =
     '<div class="hf-label">Kampagne aus Modul 1</div>' +
     (HF.pre_headline ? '<div class="hf-pre">'+ex(HF.pre_headline)+'</div>' : '') +
     '<div class="hf-title">'+ex(HF.titel||HF.kampagnenname)+'</div>' +
     '<div class="hf-sub">'+ex(HF.sub_headline||'')+'</div>' +
-    '<div class="hf-meta">'+ex(HF.live_termin||'')+'  |  '+ex(HF.kampagnenname||'')+'</div>';
+    '<div class="hf-meta">'+ex(HF.live_termin||'')+(HF.live_termin ? '  |  ' : '')+ex(HF.kampagnenname||'')+'</div>' +
+    '<div class="hf-detail">' +
+      '<div class="hf-detail-label">Webinar-Inhalte (Bulletpoints)</div>' +
+      bulletHTML +
+    '</div>' +
+    (zielgruppe ? '<div class="hf-detail"><div class="hf-detail-label">Zielgruppe</div><div class="hf-detail-val">'+ex(zielgruppe)+'</div></div>' : '') +
+    (strategie ? '<div class="hf-detail"><div class="hf-detail-label">Strategie</div><div class="hf-detail-val">'+ex(strategie)+'</div></div>' : '');
 }
+
+var PRESETS = {
+  webinar: [
+    {id:'announcement', name:'Announcement Bar', desc:'Termin-Hinweis mit Live-Badge', active:true, custom:false},
+    {id:'hero', name:'Hero', desc:'Pre-Headline, H1, H2, CTA, Dozenten-Zeile', active:true, custom:false},
+    {id:'trustbar', name:'Trust Bar', desc:'Presselogo-Platzhalter', active:true, custom:false},
+    {id:'introtext', name:'Intro Text', desc:'Kontext-Story, Warum-jetzt-Narrativ, Referenten-Bruecke', active:true, custom:false},
+    {id:'problem', name:'Problem / Mirror Effect', desc:'Selbstreflexions-Checkliste', active:true, custom:false},
+    {id:'framework', name:'Educational Gap', desc:'Erklaer-Block mit Kontext und Hintergrund-Wissen', active:true, custom:false},
+    {id:'social', name:'Social Proof', desc:'3 Testimonials', active:true, custom:false},
+    {id:'authority', name:'Authority / Speaker', desc:'Experten-Bio, Webinar-Rolle', active:true, custom:false},
+    {id:'benefits', name:'Benefit Stack', desc:'3 Gruende teilzunehmen', active:true, custom:false},
+    {id:'finalcta', name:'Final CTA / Scarcity', desc:'Abschluss mit Verknappung', active:true, custom:false},
+    {id:'footer', name:'Footer', desc:'Rechtliche Links (Platzhalter)', active:true, custom:false}
+  ],
+  leadgen: [
+    {id:'hero', name:'Hero', desc:'Pre-Headline, H1, H2, CTA', active:true, custom:false},
+    {id:'problem', name:'Problem / Mirror Effect', desc:'Selbstreflexions-Checkliste', active:true, custom:false},
+    {id:'social', name:'Social Proof', desc:'3 Testimonials', active:true, custom:false},
+    {id:'authority', name:'Authority / Speaker', desc:'Experten-Bio, Webinar-Rolle', active:true, custom:false},
+    {id:'finalcta', name:'Final CTA / Scarcity', desc:'Abschluss mit Verknappung', active:true, custom:false},
+    {id:'footer', name:'Footer', desc:'Rechtliche Links (Platzhalter)', active:true, custom:false}
+  ],
+  sales: [
+    {id:'hero', name:'Hero', desc:'Pre-Headline, H1, H2, CTA', active:true, custom:false},
+    {id:'problem', name:'Problem / Mirror Effect', desc:'Selbstreflexions-Checkliste', active:true, custom:false},
+    {id:'framework', name:'Educational Gap', desc:'Erklaer-Block mit Kontext und Hintergrund-Wissen', active:true, custom:false},
+    {id:'social', name:'Social Proof', desc:'3 Testimonials', active:true, custom:false},
+    {id:'authority', name:'Authority / Speaker', desc:'Experten-Bio, Webinar-Rolle', active:true, custom:false},
+    {id:'benefits', name:'Benefit Stack', desc:'3 Gruende teilzunehmen', active:true, custom:false},
+    {id:'custom_price', name:'Preis & Angebot', desc:'Preisdarstellung, Boni, Vergleich', active:true, custom:true},
+    {id:'finalcta', name:'Final CTA / Scarcity', desc:'Abschluss mit Verknappung', active:true, custom:false},
+    {id:'footer', name:'Footer', desc:'Rechtliche Links (Platzhalter)', active:true, custom:false}
+  ],
+  custom: []
+};
+
+var activePreset = 'webinar';
 
 function goSections() {
   hide('phase-import'); show('phase-sections'); hide('phase-review'); hide('phase-export'); setP(2);
-  if (sections.length === 0) {
-    sections = DEFAULT_SECTIONS.map(function(s){ return Object.assign({}, s); });
-  }
+  show('sec-mode-picker'); hide('sec-editor');
+  switchSecMode('preset');
+}
+
+function switchSecMode(mode) {
+  document.getElementById('secmode-preset-btn').classList.toggle('active', mode === 'preset');
+  document.getElementById('secmode-ai-btn').classList.toggle('active', mode === 'ai');
+  document.getElementById('secmode-preset').classList.toggle('active', mode === 'preset');
+  document.getElementById('secmode-ai').classList.toggle('active', mode === 'ai');
+}
+
+function selectPreset(key) {
+  activePreset = key;
+  ['webinar','leadgen','sales','custom'].forEach(function(k) {
+    var card = document.getElementById('preset-'+k);
+    var check = document.getElementById('pc-'+k);
+    card.classList.toggle('selected', k === key);
+    check.innerHTML = k === key ? '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>' : '';
+  });
+}
+
+function applyPresetAndShow() {
+  sections = (PRESETS[activePreset]||[]).map(function(s){ return Object.assign({}, s); });
+  var labels = {webinar:'Webinar Standard', leadgen:'Lead Gen Kompakt', sales:'Sales / Produkt', custom:'Eigene Sections'};
+  document.getElementById('sec-editor-label').textContent = 'Sections – ' + (labels[activePreset]||'Preset');
+  hide('sec-mode-picker'); show('sec-editor');
   renderSecList();
 }
+
+function showSecModePicker() {
+  show('sec-mode-picker'); hide('sec-editor');
+}
+
+async function suggestSectionsAI() {
+  var hint = document.getElementById('ai-sec-hint').value.trim();
+  var loadEl = document.getElementById('ai-sec-loading');
+  var errEl = document.getElementById('ai-sec-error');
+  errEl.innerHTML = '';
+  loadEl.style.display = 'flex';
+  document.querySelector('#secmode-ai .primary-btn').disabled = true;
+
+  try {
+    var usr = 'Du bist ein Conversion-Optimierungsspezialist fuer Webinar-Landingpages.\n\n' +
+      'Kampagne: ' + (HF.titel||HF.kampagnenname||'') + '\n' +
+      'Pre-Headline: ' + (HF.pre_headline||'') + '\n' +
+      'Sub-Headline: ' + (HF.sub_headline||'') + '\n' +
+      'Zielgruppe: ' + (HF.zielgruppe||HF.strategie_titel||'') + '\n' +
+      'Angebot: ' + (HF.offer||'Kostenfreies Webinar') + '\n' +
+      (hint ? 'Zusaetzliche Hinweise: ' + hint + '\n' : '') + '\n' +
+      'Schlage die optimale Section-Struktur fuer diese Landingpage vor.\n\n' +
+      'Antworte AUSSCHLIESSLICH mit einem JSON-Array. Jedes Element hat:\n' +
+      '- "id": einzigartiger snake_case Identifier\n' +
+      '- "name": Anzeigename der Section (kurz, max 4 Worte)\n' +
+      '- "desc": kurze Beschreibung was diese Section enthaelt (max 12 Worte)\n\n' +
+      'Nutze diese Standard-IDs wenn passend (damit das Rendering-System greift): announcement, hero, trustbar, introtext, problem, framework, social, authority, benefits, finalcta, footer\n' +
+      'Fuer neue/eigene Sections waehle beschreibende IDs wie "faq", "guarantee", "price", "video_section" etc.\n\n' +
+      'Beispiel-Output:\n[{"id":"hero","name":"Hero","desc":"Hauptheadline, CTA und Video"},{"id":"problem","name":"Problem","desc":"Selbstreflexions-Checkliste"}]\n\n' +
+      'NUR das JSON-Array, kein anderer Text, keine Backticks.';
+
+    var resp = await fetch(PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: usr }]
+      })
+    });
+
+    var d = await resp.json();
+    if (d.error) throw new Error(d.error.message);
+    var raw = d.content.map(function(b){return b.text||'';}).join('').trim();
+
+    // Extract JSON array
+    var cleaned = raw.replace(/^```(?:json)?\s*/i,'').replace(/```\s*$/i,'').trim();
+    var arrStart = cleaned.indexOf('[');
+    var arrEnd = cleaned.lastIndexOf(']');
+    if (arrStart === -1 || arrEnd === -1) throw new Error('KI hat kein gueltiges Array zurueckgegeben.');
+    var parsed = JSON.parse(cleaned.slice(arrStart, arrEnd+1));
+
+    sections = parsed.map(function(s) {
+      return { id: s.id||('custom_'+Math.random().toString(36).slice(2,6)), name: s.name||s.id, desc: s.desc||'', active: true, custom: !['announcement','hero','trustbar','introtext','problem','framework','social','authority','benefits','finalcta','footer'].includes(s.id) };
+    });
+
+    document.getElementById('sec-editor-label').textContent = 'Sections – KI-Vorschlag';
+    hide('sec-mode-picker'); show('sec-editor');
+    renderSecList();
+
+  } catch(e) {
+    errEl.innerHTML = '<div class="error-box" style="margin-top:8px">Fehler: '+ex(e.message)+'</div>';
+  }
+
+  loadEl.style.display = 'none';
+  document.querySelector('#secmode-ai .primary-btn').disabled = false;
+}
+
 function goReview() { hide('phase-export'); show('phase-review'); setP(3); }
 function goExport() { hide('phase-review'); show('phase-export'); setP(4); buildExport(); }
 
@@ -410,14 +746,17 @@ async function generateAll(active) {
   }).join(',\n  ');
 
   var bpList = (HF.bulletpoints||[]).map(function(b,i){return (i+1)+'. '+b;}).join('\n');
+  var zielgruppe = HF.zielgruppe || HF.strategie_titel || '';
+  var strategie = HF.strategie || HF.strategie_titel || '';
   var usr = 'Kampagne:\n' +
     'Titel: ' + (HF.titel||HF.kampagnenname||'') + '\n' +
     'Pre-Headline: ' + (HF.pre_headline||'') + '\n' +
     'Sub-Headline: ' + (HF.sub_headline||'') + '\n' +
     'Termin: ' + (HF.live_termin||'') + '\n' +
     'Offer: ' + (HF.offer||'') + '\n' +
-    'Webinar-Inhalte (Bulletpoints 1:1 fuer Hero verwenden):\n' + bpList + '\n' +
-    'Zielgruppenanalyse: ' + (HF.zielgruppe||HF.strategie_titel||'') + '\n\n' +
+    'Webinar-Inhalte (Bulletpoints 1:1 fuer Hero verwenden):\n' + (bpList||'(keine Bulletpoints angegeben)') + '\n' +
+    'Zielgruppe: ' + (zielgruppe||'(keine Angabe)') + '\n' +
+    (strategie ? 'Strategie / Positionierung: ' + strategie + '\n' : '') + '\n' +
     'Generiere folgende Sections als JSON-Objekt mit exakt diesen Keys:\n{\n  ' + schemaLines + '\n}\n\n' +
     'Regeln:\n' +
     '- Hero: Verwende die Hardfacts DIREKT und ungekuerzt: preHeadline = exakt aus "Pre-Headline", h1 = exakt aus "Titel", h2 = exakt aus "Sub-Headline". Die bulletpoints kommen 1:1 aus "Webinar-Inhalte" - parse jeden Bullet als {"title":"...", "text":"..."} wobei title der Hauptpunkt ist und text die Erklaerung (falls vorhanden, sonst leer lassen). Generiere 4 Bulletpoints. ctaButton = "Jetzt kostenlos anmelden", ctaSubline = "100% kostenfrei am [Termin]", videoPlaceholder = "[16:9 Video-Platzhalter: Anmeldeseiten-Video mit Dr. Bauhofer]"\n' +
