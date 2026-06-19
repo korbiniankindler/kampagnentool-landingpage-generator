@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Webinar-Kampagnen Tool - Modul 2: Landingpage</title>
+<style>
+:root{--bg-primary:#fff;--bg-secondary:#f7f7f5;--bg-tertiary:#f0efec;--bg-success:#eaf3de;--bg-danger:#fcebeb;--text-primary:#1a1a1a;--text-secondary:#6b6b67;--text-tertiary:#9b9b96;--text-success:#3b6d11;--text-danger:#a32d2d;--border-light:rgba(0,0,0,.10);--border-medium:rgba(0,0,0,.18);--border-strong:rgba(0,0,0,.28);--border-success:rgba(59,109,17,.3);--border-danger:rgba(163,45,45,.25);--radius-md:8px;--radius-lg:12px;--font:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg-tertiary);min-height:100vh;padding:2rem 1rem 4rem;color:var(--text-primary)}
+.app{max-width:960px;margin:0 auto}
+.header{display:flex;align-items:center;gap:10px;margin-bottom:2rem}
+.logo{width:36px;height:36px;background:#111;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:500;flex-shrink:0}
+.header-name{font-size:14px;font-weight:500}.header-sub{font-size:13px;color:var(--text-secondary)}
+.progress-bar{display:flex;align-items:center;margin-bottom:2rem}
+.prog-step{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-tertiary);padding:6px 0}
+.prog-step.active{color:var(--text-primary);font-weight:500}.prog-step.done{color:var(--text-success)}
+.prog-num{width:22px;height:22px;border-radius:50%;border:.5px solid var(--border-medium);display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0}
+.prog-step.active .prog-num{background:#111;color:#fff;border-color:#111}
+.prog-step.done .prog-num{background:var(--bg-success);border-color:var(--border-success);color:var(--text-success)}
+.prog-line{flex:1;height:.5px;background:var(--border-light);margin:0 10px}
+.page-title{font-size:22px;font-weight:500;margin-bottom:.25rem}
+.page-desc{font-size:13px;color:var(--text-secondary);margin-bottom:1.75rem}
+.modul-badge{font-size:11px;padding:2px 8px;border-radius:20px;border:.5px solid var(--border-light);color:var(--text-secondary);vertical-align:middle;margin-left:8px}
+.card{border:.5px solid var(--border-light);border-radius:var(--radius-lg);padding:1.25rem 1.5rem;margin-bottom:.875rem;background:var(--bg-primary)}
+.card-header{display:flex;align-items:center;gap:10px;margin-bottom:1rem}
+.card-num{width:22px;height:22px;border-radius:50%;border:.5px solid var(--border-medium);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--text-secondary);flex-shrink:0}
+.card-label{font-size:15px;font-weight:500}
+.field-label{display:block;font-size:13px;color:var(--text-secondary);margin-bottom:6px}
+.field-hint{font-size:12px;color:var(--text-tertiary);margin-top:4px}
+input[type=text],textarea,select{width:100%;font-size:14px;border:.5px solid var(--border-light);border-radius:var(--radius-md);padding:8px 12px;background:var(--bg-secondary);color:var(--text-primary);font-family:var(--font);outline:none;transition:border-color .15s;-webkit-appearance:none}
+input[type=text]:focus,textarea:focus,select:focus{border-color:var(--border-strong)}
+textarea{resize:vertical;min-height:64px;line-height:1.5}
+.hf-box{padding:1rem;border:.5px solid var(--border-light);border-radius:var(--radius-md);background:var(--bg-secondary)}
+.hf-label{font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.hf-pre{font-size:11px;font-weight:600;color:var(--text-secondary);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px}
+.hf-title{font-size:16px;font-weight:600;color:var(--text-primary);line-height:1.3;margin-bottom:3px}
+.hf-sub{font-size:13px;color:var(--text-secondary);margin-bottom:6px}.hf-meta{font-size:12px;color:var(--text-tertiary)}
+.primary-btn{width:100%;padding:11px;background:#111;color:#fff;border:none;border-radius:var(--radius-md);font-size:14px;font-weight:500;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:7px;transition:opacity .15s;margin-top:1.25rem}
+.primary-btn:hover{opacity:.85}.primary-btn:disabled{opacity:.4;cursor:not-allowed}
+.secondary-btn{padding:8px 14px;border:.5px solid var(--border-medium);border-radius:var(--radius-md);background:transparent;font-size:13px;cursor:pointer;color:var(--text-primary);font-family:var(--font);display:flex;align-items:center;gap:6px;transition:background .15s}
+.secondary-btn:hover{background:var(--bg-secondary)}.secondary-btn:disabled{opacity:.4;cursor:not-allowed}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{width:18px;height:18px;border:2px solid rgba(0,0,0,.1);border-top-color:var(--text-secondary);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+.spinner-sm{width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+.loading-card{display:flex;align-items:center;gap:12px;padding:1.25rem;border-radius:var(--radius-md);background:var(--bg-secondary);font-size:14px;color:var(--text-secondary);margin-top:1rem}
+.error-box{padding:10px 13px;border-radius:var(--radius-md);background:var(--bg-danger);border:.5px solid var(--border-danger);font-size:13px;color:var(--text-danger);margin-top:.75rem}
+.success-banner{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:var(--radius-md);background:var(--bg-success);border:.5px solid var(--border-success);font-size:13px;color:var(--text-success);margin-bottom:1rem}
+.import-banner{border:.5px solid var(--border-light);border-radius:var(--radius-lg);padding:1rem 1.25rem;background:var(--bg-primary);margin-bottom:1.25rem}
+.import-upload{border:.5px dashed var(--border-medium);border-radius:var(--radius-md);padding:11px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:var(--text-secondary);background:var(--bg-secondary);transition:border-color .15s;margin-top:8px}
+.import-upload:hover{border-color:var(--border-strong)}
+.section-label{font-size:13px;font-weight:500;color:var(--text-secondary);margin:.75rem 0 .5rem}
+svg{display:inline-block;vertical-align:middle;flex-shrink:0}
+.sec-list{display:flex;flex-direction:column;gap:6px}
+.sec-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border:.5px solid var(--border-light);border-radius:var(--radius-md);background:var(--bg-primary);cursor:default;transition:border-color .15s,opacity .15s}
+.sec-row.dragging{opacity:.4}
+.sec-row.drag-over{border-color:#111;border-style:dashed}
+.sec-row.disabled{opacity:.5}
+.drag-handle{cursor:grab;color:var(--text-tertiary);flex-shrink:0;touch-action:none}
+.drag-handle:active{cursor:grabbing}
+.sec-cb{width:18px;height:18px;flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.sec-info{flex:1;min-width:0}
+.sec-name{font-size:13px;font-weight:500;color:var(--text-primary)}
+.sec-desc{font-size:12px;color:var(--text-tertiary);margin-top:1px}
+.sec-remove{width:24px;height:24px;border-radius:5px;border:.5px solid var(--border-light);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-secondary);flex-shrink:0;transition:background .15s}
+.sec-remove:hover{background:var(--bg-secondary);border-color:var(--border-danger);color:var(--text-danger)}
+.add-section-zone{border:.5px dashed var(--border-medium);border-radius:var(--radius-md);padding:14px;margin-top:10px}
+.add-section-row{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text-secondary)}
+.add-section-form{display:none;flex-direction:column;gap:8px;margin-top:10px}
+.add-section-form.open{display:flex}
+.add-section-actions{display:flex;gap:8px}
+.review-card{border:.5px solid var(--border-light);border-radius:var(--radius-lg);background:var(--bg-primary);margin-bottom:1rem;overflow:hidden}
+.review-head{display:flex;align-items:center;justify-content:space-between;padding:.9rem 1.25rem;background:var(--bg-secondary);border-bottom:.5px solid var(--border-light)}
+.review-title{font-size:14px;font-weight:600}
+.review-status{font-size:11px;color:var(--text-tertiary)}
+.review-body{padding:1.1rem 1.25rem}
+.field-block{margin-bottom:12px}
+.field-tag{font-size:10px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;display:flex;align-items:center;gap:6px}
+.field-editable{font-size:13px;line-height:1.55;color:var(--text-primary);padding:6px 8px;border-radius:6px;border:.5px solid transparent;cursor:text;transition:border-color .15s,background .15s;white-space:pre-wrap}
+.field-editable:hover{background:var(--bg-secondary);border-color:var(--border-light)}
+.field-editable[contenteditable=true]:focus{background:var(--bg-secondary);border-color:var(--border-strong);outline:none}
+.checklist-item{border:.5px solid var(--border-light);border-radius:6px;padding:8px 10px;margin-bottom:6px;background:var(--bg-secondary)}
+.checklist-item .field-editable{background:transparent}
+.testimonial-card{border:.5px solid var(--border-light);border-radius:6px;padding:10px 12px;margin-bottom:6px;background:var(--bg-secondary)}
+.review-feedback{margin-top:10px;padding-top:10px;border-top:.5px solid var(--border-light)}
+.review-feedback textarea{min-height:48px;font-size:12px}
+.review-feedback-row{display:flex;gap:8px;margin-top:6px}
+.mini-btn{padding:6px 11px;border:.5px solid var(--border-medium);border-radius:6px;background:transparent;font-size:12px;cursor:pointer;color:var(--text-primary);font-family:var(--font);display:flex;align-items:center;gap:5px;transition:background .15s}
+.mini-btn:hover{background:var(--bg-primary)}
+.mini-btn:disabled{opacity:.4;cursor:not-allowed}
+.export-box{background:var(--bg-secondary);border:.5px solid var(--border-light);border-radius:var(--radius-md);padding:14px;font-size:11px;color:var(--text-secondary);font-family:monospace;white-space:pre-wrap;max-height:420px;overflow-y:auto;line-height:1.6}
+.export-btns{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.export-btn{flex:1;min-width:140px;padding:10px 14px;border:.5px solid var(--border-medium);border-radius:var(--radius-md);background:var(--bg-primary);font-size:13px;font-weight:500;cursor:pointer;color:var(--text-primary);font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:7px;transition:background .15s}
+.export-btn:hover{background:var(--bg-secondary)}
+.export-btn.primary{background:#111;color:#fff;border-color:#111}.export-btn.primary:hover{opacity:.85}
+</style>
+</head>
+<body>
+<div class="app">
+
+<div class="header">
+  <div class="logo">BL</div>
+  <div><div class="header-name">Webinar-Kampagnen Tool</div><div class="header-sub">Modul 2 - Landingpage Generator</div></div>
+</div>
+
+<div class="progress-bar">
+  <div class="prog-step done" id="prog-1"><div class="prog-num" id="pn-1">1</div> Hardfacts</div>
+  <div class="prog-line"></div>
+  <div class="prog-step active" id="prog-2"><div class="prog-num" id="pn-2">2</div> Sections</div>
+  <div class="prog-line"></div>
+  <div class="prog-step" id="prog-3"><div class="prog-num" id="pn-3">3</div> Review</div>
+  <div class="prog-line"></div>
+  <div class="prog-step" id="prog-4"><div class="prog-num" id="pn-4">4</div> Export</div>
+</div>
+
+<!-- PHASE IMPORT -->
+<div id="phase-import">
+  <div class="page-title">Landingpage generieren <span class="modul-badge">Modul 2</span></div>
+  <p class="page-desc">Hardfacts laden und Landingpage-Sections festlegen.</p>
+  <div id="import-err"></div>
+  <div class="import-banner" id="import-banner" style="display:none">
+    <div class="section-label" style="margin-top:0">Hardfacts aus Modul 1 importieren</div>
+    <p style="font-size:13px;color:var(--text-secondary)">Keine Session-Daten gefunden. Exportiere die JSON-Datei in Modul 1 und lade sie hier hoch.</p>
+    <div class="import-upload" onclick="document.getElementById('json-inp').click()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      hardfacts.json hochladen
+    </div>
+    <input type="file" id="json-inp" accept=".json" style="display:none" onchange="loadJSON(this)">
+  </div>
+  <div id="hf-display" style="display:none">
+    <div class="hf-box" id="hf-preview"></div>
+    <button class="primary-btn" onclick="goSections()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 12 11 14 15 10"/></svg>
+      Bestaetigt - weiter zu Sections
+    </button>
+  </div>
+</div>
+
+<!-- PHASE SECTIONS -->
+<div id="phase-sections" style="display:none">
+  <div class="page-title">Sections auswaehlen <span class="modul-badge">Schritt 2</span></div>
+  <p class="page-desc">Sections an/abwaehlen, per Drag &amp; Drop neu anordnen oder eigene Section hinzufuegen.</p>
+
+  <div class="card">
+    <div id="sec-list" class="sec-list"></div>
+    <div class="add-section-zone">
+      <div class="add-section-row" onclick="toggleAddForm()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Eigene Section hinzufuegen
+      </div>
+      <div class="add-section-form" id="add-form">
+        <input type="text" id="new-sec-name" placeholder="Name der Section, z.B. FAQ">
+        <textarea id="new-sec-desc" placeholder="Was soll diese Section enthalten?" style="min-height:48px"></textarea>
+        <div class="add-section-actions">
+          <button class="mini-btn" onclick="addCustomSection()">Hinzufuegen</button>
+          <button class="mini-btn" onclick="toggleAddForm()">Abbrechen</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="sec-error"></div>
+  <button class="primary-btn" onclick="startGeneration()">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+    Landingpage generieren
+  </button>
+</div>
+
+<!-- PHASE REVIEW -->
+<div id="phase-review" style="display:none">
+  <div class="page-title">Review &amp; Anpassen <span class="modul-badge">Schritt 3</span></div>
+  <p class="page-desc">Felder direkt anklicken und bearbeiten, oder per Feedback eine Section neu generieren.</p>
+  <div id="review-loading" class="loading-card" style="display:none"><div class="spinner"></div><span id="review-loading-msg">Landingpage wird generiert...</span></div>
+  <div id="review-list"></div>
+  <button class="primary-btn" id="to-export-btn" style="display:none" onclick="goExport()">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 12 11 14 15 10"/></svg>
+    Weiter zum Export
+  </button>
+</div>
+
+<!-- PHASE EXPORT -->
+<div id="phase-export" style="display:none">
+  <div class="success-banner">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>
+    Landingpage-Briefing bereit
+  </div>
+  <div class="card">
+    <div class="section-label" style="margin-top:0">Strukturiertes Briefing fuer Claude Design</div>
+    <div class="export-box" id="export-text"></div>
+    <div class="export-btns">
+      <button class="export-btn primary" onclick="copyExport()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        In Zwischenablage kopieren
+      </button>
+      <button class="export-btn" onclick="downloadMd()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Als .md herunterladen
+      </button>
+    </div>
+  </div>
+  <button class="secondary-btn" style="margin-top:8px;width:100%;justify-content:center" onclick="goReview()">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+    Zurueck zum Review
+  </button>
+</div>
+
+</div>
+<script>
+var PROXY_URL = 'https://claude.korbinian.workers.dev/';
+var HF = null;
+var sections = [];
+var sectionData = {};
+var customCounter = 0;
+var dragSrcIdx = null;
+
+var DEFAULT_SECTIONS = [
+  {id:'announcement', name:'Announcement Bar', desc:'Termin-Hinweis mit Live-Badge', active:true, custom:false},
+  {id:'hero', name:'Hero', desc:'Pre-Headline, H1, H2, CTA, Dozenten-Zeile', active:true, custom:false},
+  {id:'trustbar', name:'Trust Bar', desc:'Presselogo-Platzhalter', active:true, custom:false},
+  {id:'introtext', name:'Intro Text', desc:'Kontext-Story, Warum-jetzt-Narrativ, Referenten-Bruecke', active:true, custom:false},
+  {id:'problem', name:'Problem / Mirror Effect', desc:'Selbstreflexions-Checkliste', active:true, custom:false},
+  {id:'framework', name:'Educational Gap', desc:'Erklaer-Block mit Kontext und Hintergrund-Wissen', active:true, custom:false},
+  {id:'social', name:'Social Proof', desc:'3 Testimonials', active:true, custom:false},
+  {id:'authority', name:'Authority / Speaker', desc:'Experten-Bio, Webinar-Rolle', active:true, custom:false},
+  {id:'benefits', name:'Benefit Stack', desc:'3 Gruende teilzunehmen', active:true, custom:false},
+  {id:'finalcta', name:'Final CTA / Scarcity', desc:'Abschluss mit Verknappung', active:true, custom:false},
+  {id:'footer', name:'Footer', desc:'Rechtliche Links (Platzhalter)', active:true, custom:false}
+];
+
+var GMSG = ['Landingpage wird generiert...','Sections werden geschrieben...','Tonalitaet wird abgestimmt...','Fast fertig...'];
+
+window.addEventListener('DOMContentLoaded', function() {
+  try {
+    var raw = sessionStorage.getItem('wkt_hardfacts');
+    if (raw) { HF = JSON.parse(raw); renderHF(); return; }
+  } catch(e) {}
+  document.getElementById('import-banner').style.display = 'block';
+});
+
+function loadJSON(inp) {
+  var f = inp.files[0]; if (!f) return;
+  var r = new FileReader();
+  r.onload = function(e) {
+    try { HF = JSON.parse(e.target.result); renderHF(); }
+    catch(err) { document.getElementById('import-err').innerHTML = '<div class="error-box">Ungueltige JSON-Datei.</div>'; }
+  };
+  r.readAsText(f);
+}
+
+function renderHF() {
+  document.getElementById('import-banner').style.display = 'none';
+  document.getElementById('hf-display').style.display = 'block';
+  document.getElementById('hf-preview').innerHTML =
+    '<div class="hf-label">Kampagne aus Modul 1</div>' +
+    (HF.pre_headline ? '<div class="hf-pre">'+ex(HF.pre_headline)+'</div>' : '') +
+    '<div class="hf-title">'+ex(HF.titel||HF.kampagnenname)+'</div>' +
+    '<div class="hf-sub">'+ex(HF.sub_headline||'')+'</div>' +
+    '<div class="hf-meta">'+ex(HF.live_termin||'')+'  |  '+ex(HF.kampagnenname||'')+'</div>';
+}
+
+function goSections() {
+  hide('phase-import'); show('phase-sections'); hide('phase-review'); hide('phase-export'); setP(2);
+  if (sections.length === 0) {
+    sections = DEFAULT_SECTIONS.map(function(s){ return Object.assign({}, s); });
+  }
+  renderSecList();
+}
+function goReview() { hide('phase-export'); show('phase-review'); setP(3); }
+function goExport() { hide('phase-review'); show('phase-export'); setP(4); buildExport(); }
+
+/* ===== SECTION LIST (Phase 2) ===== */
+function renderSecList() {
+  var html = '';
+  sections.forEach(function(s, i) {
+    html += '<div class="sec-row'+(s.active?'':' disabled')+'" draggable="true" data-idx="'+i+'" '+
+      'ondragstart="dragStart(event,'+i+')" ondragover="dragOver(event,'+i+')" ondrop="dragDrop(event,'+i+')" ondragend="dragEnd(event)" ondragleave="dragLeave(event)">' +
+      '<span class="drag-handle"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg></span>' +
+      '<span class="sec-cb" onclick="toggleSec('+i+')">' + (s.active ? sqCheck() : sqEmpty()) + '</span>' +
+      '<span class="sec-info"><div class="sec-name">'+(i+1)+'. '+ex(s.name)+(s.custom?' <span style="font-size:10px;color:var(--text-tertiary)">(eigene)</span>':'')+'</div><div class="sec-desc">'+ex(s.desc)+'</div></span>' +
+      '<button class="sec-remove" onclick="removeSec('+i+')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>' +
+      '</div>';
+  });
+  document.getElementById('sec-list').innerHTML = html;
+}
+
+function toggleSec(i) { sections[i].active = !sections[i].active; renderSecList(); }
+function removeSec(i) { sections.splice(i,1); renderSecList(); }
+
+function dragStart(ev, i) { dragSrcIdx = i; ev.currentTarget.classList.add('dragging'); ev.dataTransfer.effectAllowed='move'; }
+function dragOver(ev, i) { ev.preventDefault(); if (i !== dragSrcIdx) ev.currentTarget.classList.add('drag-over'); }
+function dragLeave(ev) { ev.currentTarget.classList.remove('drag-over'); }
+function dragEnd(ev) { document.querySelectorAll('.sec-row').forEach(function(r){r.classList.remove('dragging','drag-over');}); }
+function dragDrop(ev, i) {
+  ev.preventDefault();
+  ev.currentTarget.classList.remove('drag-over');
+  if (dragSrcIdx === null || dragSrcIdx === i) return;
+  var moved = sections.splice(dragSrcIdx, 1)[0];
+  sections.splice(i, 0, moved);
+  dragSrcIdx = null;
+  renderSecList();
+}
+
+function toggleAddForm() {
+  var f = document.getElementById('add-form');
+  f.classList.toggle('open');
+  if (f.classList.contains('open')) document.getElementById('new-sec-name').focus();
+  else { document.getElementById('new-sec-name').value=''; document.getElementById('new-sec-desc').value=''; }
+}
+
+function addCustomSection() {
+  var name = document.getElementById('new-sec-name').value.trim();
+  var desc = document.getElementById('new-sec-desc').value.trim();
+  if (!name) { alert('Bitte einen Namen eingeben.'); return; }
+  customCounter++;
+  sections.push({id:'custom_'+customCounter, name:name, desc:desc||'Frei definierte Section', active:true, custom:true});
+  toggleAddForm();
+  renderSecList();
+}
+
+/* ===== JSON PARSING (robust) ===== */
+function extractJSON(raw) {
+  var cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim();
+  var start = cleaned.indexOf('{');
+  if (start === -1) throw new Error('Kein JSON-Objekt in der Antwort gefunden.');
+  var depth = 0, inStr = false, escape = false, end = -1;
+  for (var i = start; i < cleaned.length; i++) {
+    var ch = cleaned[i];
+    if (escape) { escape = false; continue; }
+    if (ch === '\\' && inStr) { escape = true; continue; }
+    if (ch === '"') { inStr = !inStr; continue; }
+    if (inStr) continue;
+    if (ch === '{') depth++;
+    else if (ch === '}') { depth--; if (depth === 0) { end = i; break; } }
+  }
+  if (end === -1) throw new Error('JSON-Objekt ist unvollstaendig (kein schliessende Klammer).');
+  var candidate = cleaned.slice(start, end + 1);
+  candidate = candidate.replace(/,\s*([}\]])/g, '$1');
+  candidate = candidate.replace(/"((?:[^"\\]|\\.)*)"/g, function(match) {
+    return match
+      .replace(/\n/g, '\\n')
+      .replace(/\r/g, '\\r')
+      .replace(/\t/g, '\\t');
+  });
+  try {
+    return JSON.parse(candidate);
+  } catch(e) {
+    throw new Error('JSON-Parse fehlgeschlagen: ' + e.message + '. Bitte erneut versuchen.');
+  }
+}
+
+function sectionSchemaHint(s) {
+  var schemas = {
+    announcement: '{"text": "..."}',
+    hero: '{"preHeadline":"...", "h1":"...", "h2":"...", "bulletpoints":[{"title":"...","text":"..."},{"title":"...","text":"..."},{"title":"...","text":"..."},{"title":"...","text":"..."}], "ctaButton":"...", "ctaSubline":"...", "videoPlaceholder":"[16:9 Video-Platzhalter]"}',
+    trustbar: '{"note":"Platzhalter-Hinweis Text fuer Presselogos"}',
+    introtext: '{"badge":"...", "headline":"...", "para1":"...", "para2":"...", "para3":"...", "closingLine":"..."}',
+    problem: '{"headline":"...", "introCopy":"...", "checklist":[{"title":"...","text":"..."},{"title":"...","text":"..."},{"title":"...","text":"..."},{"title":"...","text":"..."},{"title":"...","text":"..."}], "transitionCopy":"...", "ctaButton":"..."}',
+    framework: '{"headline":"...", "bodyCopy":"..."}',
+    social: '{"headline":"...", "testimonials":[{"quote":"...","name":"...","role":"..."},{"quote":"...","name":"...","role":"..."},{"quote":"...","name":"...","role":"..."}]}',
+    authority: '{"headline":"...", "bioBlock":"...", "webinarRole":"...", "ctaButton":"..."}',
+    benefits: '{"headline":"...", "items":[{"title":"...","text":"..."},{"title":"...","text":"..."},{"title":"...","text":"..."}]}',
+    finalcta: '{"headline":"...", "scarcityCopy":"...", "ctaButton":"...", "ctaSubline":"..."}',
+    footer: '{"links":["Datenschutz","Impressum","Webinar Hinweise"]}'
+  };
+  return schemas[s.id] || '{"headline":"...", "bodyCopy":"...", "ctaButton":"... (falls passend)"}';
+}
+
+/* ===== GENERATION (Phase 3) ===== */
+async function startGeneration() {
+  var active = sections.filter(function(s){return s.active;});
+  if (!active.length) { document.getElementById('sec-error').innerHTML = '<div class="error-box">Bitte mindestens eine Section auswaehlen.</div>'; return; }
+  document.getElementById('sec-error').innerHTML = '';
+
+  hide('phase-sections'); show('phase-review'); setP(3);
+  var loadEl = document.getElementById('review-loading');
+  loadEl.style.display = 'flex';
+  document.getElementById('review-list').innerHTML = '';
+  document.getElementById('to-export-btn').style.display = 'none';
+
+  var mi=0;
+  var mt = setInterval(function(){ var el=document.getElementById('review-loading-msg'); if(el) el.textContent=GMSG[Math.min(++mi,GMSG.length-1)]; },2200);
+
+  try {
+    var data = await generateAll(active);
+    sectionData = data;
+    clearInterval(mt); loadEl.style.display='none';
+    renderReview(active);
+    document.getElementById('to-export-btn').style.display = 'flex';
+  } catch(e) {
+    clearInterval(mt); loadEl.style.display='none';
+    document.getElementById('review-list').innerHTML = '<div class="error-box">Fehler: '+ex(e.message)+'</div>';
+  }
+}
+
+async function generateAll(active) {
+  var sys = [
+    'Du bist ein Team aus Senior Online-Marketing-Stratege, Conversion-Copywriter und UI/UX-Designer.',
+    'Du schreibst komplette deutsche Webinar-Landingpages im BrandLift-Stil (Holistic House / Dr. Bauhofer Kampagnen).',
+    'Stil: direkt, vertrauenswuerdig, Frage-Formate, Curiosity Gaps, Sie-Anrede bei Gesundheitsthemen.',
+    '',
+    'KRITISCH: Antworte AUSSCHLIESSLICH mit einem einzigen gueltigen JSON-Objekt.',
+    'KEINE Erklaerungen, KEINE Kommentare, KEINE Markdown-Backticks (``` oder ```json), KEIN Text vor oder nach dem JSON.',
+    'Alle String-Werte muessen einzeilig sein - KEINE echten Zeilenumbrueche innerhalb von Strings.',
+    'Verwende \\n fuer Zeilenumbrueche innerhalb von Strings wenn noetig.',
+    'KEINE trailing commas. Valides JSON nach RFC 8259.'
+  ].join('\n');
+
+  var schemaLines = active.map(function(s) {
+    return '"'+s.id+'": ' + sectionSchemaHint(s) + (s.custom ? '  // Custom: "'+s.name+'": '+s.desc : '');
+  }).join(',\n  ');
+
+  var bpList = (HF.bulletpoints||[]).map(function(b,i){return (i+1)+'. '+b;}).join('\n');
+  var usr = 'Kampagne:\n' +
+    'Titel: ' + (HF.titel||HF.kampagnenname||'') + '\n' +
+    'Pre-Headline: ' + (HF.pre_headline||'') + '\n' +
+    'Sub-Headline: ' + (HF.sub_headline||'') + '\n' +
+    'Termin: ' + (HF.live_termin||'') + '\n' +
+    'Offer: ' + (HF.offer||'') + '\n' +
+    'Webinar-Inhalte (Bulletpoints 1:1 fuer Hero verwenden):\n' + bpList + '\n' +
+    'Zielgruppenanalyse: ' + (HF.zielgruppe||HF.strategie_titel||'') + '\n\n' +
+    'Generiere folgende Sections als JSON-Objekt mit exakt diesen Keys:\n{\n  ' + schemaLines + '\n}\n\n' +
+    'Regeln:\n' +
+    '- Hero: Verwende die Hardfacts DIREKT und ungekuerzt: preHeadline = exakt aus "Pre-Headline", h1 = exakt aus "Titel", h2 = exakt aus "Sub-Headline". Die bulletpoints kommen 1:1 aus "Webinar-Inhalte" - parse jeden Bullet als {"title":"...", "text":"..."} wobei title der Hauptpunkt ist und text die Erklaerung (falls vorhanden, sonst leer lassen). Generiere 4 Bulletpoints. ctaButton = "Jetzt kostenlos anmelden", ctaSubline = "100% kostenfrei am [Termin]", videoPlaceholder = "[16:9 Video-Platzhalter: Anmeldeseiten-Video mit Dr. Bauhofer]"\n' +
+    '- introtext (Intro Text): badge = kurze Pill-Kategorie (max 5 Worte), headline = aufmerksamkeitsstarke H2, para1/para2/para3 = je ein langer Fliesstext-Absatz (3-5 Saetze) der eine Kontext-Story aufbaut (gesellschaftlicher Wandel, Warum-jetzt-Narrativ, Marktentwicklung oder aehnliches passend zur Kampagne), closingLine = Bruecken-Satz der auf den Referenten und das Webinar leitet\n' +
+    '- Educational Gap (framework): headline + bodyCopy als erklaerenden Fliesstext-Block, KEIN Kompass-Prinzip\n' +
+    '- Problem-Checklist: exakt 5 Eintraege als Array mit je "title" und "text"\n' +
+    '- Testimonials: exakt 3 Eintraege als Array mit je "quote", "name", "role"\n' +
+    '- Benefits items: exakt 3 Eintraege als Array mit je "title" und "text"\n' +
+    '- Alle String-Werte EINZEILIG (kein echter Zeilenumbruch, ggf. \\n verwenden)\n' +
+    '- Alle CTAs auf kostenfreie Webinar-Anmeldung\n' +
+    '- Sprache: Deutsch, Sie-Anrede\n' +
+    '- NUR das JSON-Objekt, absolut kein anderer Text';
+
+  var resp = await fetch(PROXY_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 8000,
+      system: sys,
+      messages: [{role:'user', content:usr}]
+    })
+  });
+
+  var d = await resp.json();
+  if (d.error) throw new Error(d.error.message);
+  var raw = d.content.map(function(b){return b.text||'';}).join('');
+
+  return extractJSON(raw);
+}
+
+/* ===== REVIEW RENDERING (Phase 3) ===== */
+function renderReview(active) {
+  var html = '';
+  active.forEach(function(s, idx) {
+    html += '<div class="review-card" id="rc-'+s.id+'">' +
+      '<div class="review-head"><span class="review-title">'+(idx+1)+'. '+ex(s.name)+'</span><span class="review-status" id="rs-'+s.id+'">bestaetigt</span></div>' +
+      '<div class="review-body" id="rb-'+s.id+'">' + renderSectionFields(s) + '</div>' +
+      '<div class="review-feedback">' +
+        '<textarea id="fb-'+s.id+'" placeholder="Feedback zu dieser Section, z.B. konfrontativer formulieren, kuerzer, anderer Fokus..."></textarea>' +
+        '<div class="review-feedback-row">' +
+          '<button class="mini-btn" onclick="regenSection(\''+s.id+'\')" id="rgb-'+s.id+'"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> Section neu generieren</button>' +
+        '</div>' +
+      '</div></div>';
+  });
+  document.getElementById('review-list').innerHTML = html;
+}
+
+function renderSectionFields(s) {
+  var d = sectionData[s.id];
+  if (!d) return '<div class="field-block"><div class="field-editable">Keine Daten.</div></div>';
+
+  if (s.id === 'hero') {
+    var out = fieldBlock(s.id,'preHeadline','Pre-Headline',d.preHeadline);
+    out += fieldBlock(s.id,'h1','H1 - Haupttitel',d.h1);
+    out += fieldBlock(s.id,'h2','H2 - Sub-Headline',d.h2);
+    if (d.bulletpoints && d.bulletpoints.length) {
+      out += '<div class="field-tag" style="margin-top:4px">Inhalts-Bulletpoints (aus Webinar-Hardfacts)</div>';
+      d.bulletpoints.forEach(function(bp, i) {
+        out += '<div class="checklist-item">' +
+          '<div class="field-tag">Bullet '+(i+1)+' Titel</div>' +
+          '<div class="field-editable" contenteditable="true" data-sec="hero" data-path="bulletpoints.'+i+'.title">'+ex(bp.title)+'</div>' +
+          (bp.text ? '<div class="field-tag" style="margin-top:6px">Erklaerung</div><div class="field-editable" contenteditable="true" data-sec="hero" data-path="bulletpoints.'+i+'.text">'+ex(bp.text)+'</div>' : '') +
+          '</div>';
+      });
+    }
+    out += fieldBlock(s.id,'ctaButton','CTA Button',d.ctaButton);
+    out += fieldBlock(s.id,'ctaSubline','CTA Subline',d.ctaSubline);
+    out += '<div class="field-tag" style="margin-top:8px">Video (16:9)</div>' +
+      '<div style="background:var(--bg-tertiary);border:.5px solid var(--border-medium);border-radius:8px;aspect-ratio:16/9;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--text-tertiary);font-size:12px;max-width:380px;margin-top:4px">' +
+      '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none"/></svg>' +
+      '<span>16:9 Video-Platzhalter</span><span style="font-size:10px;color:var(--text-tertiary)">Anmeldeseiten-Video mit Referent</span>' +
+      '</div>';
+    return out;
+  }
+  if (s.id === 'introtext') {
+    var out = fieldBlock(s.id,'badge','Badge/Pill',d.badge);
+    out += fieldBlock(s.id,'headline','Headline',d.headline);
+    ['para1','para2','para3'].forEach(function(k,i){
+      if (d[k]) out += fieldBlock(s.id, k, 'Absatz '+(i+1), d[k]);
+    });
+    if (d.closingLine) out += fieldBlock(s.id,'closingLine','Abschluss-Satz (Bruecke zum Webinar)',d.closingLine);
+    return out;
+  }
+  if (s.id === 'problem' && d.checklist) {
+    var items = d.checklist.map(function(it, i) {
+      return '<div class="checklist-item">' +
+        '<div class="field-tag">Item '+(i+1)+' Titel</div><div class="field-editable" contenteditable="true" data-sec="'+s.id+'" data-path="checklist.'+i+'.title">'+ex(it.title)+'</div>' +
+        '<div class="field-tag" style="margin-top:6px">Text</div><div class="field-editable" contenteditable="true" data-sec="'+s.id+'" data-path="checklist.'+i+'.text">'+ex(it.text)+'</div>' +
+        '</div>';
+    }).join('');
+    return fieldBlock(s.id,'headline','Headline',d.headline) + fieldBlock(s.id,'introCopy','Intro-Copy',d.introCopy) +
+      '<div class="field-tag">Checkliste</div>' + items +
+      fieldBlock(s.id,'transitionCopy','Transition-Copy',d.transitionCopy) + fieldBlock(s.id,'ctaButton','CTA-Button',d.ctaButton);
+  }
+  if (s.id === 'social' && d.testimonials) {
+    var tests = d.testimonials.map(function(t, i) {
+      return '<div class="testimonial-card">' +
+        '<div class="field-tag">Zitat '+(i+1)+'</div><div class="field-editable" contenteditable="true" data-sec="'+s.id+'" data-path="testimonials.'+i+'.quote">'+ex(t.quote)+'</div>' +
+        '<div class="field-tag" style="margin-top:6px">Name</div><div class="field-editable" contenteditable="true" data-sec="'+s.id+'" data-path="testimonials.'+i+'.name">'+ex(t.name)+'</div>' +
+        '<div class="field-tag" style="margin-top:6px">Rolle</div><div class="field-editable" contenteditable="true" data-sec="'+s.id+'" data-path="testimonials.'+i+'.role">'+ex(t.role)+'</div>' +
+        '</div>';
+    }).join('');
+    return fieldBlock(s.id,'headline','Headline',d.headline) + '<div class="field-tag">Testimonials</div>' + tests;
+  }
+  if (s.id === 'benefits' && d.items) {
+    var bens = d.items.map(function(it,i){
+      return '<div class="checklist-item">' +
+        '<div class="field-tag">Benefit '+(i+1)+' Titel</div><div class="field-editable" contenteditable="true" data-sec="'+s.id+'" data-path="items.'+i+'.title">'+ex(it.title)+'</div>' +
+        '<div class="field-tag" style="margin-top:6px">Text</div><div class="field-editable" contenteditable="true" data-sec="'+s.id+'" data-path="items.'+i+'.text">'+ex(it.text)+'</div>' +
+        '</div>';
+    }).join('');
+    return fieldBlock(s.id,'headline','Headline',d.headline) + '<div class="field-tag">Benefits</div>' + bens;
+  }
+  if (s.id === 'footer' && d.links) {
+    return '<div class="field-tag">Links</div><div class="field-editable" contenteditable="true" data-sec="'+s.id+'" data-path="links">'+ex(d.links.join(' | '))+'</div>';
+  }
+
+  var out = '';
+  Object.keys(d).forEach(function(k) {
+    if (typeof d[k] === 'string') out += fieldBlock(s.id, k, labelFor(k), d[k]);
+  });
+  return out || '<div class="field-editable">Keine editierbaren Felder.</div>';
+}
+
+function fieldBlock(secId, path, label, value) {
+  return '<div class="field-block"><div class="field-tag">'+ex(label)+'</div>' +
+    '<div class="field-editable" contenteditable="true" data-sec="'+secId+'" data-path="'+path+'">'+ex(value||'')+'</div></div>';
+}
+
+function labelFor(k) {
+  var map = {h1:'H1 Haupttitel',h2:'H2 Sub-Headline',preHeadline:'Pre-Headline',ctaButton:'CTA Button',ctaSubline:'CTA Subline',dozentLine:'Dozenten-Zeile',announcement:'Announcement',bodyCopy:'Body Copy',badge:'Badge/Pill',para1:'Absatz 1',para2:'Absatz 2',para3:'Absatz 3',closingLine:'Abschluss-Satz (Bruecke zum Webinar)',bioBlock:'Bio',webinarRole:'Rolle im Webinar',scarcityCopy:'Scarcity Copy',note:'Hinweis',headline:'Headline',introCopy:'Intro Copy',transitionCopy:'Transition Copy',text:'Text',title:'Titel',bulletpoints:'Inhalts-Bulletpoints',videoPlaceholder:'Video (16:9 Platzhalter)'};
+  return map[k] || k;
+}
+
+/* Save edits on blur */
+document.addEventListener('blur', function(ev) {
+  var el = ev.target;
+  if (!el.classList || !el.classList.contains('field-editable')) return;
+  var sec = el.dataset.sec, path = el.dataset.path;
+  if (!sec || !path) return;
+  setByPath(sectionData[sec], path, el.textContent);
+}, true);
+
+function setByPath(obj, path, value) {
+  var parts = path.split('.');
+  var cur = obj;
+  for (var i=0;i<parts.length-1;i++) {
+    var key = isNaN(parts[i]) ? parts[i] : parseInt(parts[i]);
+    cur = cur[key];
+  }
+  var lastKey = isNaN(parts[parts.length-1]) ? parts[parts.length-1] : parseInt(parts[parts.length-1]);
+  if (lastKey === 'links') cur[lastKey] = value.split('|').map(function(s){return s.trim();});
+  else cur[lastKey] = value;
+}
+
+/* ===== SECTION REGENERATION ===== */
+async function regenSection(secId) {
+  var s = sections.find(function(x){return x.id===secId;});
+  if (!s) return;
+  var fb = (document.getElementById('fb-'+secId)||{}).value || '';
+  var btn = document.getElementById('rgb-'+secId);
+  btn.disabled = true; btn.innerHTML = '<div class="spinner-sm"></div> Wird generiert...';
+  document.getElementById('rs-'+secId).textContent = 'wird aktualisiert...';
+
+  try {
+    var sys = [
+      'Du bist ein Team aus Online-Marketing-Stratege, Conversion-Copywriter und UI/UX-Designer.',
+      'Du ueberarbeitest EINE Section einer deutschen Webinar-Landingpage im BrandLift-Stil.',
+      '',
+      'KRITISCH: Antworte AUSSCHLIESSLICH mit einem einzigen gueltigen JSON-Objekt.',
+      'KEINE Erklaerungen, KEINE Markdown-Backticks, KEIN Text vor oder nach dem JSON.',
+      'Alle String-Werte EINZEILIG - KEINE echten Zeilenumbrueche in Strings.',
+      'KEINE trailing commas. Valides JSON nach RFC 8259.'
+    ].join('\n');
+
+    var usr = 'Gesamtkontext (zur Konsistenz, NICHT neu generieren):\n' + JSON.stringify(sectionData) + '\n\n' +
+      'Kampagne: ' + (HF.titel||HF.kampagnenname||'') + ' | Zielgruppe: ' + (HF.zielgruppe||HF.strategie_titel||'') + '\n\n' +
+      'Ueberarbeite NUR die Section "'+s.name+'" ('+s.id+'). Erwartetes Schema:\n' + sectionSchemaHint(s) + '\n\n' +
+      'Feedback: ' + (fb || 'Allgemein verbessern, Konsistenz mit Rest der Page wahren.') + '\n\n' +
+      'Gib NUR das JSON-Objekt fuer diese Section zurueck - kein Wrapper, kein Markdown, kein Text drumherum.';
+
+    var resp = await fetch(PROXY_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1500,
+        system: sys,
+        messages: [{role:'user', content:usr}]
+      })
+    });
+
+    var d = await resp.json();
+    if (d.error) throw new Error(d.error.message);
+    var raw = d.content.map(function(b){return b.text||'';}).join('');
+
+    sectionData[secId] = extractJSON(raw);
+    document.getElementById('rb-'+secId).innerHTML = renderSectionFields(s);
+    document.getElementById('rs-'+secId).textContent = 'aktualisiert';
+  } catch(e) {
+    document.getElementById('rs-'+secId).textContent = 'Fehler';
+    alert('Fehler bei Regeneration: ' + e.message);
+  }
+  btn.disabled = false;
+  btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> Section neu generieren';
+}
+
+/* ===== EXPORT (Phase 4) ===== */
+function buildExport() {
+  var active = sections.filter(function(s){return s.active;});
+  var lines = ['# LANDINGPAGE BRIEFING', '## Kampagne: ' + (HF.kampagnenname||''), ''];
+  active.forEach(function(s, idx) {
+    lines.push('SECTION ' + idx + ' --- ' + s.name.toUpperCase());
+    var d = sectionData[s.id];
+    if (d) lines = lines.concat(flattenSection(d));
+    lines.push('');
+  });
+  document.getElementById('export-text').textContent = lines.join('\n');
+}
+
+function flattenSection(d) {
+  var out = [];
+  Object.keys(d).forEach(function(k) {
+    var val = d[k];
+    var label = labelFor(k);
+    if (Array.isArray(val)) {
+      val.forEach(function(item, i) {
+        if (typeof item === 'object') {
+          out.push('[' + label + ' ' + (i+1) + ']');
+          Object.keys(item).forEach(function(ik) { out.push('  ' + labelFor(ik) + ': ' + item[ik]); });
+        } else {
+          out.push('[' + label + ' ' + (i+1) + ']: ' + item);
+        }
+      });
+    } else if (typeof val === 'object' && val !== null) {
+      out.push('[' + label + ']');
+      out = out.concat(flattenSection(val));
+    } else {
+      out.push('[' + label + ']: ' + val);
+    }
+  });
+  return out;
+}
+
+function copyExport() {
+  var text = document.getElementById('export-text').textContent;
+  navigator.clipboard.writeText(text).then(function(){
+    var btn = event.target.closest('.export-btn');
+    var orig = btn.innerHTML;
+    btn.innerHTML = 'Kopiert!';
+    setTimeout(function(){ btn.innerHTML = orig; }, 1500);
+  });
+}
+
+function downloadMd() {
+  var text = document.getElementById('export-text').textContent;
+  var blob = new Blob([text], {type:'text/markdown'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'landingpage_' + (HF && HF.kampagnenname || 'webinar').replace(/\s+/g,'-').toLowerCase() + '.md';
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+
+/* ===== Helpers ===== */
+function sqCheck(){return '<svg width="15" height="15" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3" fill="#111"/><polyline fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" points="7 12 10 15 17 9"/></svg>';}
+function sqEmpty(){return '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/></svg>';}
+function setP(step){
+  [1,2,3,4].forEach(function(n){
+    var el=document.getElementById('prog-'+n),num=document.getElementById('pn-'+n);
+    el.classList.remove('active','done');
+    if(n<step){el.classList.add('done');num.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="9 12 11 14 15 10"/></svg>';}
+    else if(n===step){el.classList.add('active');num.textContent=n;}
+    else num.textContent=n;
+  });
+}
+function show(id){document.getElementById(id).style.display='block';}
+function hide(id){document.getElementById(id).style.display='none';}
+function ex(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+</script>
+</body>
+</html>
