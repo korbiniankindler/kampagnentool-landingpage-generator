@@ -242,7 +242,7 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
     <div class="tab-row" style="margin-bottom:1.25rem">
       <button class="tab-btn active" id="secmode-preset-btn" onclick="switchSecMode('preset')">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:5px"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-        Preset waehlen
+        Preset wählen
       </button>
       <button class="tab-btn" id="secmode-ai-btn" onclick="switchSecMode('ai')">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:5px"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
@@ -319,7 +319,7 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
         Anderes Preset / KI-Vorschlag
       </button>
     </div>
-    <p class="sec-mode-hint">An/abwaehlen, per Drag &amp; Drop neu anordnen oder eigene Section hinzufügen.</p>
+    <p class="sec-mode-hint">An/abwählen, per Drag &amp; Drop neu anordnen oder eigene Section hinzufügen.</p>
     <div class="card">
       <div id="sec-list" class="sec-list"></div>
       <div class="add-section-zone">
@@ -704,7 +704,7 @@ function sectionSchemaHint(s) {
 /* ===== GENERATION (Phase 3) ===== */
 async function startGeneration() {
   var active = sections.filter(function(s){return s.active;});
-  if (!active.length) { document.getElementById('sec-error').innerHTML = '<div class="error-box">Bitte mindestens eine Section auswaehlen.</div>'; return; }
+  if (!active.length) { document.getElementById('sec-error').innerHTML = '<div class="error-box">Bitte mindestens eine Section auswählen.</div>'; return; }
   document.getElementById('sec-error').innerHTML = '';
 
   hide('phase-sections'); show('phase-review'); setP(3);
