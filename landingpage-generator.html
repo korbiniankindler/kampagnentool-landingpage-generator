@@ -235,7 +235,7 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
 <!-- PHASE SECTIONS -->
 <div id="phase-sections" style="display:none">
   <div class="page-title">Sections festlegen <span class="modul-badge">Schritt 2</span></div>
-  <p class="page-desc">Wähle ein Preset oder lass die Sections von der KI vorschlagen.</p>
+  <p class="page-desc">Wähle ein Preset oder lasse die Sections von der KI vorschlagen, passend zum hochgeladenen Briefing.</p>
 
   <!-- MODE PICKER -->
   <div id="sec-mode-picker">
@@ -266,7 +266,7 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
             <div class="preset-check" id="pc-leadgen"></div>
             Lead Gen Kompakt
           </div>
-          <div class="preset-card-desc">Kuerzere Variante fuer schnelle Anmeldeseiten. Fokus auf Hero, Problem und CTA – ohne lange Erklaerblock.</div>
+          <div class="preset-card-desc">Platzhalter - nicht ausgearbeitet</div>
           <div class="preset-card-count">6 Sections</div>
         </div>
         <div class="preset-card" id="preset-sales" onclick="selectPreset('sales')">
@@ -274,7 +274,7 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
             <div class="preset-check" id="pc-sales"></div>
             Sales / Produkt
           </div>
-          <div class="preset-card-desc">Fuer Paid-Produkt-Landingpages. Hero, Problem-Loop, Framework, Testimonials, Benefit Stack, Preis, Garantie, CTA.</div>
+          <div class="preset-card-desc">Platzhalter - nicht ausgearbeitet</div>
           <div class="preset-card-count">9 Sections</div>
         </div>
         <div class="preset-card" id="preset-custom" onclick="selectPreset('custom')">
@@ -288,7 +288,7 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
       </div>
       <button class="primary-btn" style="margin-top:0" onclick="applyPresetAndShow()">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 12 11 14 15 10"/></svg>
-        Preset uebernehmen &amp; anpassen
+        Preset übernehmen &amp; anpassen
       </button>
     </div>
 
@@ -319,19 +319,19 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
         Anderes Preset / KI-Vorschlag
       </button>
     </div>
-    <p class="sec-mode-hint">An/abwaehlen, per Drag &amp; Drop neu anordnen oder eigene Section hinzufuegen.</p>
+    <p class="sec-mode-hint">An/abwaehlen, per Drag &amp; Drop neu anordnen oder eigene Section hinzufügen.</p>
     <div class="card">
       <div id="sec-list" class="sec-list"></div>
       <div class="add-section-zone">
         <div class="add-section-row" onclick="toggleAddForm()">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Eigene Section hinzufuegen
+          Eigene Section hinzufügen
         </div>
         <div class="add-section-form" id="add-form">
           <input type="text" id="new-sec-name" placeholder="Name der Section, z.B. FAQ">
           <textarea id="new-sec-desc" placeholder="Was soll diese Section enthalten?" style="min-height:48px"></textarea>
           <div class="add-section-actions">
-            <button class="mini-btn" onclick="addCustomSection()">Hinzufuegen</button>
+            <button class="mini-btn" onclick="addCustomSection()">Hinzufügen</button>
             <button class="mini-btn" onclick="toggleAddForm()">Abbrechen</button>
           </div>
         </div>
@@ -347,7 +347,7 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
 
 <!-- PHASE REVIEW -->
 <div id="phase-review" style="display:none">
-  <div class="page-title">Review &amp; Anpassen <span class="modul-badge">Schritt 3</span></div>
+  <div class="page-title">Review <span class="modul-badge">Schritt 3</span></div>
   <p class="page-desc">Felder direkt anklicken und bearbeiten, oder per Feedback eine Section neu generieren.</p>
   <div id="review-loading" class="loading-card" style="display:none"><div class="spinner"></div><span id="review-loading-msg">Landingpage wird generiert...</span></div>
   <div id="review-list"></div>
