@@ -728,6 +728,8 @@ async function startGeneration() {
   }
 }
 
+var GEN_CHUNK_SIZE = 3;
+
 async function generateAll(active) {
   var sys = [
     'Du bist ein Team aus Senior Online-Marketing-Stratege, Conversion-Copywriter und UI/UX-Designer.',
@@ -741,7 +743,21 @@ async function generateAll(active) {
     'KEINE trailing commas. Valides JSON nach RFC 8259.'
   ].join('\n');
 
-  var schemaLines = active.map(function(s) {
+  // Grosse Landingpages (viele Sections) werden in kleineren Batches generiert,
+  // damit einzelne Antworten nicht am max_tokens-Limit abgeschnitten werden
+  // (abgeschnittene Antworten fuehren zu "JSON-Objekt ist unvollstaendig").
+  var chunks = [];
+  for (var i = 0; i < active.length; i += GEN_CHUNK_SIZE) chunks.push(active.slice(i, i + GEN_CHUNK_SIZE));
+
+  var results = await Promise.all(chunks.map(function(chunk) { return generateChunk(chunk, sys); }));
+
+  var data = {};
+  results.forEach(function(r) { Object.keys(r).forEach(function(k){ data[k] = r[k]; }); });
+  return data;
+}
+
+async function generateChunk(chunk, sys) {
+  var schemaLines = chunk.map(function(s) {
     return '"'+s.id+'": ' + sectionSchemaHint(s) + (s.custom ? '  // Custom: "'+s.name+'": '+s.desc : '');
   }).join(',\n  ');
 
@@ -777,7 +793,7 @@ async function generateAll(active) {
     },
     body: JSON.stringify({
       model: 'claude-sonnet-4-6',
-      max_tokens: 8000,
+      max_tokens: 4000,
       system: sys,
       messages: [{role:'user', content:usr}]
     })
