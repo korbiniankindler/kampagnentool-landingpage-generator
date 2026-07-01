@@ -82,7 +82,7 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
 .checklist-item{border:.5px solid var(--border-light);border-radius:6px;padding:8px 10px;margin-bottom:6px;background:var(--bg-secondary)}
 .checklist-item .field-editable{background:transparent}
 .testimonial-card{border:.5px solid var(--border-light);border-radius:6px;padding:10px 12px;margin-bottom:6px;background:var(--bg-secondary)}
-.review-feedback{margin-top:10px;padding-top:10px;border-top:.5px solid var(--border-light)}
+.review-feedback{margin-top:10px;padding:10px 1.25rem 1.1rem;border-top:.5px solid var(--border-light)}
 .review-feedback textarea{min-height:48px;font-size:12px}
 .review-feedback-row{display:flex;gap:8px;margin-top:6px}
 .mini-btn{padding:6px 11px;border:.5px solid var(--border-medium);border-radius:6px;background:transparent;font-size:12px;cursor:pointer;color:var(--text-primary);font-family:var(--font);display:flex;align-items:center;gap:5px;transition:background .15s}
@@ -811,7 +811,7 @@ function renderReview(active) {
   var html = '';
   active.forEach(function(s, idx) {
     html += '<div class="review-card" id="rc-'+s.id+'">' +
-      '<div class="review-head"><span class="review-title">'+(idx+1)+'. '+ex(s.name)+'</span><span class="review-status" id="rs-'+s.id+'">bestaetigt</span></div>' +
+      '<div class="review-head"><span class="review-title">'+(idx+1)+'. '+ex(s.name)+'</span><span class="review-status" id="rs-'+s.id+'"></span></div>' +
       '<div class="review-body" id="rb-'+s.id+'">' + renderSectionFields(s) + '</div>' +
       '<div class="review-feedback">' +
         '<textarea id="fb-'+s.id+'" placeholder="Feedback zu dieser Section, z.B. konfrontativer formulieren, kuerzer, anderer Fokus..."></textarea>' +
