@@ -751,25 +751,43 @@ function extractJSON(raw) {
   var cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim();
   var start = cleaned.indexOf('{');
   if (start === -1) throw new Error('Kein JSON-Objekt in der Antwort gefunden.');
-  var depth = 0, inStr = false, escape = false, end = -1;
+
+  // Repariert das JSON zeichenweise: entkommt Zeilenumbrüche innerhalb von
+  // Strings und erkennt/entkommt nicht escapte Anführungszeichen innerhalb
+  // von Textwerten (z.B. wenn die KI in einem Satz ein Wort in "..." setzt),
+  // indem geprüft wird ob nach einem " tatsächlich ein JSON-Trenner folgt.
+  var depth = 0, inStr = false, escape = false, closed = false;
+  var candidate = '';
   for (var i = start; i < cleaned.length; i++) {
     var ch = cleaned[i];
-    if (escape) { escape = false; continue; }
-    if (ch === '\\' && inStr) { escape = true; continue; }
-    if (ch === '"') { inStr = !inStr; continue; }
-    if (inStr) continue;
+    if (escape) { candidate += ch; escape = false; continue; }
+    if (ch === '\\' && inStr) { candidate += ch; escape = true; continue; }
+    if (ch === '"') {
+      if (inStr) {
+        var j = i + 1;
+        while (j < cleaned.length && /\s/.test(cleaned[j])) j++;
+        var next = cleaned[j];
+        var isTerminator = (next === undefined || next === ',' || next === '}' || next === ']' || next === ':');
+        if (isTerminator) { inStr = false; candidate += ch; }
+        else { candidate += '\\"'; }
+      } else {
+        inStr = true; candidate += ch;
+      }
+      continue;
+    }
+    if (inStr) {
+      if (ch === '\n') { candidate += '\\n'; continue; }
+      if (ch === '\r') { candidate += '\\r'; continue; }
+      if (ch === '\t') { candidate += '\\t'; continue; }
+      candidate += ch;
+      continue;
+    }
+    candidate += ch;
     if (ch === '{') depth++;
-    else if (ch === '}') { depth--; if (depth === 0) { end = i; break; } }
+    else if (ch === '}') { depth--; if (depth === 0) { closed = true; break; } }
   }
-  if (end === -1) throw new Error('JSON-Objekt ist unvollständig (kein schließende Klammer).');
-  var candidate = cleaned.slice(start, end + 1);
+  if (!closed) throw new Error('JSON-Objekt ist unvollständig (keine schließende Klammer).');
   candidate = candidate.replace(/,\s*([}\]])/g, '$1');
-  candidate = candidate.replace(/"((?:[^"\\]|\\.)*)"/g, function(match) {
-    return match
-      .replace(/\n/g, '\\n')
-      .replace(/\r/g, '\\r')
-      .replace(/\t/g, '\\t');
-  });
   try {
     return JSON.parse(candidate);
   } catch(e) {
@@ -841,6 +859,7 @@ async function generateAll(active) {
     'KEINE Erklärungen, KEINE Kommentare, KEINE Markdown-Backticks (``` oder ```json), KEIN Text vor oder nach dem JSON.',
     'Alle String-Werte müssen einzeilig sein - KEINE echten Zeilenumbrüche innerhalb von Strings.',
     'Verwende \\n für Zeilenumbrüche innerhalb von Strings wenn nötig.',
+    'Falls in einem Textwert wörtlich zitiert oder ein Begriff hervorgehoben wird, nutze deutsche Anführungszeichen „..." statt gerader Anführungszeichen; falls doch gerade Anführungszeichen " im Text vorkommen, escape sie zwingend als \\".',
     'KEINE trailing commas. Valides JSON nach RFC 8259.'
   ].join('\n');
 
@@ -1065,6 +1084,7 @@ async function regenSection(secId) {
       'KRITISCH: Antworte AUSSCHLIESSLICH mit einem einzigen gültigen JSON-Objekt.',
       'KEINE Erklärungen, KEINE Markdown-Backticks, KEIN Text vor oder nach dem JSON.',
       'Alle String-Werte EINZEILIG - KEINE echten Zeilenumbrüche in Strings.',
+      'Falls in einem Textwert wörtlich zitiert oder ein Begriff hervorgehoben wird, nutze deutsche Anführungszeichen „..." statt gerader Anführungszeichen; falls doch gerade Anführungszeichen " im Text vorkommen, escape sie zwingend als \\".',
       'KEINE trailing commas. Valides JSON nach RFC 8259.'
     ].join('\n');
 
