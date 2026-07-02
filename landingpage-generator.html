@@ -131,9 +131,9 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
 </div>
 
 <div class="progress-bar" id="progress-bar">
-  <div class="prog-step done" id="prog-1" onclick="goToStep(1)"><div class="prog-num" id="pn-1">1</div> Hardfacts</div>
+  <div class="prog-step active" id="prog-1" onclick="goToStep(1)"><div class="prog-num" id="pn-1">1</div> Hardfacts</div>
   <div class="prog-line"></div>
-  <div class="prog-step active" id="prog-2" onclick="goToStep(2)"><div class="prog-num" id="pn-2">2</div> Sections</div>
+  <div class="prog-step" id="prog-2" onclick="goToStep(2)"><div class="prog-num" id="pn-2">2</div> Sections</div>
   <div class="prog-line"></div>
   <div class="prog-step" id="prog-3" onclick="goToStep(3)"><div class="prog-num" id="pn-3">3</div> Review</div>
   <div class="prog-line"></div>
@@ -194,11 +194,11 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
         </div>
         <div>
           <label class="field-label">Haupt-Headline (H1)</label>
-          <input type="text" id="ft-h1" placeholder="z.B. Warum Ihr Koerper ab 45 eine andere Sprache spricht">
+          <input type="text" id="ft-h1" placeholder="z.B. Warum Ihr Körper ab 45 eine andere Sprache spricht">
         </div>
         <div>
           <label class="field-label">Sub-Headline (H2)</label>
-          <input type="text" id="ft-h2" placeholder="z.B. Das kostenfreie Live-Webinar fuer Frauen, die ihre Gesundheit wirklich verstehen wollen">
+          <input type="text" id="ft-h2" placeholder="z.B. Das kostenfreie Live-Webinar für Frauen, die ihre Gesundheit wirklich verstehen wollen">
         </div>
         <div>
           <label class="field-label">Live-Termin</label>
@@ -213,8 +213,8 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
 
     <div class="card">
       <div class="card-header"><div class="card-num">2</div><div class="card-label">Webinar-Inhalte (Bulletpoints)</div></div>
-      <p style="font-size:12px;color:var(--text-tertiary);margin-bottom:10px">Ein Punkt pro Zeile. Diese werden 1:1 in die Hero-Section uebernommen.</p>
-      <textarea id="ft-bullets" style="min-height:140px" placeholder="Warum der Koerper ab 45 auf Stress anders reagiert&#10;Welche Ayurveda-Typen besonders gefaehrdet sind&#10;Die 3 haeufigsten Fehler bei der Selbstbehandlung&#10;Wie Sie Ihren persoenlichen Reset-Plan erstellen"></textarea>
+      <p style="font-size:12px;color:var(--text-tertiary);margin-bottom:10px">Ein Punkt pro Zeile. Diese werden 1:1 in die Hero-Section übernommen.</p>
+      <textarea id="ft-bullets" style="min-height:140px" placeholder="Warum der Körper ab 45 auf Stress anders reagiert&#10;Welche Ayurveda-Typen besonders gefährdet sind&#10;Die 3 häufigsten Fehler bei der Selbstbehandlung&#10;Wie Sie Ihren persönlichen Reset-Plan erstellen"></textarea>
     </div>
 
     <div class="card">
@@ -222,11 +222,11 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
       <div style="display:grid;gap:12px">
         <div>
           <label class="field-label">Zielgruppe</label>
-          <textarea id="ft-zielgruppe" style="min-height:80px" placeholder="z.B. Frauen 45-65, gesundheitsbewusst, erste Wechseljahresbeschwerden, suchen nach ganzheitlichen Loesungen statt Medikamenten"></textarea>
+          <textarea id="ft-zielgruppe" style="min-height:80px" placeholder="z.B. Frauen 45-65, gesundheitsbewusst, erste Wechseljahresbeschwerden, suchen nach ganzheitlichen Lösungen statt Medikamenten"></textarea>
         </div>
         <div>
           <label class="field-label">Strategie / Positionierung (optional)</label>
-          <textarea id="ft-strategie" style="min-height:80px" placeholder="z.B. Positionierung ueber Wissen und Vertrauen, nicht ueber Angst. Ayurveda als Ergaenzung zur Schulmedizin, nicht als Ersatz."></textarea>
+          <textarea id="ft-strategie" style="min-height:80px" placeholder="z.B. Positionierung über Wissen und Vertrauen, nicht über Angst. Ayurveda als Ergänzung zur Schulmedizin, nicht als Ersatz."></textarea>
         </div>
       </div>
     </div>
@@ -259,7 +259,7 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
     <div class="tab-row" style="margin-bottom:1.25rem">
       <button class="tab-btn active" id="secmode-preset-btn" onclick="switchSecMode('preset')">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:5px"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-        Preset waehlen
+        Preset wählen
       </button>
       <button class="tab-btn" id="secmode-ai-btn" onclick="switchSecMode('ai')">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:5px"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
@@ -275,7 +275,7 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
             <div class="preset-check" id="pc-webinar"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
             Webinar Standard
           </div>
-          <div class="preset-card-desc">Bewaehrte Struktur fuer kostenfreie Live-Webinare mit Anmeldung. Announcement, Hero, Social Proof, Authority, CTA.</div>
+          <div class="preset-card-desc">Bewährte Struktur für kostenfreie Live-Webinare mit Anmeldung. Announcement, Hero, Social Proof, Authority, CTA.</div>
           <div class="preset-card-count">11 Sections</div>
         </div>
         <div class="preset-card" id="preset-leadgen" onclick="selectPreset('leadgen')">
@@ -299,7 +299,7 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
             <div class="preset-check" id="pc-custom"></div>
             Leere Liste
           </div>
-          <div class="preset-card-desc">Starte mit leerer Section-Liste und fuege alles manuell per Drag &amp; Drop und eigenen Sections zusammen.</div>
+          <div class="preset-card-desc">Starte mit leerer Section-Liste und füge alles manuell per Drag &amp; Drop und eigenen Sections zusammen.</div>
           <div class="preset-card-count">0 Sections</div>
         </div>
       </div>
@@ -312,15 +312,15 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
     <!-- AI MODE -->
     <div id="secmode-ai" class="tab-panel">
       <div class="ai-suggest-box">
-        <p style="font-size:13px;color:var(--text-secondary);margin-bottom:10px">Die KI analysiert deine Kampagnen-Infos und schlaegt eine massgeschneiderte Section-Struktur vor. Du kannst den Vorschlag danach noch anpassen.</p>
-        <label class="field-label">Zusaetzliche Hinweise fuer die KI (optional)</label>
-        <textarea id="ai-sec-hint" placeholder="z.B. Seite soll sehr kurz sein, nur 5-6 Sections. Oder: FAQ-Section erwaenscht. Oder: Kein Trust Bar, wir haben keine Presselogos." style="min-height:72px;margin-bottom:10px"></textarea>
+        <p style="font-size:13px;color:var(--text-secondary);margin-bottom:10px">Die KI analysiert deine Kampagnen-Infos und schlägt eine maßgeschneiderte Section-Struktur vor. Du kannst den Vorschlag danach noch anpassen.</p>
+        <label class="field-label">Zusätzliche Hinweise für die KI (optional)</label>
+        <textarea id="ai-sec-hint" placeholder="z.B. Seite soll sehr kurz sein, nur 5-6 Sections. Oder: FAQ-Section erwünscht. Oder: Kein Trust Bar, wir haben keine Presselogos." style="min-height:72px;margin-bottom:10px"></textarea>
         <button class="primary-btn" style="margin-top:0" onclick="suggestSectionsAI()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
           Sections von KI vorschlagen lassen
         </button>
         <div id="ai-sec-loading" class="ai-suggest-loading" style="display:none">
-          <div class="spinner"></div> KI analysiert Kampagne und schlaegt Sections vor...
+          <div class="spinner"></div> KI analysiert Kampagne und schlägt Sections vor...
         </div>
         <div id="ai-sec-error"></div>
       </div>
@@ -336,7 +336,7 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
         Anderes Preset / KI-Vorschlag
       </button>
     </div>
-    <p class="sec-mode-hint">An/abwaehlen, per Drag &amp; Drop neu anordnen oder eigene Section hinzufügen.</p>
+    <p class="sec-mode-hint">An/abwählen, per Drag &amp; Drop neu anordnen oder eigene Section hinzufügen.</p>
     <div class="card">
       <div id="sec-list" class="sec-list"></div>
       <div class="add-section-zone">
@@ -388,7 +388,7 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
     Landingpage-Briefing bereit
   </div>
   <div class="card">
-    <div class="section-label" style="margin-top:0">Strukturiertes Briefing fuer Claude Design</div>
+    <div class="section-label" style="margin-top:0">Strukturiertes Briefing für Claude Design</div>
     <div class="export-box" id="export-text"></div>
     <div class="export-btns">
       <button class="export-btn primary" onclick="copyExport()">
@@ -411,7 +411,7 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
   </div>
   <button class="secondary-btn" style="margin-top:8px;width:100%;justify-content:center" onclick="goToStep(3)">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-    Zurueck zum Review
+    Zurück zum Review
   </button>
 </div>
 
@@ -427,9 +427,10 @@ var currentStep = 1;
 var maxStep = 1;
 var isGenerating = false;
 
-var GMSG = ['Landingpage wird generiert...','Sections werden geschrieben...','Tonalitaet wird abgestimmt...','Fast fertig...'];
+var GMSG = ['Landingpage wird generiert...','Sections werden geschrieben...','Tonalität wird abgestimmt...','Fast fertig...'];
 
 window.addEventListener('DOMContentLoaded', function() {
+  setP(1);
   updateProgClickability();
   try {
     var raw = sessionStorage.getItem('wkt_hardfacts');
@@ -450,7 +451,7 @@ function loadJSON(inp) {
   var r = new FileReader();
   r.onload = function(e) {
     try { HF = JSON.parse(e.target.result); renderHF(); }
-    catch(err) { document.getElementById('import-err').innerHTML = '<div class="error-box">Ungueltige JSON-Datei.</div>'; }
+    catch(err) { document.getElementById('import-err').innerHTML = '<div class="error-box">Ungültige JSON-Datei.</div>'; }
   };
   r.readAsText(f);
 }
@@ -508,12 +509,12 @@ var PRESETS = {
     {id:'announcement', name:'Announcement Bar', desc:'Termin-Hinweis mit Live-Badge', active:true, custom:false},
     {id:'hero', name:'Hero', desc:'Pre-Headline, H1, H2, CTA, Dozenten-Zeile', active:true, custom:false},
     {id:'trustbar', name:'Trust Bar', desc:'Presselogo-Platzhalter', active:true, custom:false},
-    {id:'introtext', name:'Intro Text', desc:'Kontext-Story, Warum-jetzt-Narrativ, Referenten-Bruecke', active:true, custom:false},
+    {id:'introtext', name:'Intro Text', desc:'Kontext-Story, Warum-jetzt-Narrativ, Referenten-Brücke', active:true, custom:false},
     {id:'problem', name:'Problem / Mirror Effect', desc:'Selbstreflexions-Checkliste', active:true, custom:false},
-    {id:'framework', name:'Educational Gap', desc:'Erklaer-Block mit Kontext und Hintergrund-Wissen', active:true, custom:false},
+    {id:'framework', name:'Educational Gap', desc:'Erklär-Block mit Kontext und Hintergrund-Wissen', active:true, custom:false},
     {id:'social', name:'Social Proof', desc:'3 Testimonials', active:true, custom:false},
     {id:'authority', name:'Authority / Speaker', desc:'Experten-Bio, Webinar-Rolle', active:true, custom:false},
-    {id:'benefits', name:'Benefit Stack', desc:'3 Gruende teilzunehmen', active:true, custom:false},
+    {id:'benefits', name:'Benefit Stack', desc:'3 Gründe teilzunehmen', active:true, custom:false},
     {id:'finalcta', name:'Final CTA / Scarcity', desc:'Abschluss mit Verknappung', active:true, custom:false},
     {id:'footer', name:'Footer', desc:'Rechtliche Links (Platzhalter)', active:true, custom:false}
   ],
@@ -528,10 +529,10 @@ var PRESETS = {
   sales: [
     {id:'hero', name:'Hero', desc:'Pre-Headline, H1, H2, CTA', active:true, custom:false},
     {id:'problem', name:'Problem / Mirror Effect', desc:'Selbstreflexions-Checkliste', active:true, custom:false},
-    {id:'framework', name:'Educational Gap', desc:'Erklaer-Block mit Kontext und Hintergrund-Wissen', active:true, custom:false},
+    {id:'framework', name:'Educational Gap', desc:'Erklär-Block mit Kontext und Hintergrund-Wissen', active:true, custom:false},
     {id:'social', name:'Social Proof', desc:'3 Testimonials', active:true, custom:false},
     {id:'authority', name:'Authority / Speaker', desc:'Experten-Bio, Webinar-Rolle', active:true, custom:false},
-    {id:'benefits', name:'Benefit Stack', desc:'3 Gruende teilzunehmen', active:true, custom:false},
+    {id:'benefits', name:'Benefit Stack', desc:'3 Gründe teilzunehmen', active:true, custom:false},
     {id:'custom_price', name:'Preis & Angebot', desc:'Preisdarstellung, Boni, Vergleich', active:true, custom:true},
     {id:'finalcta', name:'Final CTA / Scarcity', desc:'Abschluss mit Verknappung', active:true, custom:false},
     {id:'footer', name:'Footer', desc:'Rechtliche Links (Platzhalter)', active:true, custom:false}
@@ -587,20 +588,20 @@ async function suggestSectionsAI() {
   document.querySelector('#secmode-ai .primary-btn').disabled = true;
 
   try {
-    var usr = 'Du bist ein Conversion-Optimierungsspezialist fuer Webinar-Landingpages.\n\n' +
+    var usr = 'Du bist ein Conversion-Optimierungsspezialist für Webinar-Landingpages.\n\n' +
       'Kampagne: ' + (HF.titel||HF.kampagnenname||'') + '\n' +
       'Pre-Headline: ' + (HF.pre_headline||'') + '\n' +
       'Sub-Headline: ' + (HF.sub_headline||'') + '\n' +
       'Zielgruppe: ' + (HF.zielgruppe||HF.strategie_titel||'') + '\n' +
       'Angebot: ' + (HF.offer||'Kostenfreies Webinar') + '\n' +
-      (hint ? 'Zusaetzliche Hinweise: ' + hint + '\n' : '') + '\n' +
-      'Schlage die optimale Section-Struktur fuer diese Landingpage vor.\n\n' +
+      (hint ? 'Zusätzliche Hinweise: ' + hint + '\n' : '') + '\n' +
+      'Schlage die optimale Section-Struktur für diese Landingpage vor.\n\n' +
       'Antworte AUSSCHLIESSLICH mit einem JSON-Array. Jedes Element hat:\n' +
       '- "id": einzigartiger snake_case Identifier\n' +
       '- "name": Anzeigename der Section (kurz, max 4 Worte)\n' +
-      '- "desc": kurze Beschreibung was diese Section enthaelt (max 12 Worte)\n\n' +
+      '- "desc": kurze Beschreibung was diese Section enthält (max 12 Worte)\n\n' +
       'Nutze diese Standard-IDs wenn passend (damit das Rendering-System greift): announcement, hero, trustbar, introtext, problem, framework, social, authority, benefits, finalcta, footer\n' +
-      'Fuer neue/eigene Sections waehle beschreibende IDs wie "faq", "guarantee", "price", "video_section" etc.\n\n' +
+      'Für neue/eigene Sections wähle beschreibende IDs wie "faq", "guarantee", "price", "video_section" etc.\n\n' +
       'Beispiel-Output:\n[{"id":"hero","name":"Hero","desc":"Hauptheadline, CTA und Video"},{"id":"problem","name":"Problem","desc":"Selbstreflexions-Checkliste"}]\n\n' +
       'NUR das JSON-Array, kein anderer Text, keine Backticks.';
 
@@ -622,7 +623,7 @@ async function suggestSectionsAI() {
     var cleaned = raw.replace(/^```(?:json)?\s*/i,'').replace(/```\s*$/i,'').trim();
     var arrStart = cleaned.indexOf('[');
     var arrEnd = cleaned.lastIndexOf(']');
-    if (arrStart === -1 || arrEnd === -1) throw new Error('KI hat kein gueltiges Array zurueckgegeben.');
+    if (arrStart === -1 || arrEnd === -1) throw new Error('KI hat kein gültiges Array zurückgegeben.');
     var parsed = JSON.parse(cleaned.slice(arrStart, arrEnd+1));
 
     sections = parsed.map(function(s) {
@@ -710,7 +711,7 @@ function extractJSON(raw) {
     if (ch === '{') depth++;
     else if (ch === '}') { depth--; if (depth === 0) { end = i; break; } }
   }
-  if (end === -1) throw new Error('JSON-Objekt ist unvollstaendig (kein schliessende Klammer).');
+  if (end === -1) throw new Error('JSON-Objekt ist unvollständig (kein schließende Klammer).');
   var candidate = cleaned.slice(start, end + 1);
   candidate = candidate.replace(/,\s*([}\]])/g, '$1');
   candidate = candidate.replace(/"((?:[^"\\]|\\.)*)"/g, function(match) {
@@ -730,7 +731,7 @@ function sectionSchemaHint(s) {
   var schemas = {
     announcement: '{"text": "..."}',
     hero: '{"preHeadline":"...", "h1":"...", "h2":"...", "bulletpoints":[{"title":"...","text":"..."},{"title":"...","text":"..."},{"title":"...","text":"..."},{"title":"...","text":"..."}], "ctaButton":"...", "ctaSubline":"...", "videoPlaceholder":"[16:9 Video-Platzhalter]"}',
-    trustbar: '{"note":"Platzhalter-Hinweis Text fuer Presselogos"}',
+    trustbar: '{"note":"Platzhalter-Hinweis Text für Presselogos"}',
     introtext: '{"badge":"...", "headline":"...", "para1":"...", "para2":"...", "para3":"...", "closingLine":"..."}',
     problem: '{"headline":"...", "introCopy":"...", "checklist":[{"title":"...","text":"..."},{"title":"...","text":"..."},{"title":"...","text":"..."},{"title":"...","text":"..."},{"title":"...","text":"..."}], "transitionCopy":"...", "ctaButton":"..."}',
     framework: '{"headline":"...", "bodyCopy":"..."}',
@@ -746,7 +747,7 @@ function sectionSchemaHint(s) {
 /* ===== GENERATION (Phase 3) ===== */
 async function startGeneration() {
   var active = sections.filter(function(s){return s.active;});
-  if (!active.length) { document.getElementById('sec-error').innerHTML = '<div class="error-box">Bitte mindestens eine Section auswaehlen.</div>'; return; }
+  if (!active.length) { document.getElementById('sec-error').innerHTML = '<div class="error-box">Bitte mindestens eine Section auswählen.</div>'; return; }
   document.getElementById('sec-error').innerHTML = '';
 
   currentStep = 3; maxStep = Math.max(maxStep, 3); updateProgClickability();
@@ -781,18 +782,18 @@ async function generateAll(active) {
   var sys = [
     'Du bist ein Team aus Senior Online-Marketing-Stratege, Conversion-Copywriter und UI/UX-Designer.',
     'Du schreibst komplette deutsche Webinar-Landingpages im BrandLift-Stil (Holistic House / Dr. Bauhofer Kampagnen).',
-    'Stil: direkt, vertrauenswuerdig, Frage-Formate, Curiosity Gaps, Sie-Anrede bei Gesundheitsthemen.',
+    'Stil: direkt, vertrauenswürdig, Frage-Formate, Curiosity Gaps, Sie-Anrede bei Gesundheitsthemen.',
     '',
-    'KRITISCH: Antworte AUSSCHLIESSLICH mit einem einzigen gueltigen JSON-Objekt.',
-    'KEINE Erklaerungen, KEINE Kommentare, KEINE Markdown-Backticks (``` oder ```json), KEIN Text vor oder nach dem JSON.',
-    'Alle String-Werte muessen einzeilig sein - KEINE echten Zeilenumbrueche innerhalb von Strings.',
-    'Verwende \\n fuer Zeilenumbrueche innerhalb von Strings wenn noetig.',
+    'KRITISCH: Antworte AUSSCHLIESSLICH mit einem einzigen gültigen JSON-Objekt.',
+    'KEINE Erklärungen, KEINE Kommentare, KEINE Markdown-Backticks (``` oder ```json), KEIN Text vor oder nach dem JSON.',
+    'Alle String-Werte müssen einzeilig sein - KEINE echten Zeilenumbrüche innerhalb von Strings.',
+    'Verwende \\n für Zeilenumbrüche innerhalb von Strings wenn nötig.',
     'KEINE trailing commas. Valides JSON nach RFC 8259.'
   ].join('\n');
 
   // Grosse Landingpages (viele Sections) werden in kleineren Batches generiert,
   // damit einzelne Antworten nicht am max_tokens-Limit abgeschnitten werden
-  // (abgeschnittene Antworten fuehren zu "JSON-Objekt ist unvollstaendig").
+  // (abgeschnittene Antworten führen zu "JSON-Objekt ist unvollständig").
   var chunks = [];
   for (var i = 0; i < active.length; i += GEN_CHUNK_SIZE) chunks.push(active.slice(i, i + GEN_CHUNK_SIZE));
 
@@ -817,17 +818,17 @@ async function generateChunk(chunk, sys) {
     'Sub-Headline: ' + (HF.sub_headline||'') + '\n' +
     'Termin: ' + (HF.live_termin||'') + '\n' +
     'Offer: ' + (HF.offer||'') + '\n' +
-    'Webinar-Inhalte (Bulletpoints 1:1 fuer Hero verwenden):\n' + (bpList||'(keine Bulletpoints angegeben)') + '\n' +
+    'Webinar-Inhalte (Bulletpoints 1:1 für Hero verwenden):\n' + (bpList||'(keine Bulletpoints angegeben)') + '\n' +
     'Zielgruppe: ' + (zielgruppe||'(keine Angabe)') + '\n' +
     (strategie ? 'Strategie / Positionierung: ' + strategie + '\n' : '') + '\n' +
     'Generiere folgende Sections als JSON-Objekt mit exakt diesen Keys:\n{\n  ' + schemaLines + '\n}\n\n' +
     'Regeln:\n' +
-    '- Hero: Verwende die Hardfacts DIREKT und ungekuerzt: preHeadline = exakt aus "Pre-Headline", h1 = exakt aus "Titel", h2 = exakt aus "Sub-Headline". Die bulletpoints kommen 1:1 aus "Webinar-Inhalte" - parse jeden Bullet als {"title":"...", "text":"..."} wobei title der Hauptpunkt ist und text die Erklaerung (falls vorhanden, sonst leer lassen). Generiere 4 Bulletpoints. ctaButton = "Jetzt kostenlos anmelden", ctaSubline = "100% kostenfrei am [Termin]", videoPlaceholder = "[16:9 Video-Platzhalter: Anmeldeseiten-Video mit Dr. Bauhofer]"\n' +
-    '- introtext (Intro Text): badge = kurze Pill-Kategorie (max 5 Worte), headline = aufmerksamkeitsstarke H2, para1/para2/para3 = je ein langer Fliesstext-Absatz (3-5 Saetze) der eine Kontext-Story aufbaut (gesellschaftlicher Wandel, Warum-jetzt-Narrativ, Marktentwicklung oder aehnliches passend zur Kampagne), closingLine = Bruecken-Satz der auf den Referenten und das Webinar leitet\n' +
-    '- Educational Gap (framework): headline + bodyCopy als erklaerenden Fliesstext-Block, KEIN Kompass-Prinzip\n' +
-    '- Problem-Checklist: exakt 5 Eintraege als Array mit je "title" und "text"\n' +
-    '- Testimonials: exakt 3 Eintraege als Array mit je "quote", "name", "role"\n' +
-    '- Benefits items: exakt 3 Eintraege als Array mit je "title" und "text"\n' +
+    '- Hero: Verwende die Hardfacts DIREKT und ungekürzt: preHeadline = exakt aus "Pre-Headline", h1 = exakt aus "Titel", h2 = exakt aus "Sub-Headline". Die bulletpoints kommen 1:1 aus "Webinar-Inhalte" - parse jeden Bullet als {"title":"...", "text":"..."} wobei title der Hauptpunkt ist und text die Erklärung (falls vorhanden, sonst leer lassen). Generiere 4 Bulletpoints. ctaButton = "Jetzt kostenlos anmelden", ctaSubline = "100% kostenfrei am [Termin]", videoPlaceholder = "[16:9 Video-Platzhalter: Anmeldeseiten-Video mit Dr. Bauhofer]"\n' +
+    '- introtext (Intro Text): badge = kurze Pill-Kategorie (max 5 Worte), headline = aufmerksamkeitsstarke H2, para1/para2/para3 = je ein langer Fließtext-Absatz (3-5 Sätze) der eine Kontext-Story aufbaut (gesellschaftlicher Wandel, Warum-jetzt-Narrativ, Marktentwicklung oder ähnliches passend zur Kampagne), closingLine = Brücken-Satz der auf den Referenten und das Webinar leitet\n' +
+    '- Educational Gap (framework): headline + bodyCopy als erklärenden Fließtext-Block, KEIN Kompass-Prinzip\n' +
+    '- Problem-Checklist: exakt 5 Einträge als Array mit je "title" und "text"\n' +
+    '- Testimonials: exakt 3 Einträge als Array mit je "quote", "name", "role"\n' +
+    '- Benefits items: exakt 3 Einträge als Array mit je "title" und "text"\n' +
     '- Alle String-Werte EINZEILIG (kein echter Zeilenumbruch, ggf. \\n verwenden)\n' +
     '- Alle CTAs auf kostenfreie Webinar-Anmeldung\n' +
     '- Sprache: Deutsch, Sie-Anrede\n' +
@@ -863,7 +864,7 @@ function renderReview(active, opts) {
       '<div class="review-body" id="rb-'+s.id+'">' + renderSectionFields(s) + '</div>' +
       (ro ? '' :
       '<div class="review-feedback">' +
-        '<textarea id="fb-'+s.id+'" placeholder="Feedback zu dieser Section, z.B. konfrontativer formulieren, kuerzer, anderer Fokus..."></textarea>' +
+        '<textarea id="fb-'+s.id+'" placeholder="Feedback zu dieser Section, z.B. konfrontativer formulieren, kürzer, anderer Fokus..."></textarea>' +
         '<div class="review-feedback-row">' +
           '<button class="mini-btn" onclick="regenSection(\''+s.id+'\')" id="rgb-'+s.id+'"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> Section neu generieren</button>' +
         '</div>' +
@@ -894,7 +895,7 @@ function renderSectionFields(s) {
         out += '<div class="checklist-item">' +
           '<div class="field-tag">Bullet '+(i+1)+' Titel</div>' +
           '<div class="field-editable" contenteditable="true" data-sec="hero" data-path="bulletpoints.'+i+'.title">'+ex(bp.title)+'</div>' +
-          (bp.text ? '<div class="field-tag" style="margin-top:6px">Erklaerung</div><div class="field-editable" contenteditable="true" data-sec="hero" data-path="bulletpoints.'+i+'.text">'+ex(bp.text)+'</div>' : '') +
+          (bp.text ? '<div class="field-tag" style="margin-top:6px">Erklärung</div><div class="field-editable" contenteditable="true" data-sec="hero" data-path="bulletpoints.'+i+'.text">'+ex(bp.text)+'</div>' : '') +
           '</div>';
       });
     }
@@ -913,7 +914,7 @@ function renderSectionFields(s) {
     ['para1','para2','para3'].forEach(function(k,i){
       if (d[k]) out += fieldBlock(s.id, k, 'Absatz '+(i+1), d[k]);
     });
-    if (d.closingLine) out += fieldBlock(s.id,'closingLine','Abschluss-Satz (Bruecke zum Webinar)',d.closingLine);
+    if (d.closingLine) out += fieldBlock(s.id,'closingLine','Abschluss-Satz (Brücke zum Webinar)',d.closingLine);
     return out;
   }
   if (s.id === 'problem' && d.checklist) {
@@ -963,7 +964,7 @@ function fieldBlock(secId, path, label, value) {
 }
 
 function labelFor(k) {
-  var map = {h1:'H1 Haupttitel',h2:'H2 Sub-Headline',preHeadline:'Pre-Headline',ctaButton:'CTA Button',ctaSubline:'CTA Subline',dozentLine:'Dozenten-Zeile',announcement:'Announcement',bodyCopy:'Body Copy',badge:'Badge/Pill',para1:'Absatz 1',para2:'Absatz 2',para3:'Absatz 3',closingLine:'Abschluss-Satz (Bruecke zum Webinar)',bioBlock:'Bio',webinarRole:'Rolle im Webinar',scarcityCopy:'Scarcity Copy',note:'Hinweis',headline:'Headline',introCopy:'Intro Copy',transitionCopy:'Transition Copy',text:'Text',title:'Titel',bulletpoints:'Inhalts-Bulletpoints',videoPlaceholder:'Video (16:9 Platzhalter)',testimonials:'Testimonials',links:'Links',checklist:'Checkliste',items:'Punkte',quote:'Zitat',name:'Name',role:'Rolle'};
+  var map = {h1:'H1 Haupttitel',h2:'H2 Sub-Headline',preHeadline:'Pre-Headline',ctaButton:'CTA Button',ctaSubline:'CTA Subline',dozentLine:'Dozenten-Zeile',announcement:'Announcement',bodyCopy:'Body Copy',badge:'Badge/Pill',para1:'Absatz 1',para2:'Absatz 2',para3:'Absatz 3',closingLine:'Abschluss-Satz (Brücke zum Webinar)',bioBlock:'Bio',webinarRole:'Rolle im Webinar',scarcityCopy:'Scarcity Copy',note:'Hinweis',headline:'Headline',introCopy:'Intro Copy',transitionCopy:'Transition Copy',text:'Text',title:'Titel',bulletpoints:'Inhalts-Bulletpoints',videoPlaceholder:'Video (16:9 Platzhalter)',testimonials:'Testimonials',links:'Links',checklist:'Checkliste',items:'Punkte',quote:'Zitat',name:'Name',role:'Rolle'};
   return map[k] || k;
 }
 
@@ -1002,11 +1003,11 @@ async function regenSection(secId) {
   try {
     var sys = [
       'Du bist ein Team aus Online-Marketing-Stratege, Conversion-Copywriter und UI/UX-Designer.',
-      'Du ueberarbeitest EINE Section einer deutschen Webinar-Landingpage im BrandLift-Stil.',
+      'Du überarbeitest EINE Section einer deutschen Webinar-Landingpage im BrandLift-Stil.',
       '',
-      'KRITISCH: Antworte AUSSCHLIESSLICH mit einem einzigen gueltigen JSON-Objekt.',
-      'KEINE Erklaerungen, KEINE Markdown-Backticks, KEIN Text vor oder nach dem JSON.',
-      'Alle String-Werte EINZEILIG - KEINE echten Zeilenumbrueche in Strings.',
+      'KRITISCH: Antworte AUSSCHLIESSLICH mit einem einzigen gültigen JSON-Objekt.',
+      'KEINE Erklärungen, KEINE Markdown-Backticks, KEIN Text vor oder nach dem JSON.',
+      'Alle String-Werte EINZEILIG - KEINE echten Zeilenumbrüche in Strings.',
       'KEINE trailing commas. Valides JSON nach RFC 8259.'
     ].join('\n');
 
@@ -1014,7 +1015,7 @@ async function regenSection(secId) {
       'Kampagne: ' + (HF.titel||HF.kampagnenname||'') + ' | Zielgruppe: ' + (HF.zielgruppe||HF.strategie_titel||'') + '\n\n' +
       'Ueberarbeite NUR die Section "'+s.name+'" ('+s.id+'). Erwartetes Schema:\n' + sectionSchemaHint(s) + '\n\n' +
       'Feedback: ' + (fb || 'Allgemein verbessern, Konsistenz mit Rest der Page wahren.') + '\n\n' +
-      'Gib NUR das JSON-Objekt fuer diese Section zurueck - kein Wrapper, kein Markdown, kein Text drumherum.';
+      'Gib NUR das JSON-Objekt für diese Section zurück - kein Wrapper, kein Markdown, kein Text drumherum.';
 
     var resp = await fetch(PROXY_URL, {
       method: 'POST',
@@ -1401,8 +1402,10 @@ function goToStep(n) {
     }
     show('phase-sections');
   } else if (n === 3) {
+    // Review stays fully editable regardless of frontier: no AI generation happens
+    // between step 3 and step 4, so revisiting it can never leave stale/inconsistent data.
     document.getElementById('review-loading').style.display = 'none';
-    renderReview(sections.filter(function(s){return s.active;}), {readOnly: !isFrontier});
+    renderReview(sections.filter(function(s){return s.active;}), {readOnly: false});
     show('phase-review');
   } else if (n === 4) {
     buildExport();
