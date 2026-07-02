@@ -19,6 +19,10 @@ body{font-family:var(--font);background:var(--bg-tertiary);min-height:100vh;padd
 .prog-step.active .prog-num{background:#111;color:#fff;border-color:#111}
 .prog-step.done .prog-num{background:var(--bg-success);border-color:var(--border-success);color:var(--text-success)}
 .prog-line{flex:1;height:.5px;background:var(--border-light);margin:0 10px}
+.prog-step.reachable{cursor:pointer}
+.prog-step.reachable:hover{color:var(--text-primary)}
+.field-editable.ro{cursor:default}
+.field-editable.ro:hover{background:transparent;border-color:transparent}
 .page-title{font-size:22px;font-weight:500;margin-bottom:.25rem}
 .page-desc{font-size:13px;color:var(--text-secondary);margin-bottom:1.75rem}
 .modul-badge{font-size:11px;padding:2px 8px;border-radius:20px;border:.5px solid var(--border-light);color:var(--text-secondary);vertical-align:middle;margin-left:8px}
@@ -126,19 +130,21 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
 </div>
 
 <div class="progress-bar">
-  <div class="prog-step done" id="prog-1"><div class="prog-num" id="pn-1">1</div> Hardfacts</div>
+  <div class="prog-step done" id="prog-1" onclick="goToStep(1)"><div class="prog-num" id="pn-1">1</div> Hardfacts</div>
   <div class="prog-line"></div>
-  <div class="prog-step active" id="prog-2"><div class="prog-num" id="pn-2">2</div> Sections</div>
+  <div class="prog-step active" id="prog-2" onclick="goToStep(2)"><div class="prog-num" id="pn-2">2</div> Sections</div>
   <div class="prog-line"></div>
-  <div class="prog-step" id="prog-3"><div class="prog-num" id="pn-3">3</div> Review</div>
+  <div class="prog-step" id="prog-3" onclick="goToStep(3)"><div class="prog-num" id="pn-3">3</div> Review</div>
   <div class="prog-line"></div>
-  <div class="prog-step" id="prog-4"><div class="prog-num" id="pn-4">4</div> Export</div>
+  <div class="prog-step" id="prog-4" onclick="goToStep(4)"><div class="prog-num" id="pn-4">4</div> Export</div>
 </div>
 
 <!-- PHASE IMPORT -->
 <div id="phase-import">
   <div class="page-title">Landingpage generieren <span class="modul-badge">Modul 2</span></div>
   <p class="page-desc">Kampagnen-Infos laden und Landingpage-Sections festlegen.</p>
+
+  <div id="import-edit">
   <div id="import-err"></div>
 
   <div class="tab-row">
@@ -230,6 +236,15 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
       Bestätigt - weiter zu Sections
     </button>
   </div>
+  </div>
+
+  <div id="import-view" style="display:none">
+    <div class="hf-box" id="hf-preview-view"></div>
+    <button class="secondary-btn" style="margin-top:1rem" onclick="restartAll()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+      Komplett neu erstellen
+    </button>
+  </div>
 </div>
 
 <!-- PHASE SECTIONS -->
@@ -237,12 +252,13 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
   <div class="page-title">Sections festlegen <span class="modul-badge">Schritt 2</span></div>
   <p class="page-desc">Wähle ein Preset oder lasse die Sections von der KI vorschlagen, passend zum hochgeladenen Briefing.</p>
 
+  <div id="sections-edit">
   <!-- MODE PICKER -->
   <div id="sec-mode-picker">
     <div class="tab-row" style="margin-bottom:1.25rem">
       <button class="tab-btn active" id="secmode-preset-btn" onclick="switchSecMode('preset')">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:5px"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-        Preset wählen
+        Preset waehlen
       </button>
       <button class="tab-btn" id="secmode-ai-btn" onclick="switchSecMode('ai')">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:5px"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
@@ -319,7 +335,7 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
         Anderes Preset / KI-Vorschlag
       </button>
     </div>
-    <p class="sec-mode-hint">An/abwählen, per Drag &amp; Drop neu anordnen oder eigene Section hinzufügen.</p>
+    <p class="sec-mode-hint">An/abwaehlen, per Drag &amp; Drop neu anordnen oder eigene Section hinzufügen.</p>
     <div class="card">
       <div id="sec-list" class="sec-list"></div>
       <div class="add-section-zone">
@@ -343,12 +359,19 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
       Landingpage generieren
     </button>
   </div>
+  </div>
+
+  <div id="sections-view" style="display:none">
+    <div class="card">
+      <div id="sec-list-view" class="sec-list"></div>
+    </div>
+  </div>
 </div>
 
 <!-- PHASE REVIEW -->
 <div id="phase-review" style="display:none">
   <div class="page-title">Review <span class="modul-badge">Schritt 3</span></div>
-  <p class="page-desc">Felder anklicken und bearbeiten, oder per Feedback eine Section neu generieren.</p>
+  <p class="page-desc">Felder direkt anklicken und bearbeiten, oder per Feedback eine Section neu generieren.</p>
   <div id="review-loading" class="loading-card" style="display:none"><div class="spinner"></div><span id="review-loading-msg">Landingpage wird generiert...</span></div>
   <div id="review-list"></div>
   <button class="primary-btn" id="to-export-btn" style="display:none" onclick="goExport()">
@@ -377,7 +400,7 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
       </button>
     </div>
   </div>
-  <button class="secondary-btn" style="margin-top:8px;width:100%;justify-content:center" onclick="goReview()">
+  <button class="secondary-btn" style="margin-top:8px;width:100%;justify-content:center" onclick="goToStep(3)">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
     Zurueck zum Review
   </button>
@@ -391,10 +414,13 @@ var sections = [];
 var sectionData = {};
 var customCounter = 0;
 var dragSrcIdx = null;
+var currentStep = 1;
+var maxStep = 1;
 
 var GMSG = ['Landingpage wird generiert...','Sections werden geschrieben...','Tonalitaet wird abgestimmt...','Fast fertig...'];
 
 window.addEventListener('DOMContentLoaded', function() {
+  updateProgClickability();
   try {
     var raw = sessionStorage.getItem('wkt_hardfacts');
     if (raw) { HF = JSON.parse(raw); renderHF(); return; }
@@ -439,10 +465,7 @@ function submitFreitext() {
   goSections();
 }
 
-function renderHF() {
-  document.getElementById('import-banner').style.display = 'none';
-  document.getElementById('hf-display').style.display = 'block';
-
+function hfPreviewHTML() {
   var bullets = (HF.bulletpoints||[]);
   var bulletHTML = bullets.length
     ? '<ul class="hf-bullets">' + bullets.map(function(b){return '<li>'+ex(b)+'</li>';}).join('') + '</ul>'
@@ -451,8 +474,7 @@ function renderHF() {
   var zielgruppe = HF.zielgruppe || '';
   var strategie = HF.strategie || HF.strategie_titel || '';
 
-  document.getElementById('hf-preview').innerHTML =
-    '<div class="hf-label">Kampagne aus Modul 1</div>' +
+  return '<div class="hf-label">Kampagne aus Modul 1</div>' +
     (HF.pre_headline ? '<div class="hf-pre">'+ex(HF.pre_headline)+'</div>' : '') +
     '<div class="hf-title">'+ex(HF.titel||HF.kampagnenname)+'</div>' +
     '<div class="hf-sub">'+ex(HF.sub_headline||'')+'</div>' +
@@ -463,6 +485,12 @@ function renderHF() {
     '</div>' +
     (zielgruppe ? '<div class="hf-detail"><div class="hf-detail-label">Zielgruppe</div><div class="hf-detail-val">'+ex(zielgruppe)+'</div></div>' : '') +
     (strategie ? '<div class="hf-detail"><div class="hf-detail-label">Strategie</div><div class="hf-detail-val">'+ex(strategie)+'</div></div>' : '');
+}
+
+function renderHF() {
+  document.getElementById('import-banner').style.display = 'none';
+  document.getElementById('hf-display').style.display = 'block';
+  document.getElementById('hf-preview').innerHTML = hfPreviewHTML();
 }
 
 var PRESETS = {
@@ -504,7 +532,9 @@ var PRESETS = {
 var activePreset = 'webinar';
 
 function goSections() {
+  currentStep = 2; maxStep = Math.max(maxStep, 2); updateProgClickability();
   hide('phase-import'); show('phase-sections'); hide('phase-review'); hide('phase-export'); setP(2);
+  hide('sections-view'); show('sections-edit');
   show('sec-mode-picker'); hide('sec-editor');
   switchSecMode('preset');
 }
@@ -601,8 +631,10 @@ async function suggestSectionsAI() {
   document.querySelector('#secmode-ai .primary-btn').disabled = false;
 }
 
-function goReview() { hide('phase-export'); show('phase-review'); setP(3); }
-function goExport() { hide('phase-review'); show('phase-export'); setP(4); buildExport(); }
+function goExport() {
+  currentStep = 4; maxStep = Math.max(maxStep, 4); updateProgClickability();
+  hide('phase-review'); show('phase-export'); setP(4); buildExport();
+}
 
 /* ===== SECTION LIST (Phase 2) ===== */
 function renderSecList() {
@@ -704,9 +736,10 @@ function sectionSchemaHint(s) {
 /* ===== GENERATION (Phase 3) ===== */
 async function startGeneration() {
   var active = sections.filter(function(s){return s.active;});
-  if (!active.length) { document.getElementById('sec-error').innerHTML = '<div class="error-box">Bitte mindestens eine Section auswählen.</div>'; return; }
+  if (!active.length) { document.getElementById('sec-error').innerHTML = '<div class="error-box">Bitte mindestens eine Section auswaehlen.</div>'; return; }
   document.getElementById('sec-error').innerHTML = '';
 
+  currentStep = 3; maxStep = Math.max(maxStep, 3); updateProgClickability();
   hide('phase-sections'); show('phase-review'); setP(3);
   var loadEl = document.getElementById('review-loading');
   loadEl.style.display = 'flex';
@@ -721,7 +754,6 @@ async function startGeneration() {
     sectionData = data;
     clearInterval(mt); loadEl.style.display='none';
     renderReview(active);
-    document.getElementById('to-export-btn').style.display = 'flex';
   } catch(e) {
     clearInterval(mt); loadEl.style.display='none';
     document.getElementById('review-list').innerHTML = '<div class="error-box">Fehler: '+ex(e.message)+'</div>';
@@ -807,20 +839,30 @@ async function generateChunk(chunk, sys) {
 }
 
 /* ===== REVIEW RENDERING (Phase 3) ===== */
-function renderReview(active) {
+function renderReview(active, opts) {
+  var ro = !!(opts && opts.readOnly);
   var html = '';
   active.forEach(function(s, idx) {
     html += '<div class="review-card" id="rc-'+s.id+'">' +
       '<div class="review-head"><span class="review-title">'+(idx+1)+'. '+ex(s.name)+'</span><span class="review-status" id="rs-'+s.id+'"></span></div>' +
       '<div class="review-body" id="rb-'+s.id+'">' + renderSectionFields(s) + '</div>' +
+      (ro ? '' :
       '<div class="review-feedback">' +
         '<textarea id="fb-'+s.id+'" placeholder="Feedback zu dieser Section, z.B. konfrontativer formulieren, kuerzer, anderer Fokus..."></textarea>' +
         '<div class="review-feedback-row">' +
           '<button class="mini-btn" onclick="regenSection(\''+s.id+'\')" id="rgb-'+s.id+'"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> Section neu generieren</button>' +
         '</div>' +
-      '</div></div>';
+      '</div>') +
+      '</div>';
   });
   document.getElementById('review-list').innerHTML = html;
+  if (ro) {
+    document.querySelectorAll('#review-list .field-editable').forEach(function(el) {
+      el.removeAttribute('contenteditable');
+      el.classList.add('ro');
+    });
+  }
+  document.getElementById('to-export-btn').style.display = ro ? 'none' : 'flex';
 }
 
 function renderSectionFields(s) {
@@ -1057,6 +1099,67 @@ function setP(step){
 function show(id){document.getElementById(id).style.display='block';}
 function hide(id){document.getElementById(id).style.display='none';}
 function ex(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+/* ===== STEP NAVIGATION (view-only) ===== */
+function updateProgClickability() {
+  [1,2,3,4].forEach(function(n) {
+    document.getElementById('prog-'+n).classList.toggle('reachable', n <= maxStep);
+  });
+}
+
+function goToStep(n) {
+  if (n > maxStep || n === currentStep) return;
+  currentStep = n;
+  hide('phase-import'); hide('phase-sections'); hide('phase-review'); hide('phase-export');
+  if (n === 1) {
+    hide('import-edit'); show('import-view');
+    document.getElementById('hf-preview-view').innerHTML = HF ? hfPreviewHTML() : '<span style="color:var(--text-tertiary);font-size:12px">Keine Daten vorhanden.</span>';
+    show('phase-import');
+  } else if (n === 2) {
+    hide('sections-edit'); show('sections-view');
+    renderSecListView();
+    show('phase-sections');
+  } else if (n === 3) {
+    document.getElementById('review-loading').style.display = 'none';
+    renderReview(sections.filter(function(s){return s.active;}), {readOnly:true});
+    show('phase-review');
+  } else if (n === 4) {
+    buildExport();
+    show('phase-export');
+  }
+  setP(n);
+}
+
+function renderSecListView() {
+  var html = sections.map(function(s, i) {
+    return '<div class="sec-row'+(s.active?'':' disabled')+'">' +
+      '<span class="sec-cb">' + (s.active ? sqCheck() : sqEmpty()) + '</span>' +
+      '<span class="sec-info"><div class="sec-name">'+(i+1)+'. '+ex(s.name)+(s.custom?' <span style="font-size:10px;color:var(--text-tertiary)">(eigene)</span>':'')+'</div><div class="sec-desc">'+ex(s.desc)+'</div></span>' +
+      '</div>';
+  }).join('');
+  document.getElementById('sec-list-view').innerHTML = html || '<div style="font-size:12px;color:var(--text-tertiary);padding:8px">Keine Sections vorhanden.</div>';
+}
+
+function restartAll() {
+  HF = null; sections = []; sectionData = {}; activePreset = 'webinar'; customCounter = 0;
+  currentStep = 1; maxStep = 1;
+
+  ['ft-titel','ft-pre','ft-h1','ft-h2','ft-termin','ft-offer','ft-zielgruppe','ft-strategie','ft-bullets'].forEach(function(id) {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('ft-err').innerHTML = '';
+  document.getElementById('import-err').innerHTML = '';
+  document.getElementById('json-inp').value = '';
+  document.getElementById('import-banner').style.display = 'block';
+  document.getElementById('hf-display').style.display = 'none';
+  switchTab('json');
+
+  hide('import-view'); show('import-edit');
+  hide('phase-sections'); hide('phase-review'); hide('phase-export'); show('phase-import');
+  selectPreset('webinar');
+  updateProgClickability();
+  setP(1);
+}
 </script>
 </body>
 </html>
