@@ -21,6 +21,7 @@ body{font-family:var(--font);background:var(--bg-tertiary);min-height:100vh;padd
 .prog-line{flex:1;height:.5px;background:var(--border-light);margin:0 10px}
 .prog-step.reachable{cursor:pointer}
 .prog-step.reachable:hover{color:var(--text-primary)}
+.progress-bar.nav-locked{pointer-events:none;opacity:.6}
 .field-editable.ro{cursor:default}
 .field-editable.ro:hover{background:transparent;border-color:transparent}
 .page-title{font-size:22px;font-weight:500;margin-bottom:.25rem}
@@ -129,7 +130,7 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
   <div><div class="header-name">Webinar-Kampagnen Tool</div><div class="header-sub">Modul 2 - Landingpage Generator</div></div>
 </div>
 
-<div class="progress-bar">
+<div class="progress-bar" id="progress-bar">
   <div class="prog-step done" id="prog-1" onclick="goToStep(1)"><div class="prog-num" id="pn-1">1</div> Hardfacts</div>
   <div class="prog-line"></div>
   <div class="prog-step active" id="prog-2" onclick="goToStep(2)"><div class="prog-num" id="pn-2">2</div> Sections</div>
@@ -416,6 +417,7 @@ var customCounter = 0;
 var dragSrcIdx = null;
 var currentStep = 1;
 var maxStep = 1;
+var isGenerating = false;
 
 var GMSG = ['Landingpage wird generiert...','Sections werden geschrieben...','Tonalitaet wird abgestimmt...','Fast fertig...'];
 
@@ -749,6 +751,8 @@ async function startGeneration() {
   var mi=0;
   var mt = setInterval(function(){ var el=document.getElementById('review-loading-msg'); if(el) el.textContent=GMSG[Math.min(++mi,GMSG.length-1)]; },2200);
 
+  isGenerating = true;
+  document.getElementById('progress-bar').classList.add('nav-locked');
   try {
     var data = await generateAll(active);
     sectionData = data;
@@ -757,6 +761,9 @@ async function startGeneration() {
   } catch(e) {
     clearInterval(mt); loadEl.style.display='none';
     document.getElementById('review-list').innerHTML = '<div class="error-box">Fehler: '+ex(e.message)+'</div>';
+  } finally {
+    isGenerating = false;
+    document.getElementById('progress-bar').classList.remove('nav-locked');
   }
 }
 
@@ -982,6 +989,8 @@ async function regenSection(secId) {
   btn.disabled = true; btn.innerHTML = '<div class="spinner-sm"></div> Wird generiert...';
   document.getElementById('rs-'+secId).textContent = 'wird aktualisiert...';
 
+  isGenerating = true;
+  document.getElementById('progress-bar').classList.add('nav-locked');
   try {
     var sys = [
       'Du bist ein Team aus Online-Marketing-Stratege, Conversion-Copywriter und UI/UX-Designer.',
@@ -1022,6 +1031,9 @@ async function regenSection(secId) {
   } catch(e) {
     document.getElementById('rs-'+secId).textContent = 'Fehler';
     alert('Fehler bei Regeneration: ' + e.message);
+  } finally {
+    isGenerating = false;
+    document.getElementById('progress-bar').classList.remove('nav-locked');
   }
   btn.disabled = false;
   btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> Section neu generieren';
@@ -1108,7 +1120,7 @@ function updateProgClickability() {
 }
 
 function goToStep(n) {
-  if (n > maxStep || n === currentStep) return;
+  if (isGenerating || n > maxStep || n === currentStep) return;
   currentStep = n;
   var isFrontier = (n === maxStep);
   hide('phase-import'); hide('phase-sections'); hide('phase-review'); hide('phase-export');
