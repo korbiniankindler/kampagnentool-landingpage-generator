@@ -434,6 +434,53 @@ var isGenerating = false;
 
 var GMSG = ['Landingpage wird generiert...','Sections werden geschrieben...','Tonalität wird abgestimmt...','Fast fertig...'];
 
+/* ===== CLAUDE API CALL (zentral: Rate-Limit-Pacing + Retry) =====
+   Das Org-Limit liegt bei 5 Requests/Minute für dieses Modell. Alle
+   Aufrufer müssen über diese Funktion laufen, damit parallele Section-
+   Generierungen (Promise.all) sich nicht gegenseitig aus dem Limit werfen. */
+var RATE_LIMIT_MAX_PER_MIN = 4; // Sicherheitsmarge unter dem Org-Limit von 5
+var RATE_LIMIT_WINDOW_MS = 61000;
+var _claudeRequestTimestamps = [];
+
+function sleepMs(ms) { return new Promise(function(resolve){ setTimeout(resolve, ms); }); }
+
+async function throttleClaudeRequest() {
+  var now = Date.now();
+  _claudeRequestTimestamps = _claudeRequestTimestamps.filter(function(t){ return now - t < RATE_LIMIT_WINDOW_MS; });
+  if (_claudeRequestTimestamps.length >= RATE_LIMIT_MAX_PER_MIN) {
+    var oldest = _claudeRequestTimestamps[0];
+    await sleepMs(RATE_LIMIT_WINDOW_MS - (now - oldest) + 250);
+    return throttleClaudeRequest();
+  }
+  _claudeRequestTimestamps.push(Date.now());
+}
+
+function isRateLimitError(err) {
+  if (!err) return false;
+  var s = ((err.type||'') + ' ' + (err.message||'')).toLowerCase();
+  return s.indexOf('rate limit') !== -1 || s.indexOf('rate_limit') !== -1;
+}
+
+async function callClaude(body, onRetry, attempt) {
+  attempt = attempt || 1;
+  await throttleClaudeRequest();
+  var resp = await fetch(PROXY_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  var d = await resp.json();
+  if (d.error) {
+    if (isRateLimitError(d.error) && attempt < 6) {
+      if (onRetry) onRetry(attempt, d.error);
+      await sleepMs(14000 + Math.random() * 3000);
+      return callClaude(body, onRetry, attempt + 1);
+    }
+    throw new Error(d.error.message);
+  }
+  return d;
+}
+
 /* ===== COPYWRITER PRESETS (Schritt 1) ===== */
 var COPYWRITER_PRESETS = [
   {id:'holistic-house', name:'Holistic House', desc:'Marken-Stilvorgabe', file:'presets/holistic-house.md'},
@@ -655,18 +702,12 @@ async function suggestSectionsAI() {
       'Beispiel-Output:\n[{"id":"hero","name":"Hero","desc":"Hauptheadline, CTA und Video"},{"id":"problem","name":"Problem","desc":"Selbstreflexions-Checkliste"}]\n\n' +
       'NUR das JSON-Array, kein anderer Text, keine Backticks.';
 
-    var resp = await fetch(PROXY_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 1000,
-        messages: [{ role: 'user', content: usr }]
-      })
-    });
+    var d = await callClaude({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 1000,
+      messages: [{ role: 'user', content: usr }]
+    }, function(attempt){ loadEl.innerHTML = '<div class="spinner"></div> Rate-Limit erreicht, versuche erneut (' + attempt + ')...'; });
 
-    var d = await resp.json();
-    if (d.error) throw new Error(d.error.message);
     var raw = d.content.map(function(b){return b.text||'';}).join('').trim();
 
     // Extract JSON array
@@ -747,7 +788,12 @@ function addCustomSection() {
 }
 
 /* ===== JSON PARSING (robust) ===== */
-function extractJSON(raw) {
+// opts.salvage: wenn true und die Antwort abgeschnitten wurde (z.B. Token-Limit),
+// wird versucht offene Strings/Arrays/Objekte automatisch zu schließen statt
+// hart zu scheitern. Nur als letzter Rettungsversuch nach Retries nutzen -
+// per Default aus, damit echte Trunkierungen normal einen Retry auslösen.
+function extractJSON(raw, opts) {
+  opts = opts || {};
   var cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim();
   var start = cleaned.indexOf('{');
   if (start === -1) throw new Error('Kein JSON-Objekt in der Antwort gefunden.');
@@ -756,7 +802,7 @@ function extractJSON(raw) {
   // Strings und erkennt/entkommt nicht escapte Anführungszeichen innerhalb
   // von Textwerten (z.B. wenn die KI in einem Satz ein Wort in "..." setzt),
   // indem geprüft wird ob nach einem " tatsächlich ein JSON-Trenner folgt.
-  var depth = 0, inStr = false, escape = false, closed = false;
+  var stack = [], inStr = false, escape = false, closed = false;
   var candidate = '';
   for (var i = start; i < cleaned.length; i++) {
     var ch = cleaned[i];
@@ -783,15 +829,34 @@ function extractJSON(raw) {
       continue;
     }
     candidate += ch;
-    if (ch === '{') depth++;
-    else if (ch === '}') { depth--; if (depth === 0) { closed = true; break; } }
+    if (ch === '{' || ch === '[') stack.push(ch);
+    else if (ch === '}' || ch === ']') {
+      stack.pop();
+      if (stack.length === 0) { closed = true; break; }
+    }
   }
-  if (!closed) throw new Error('JSON-Objekt ist unvollständig (keine schließende Klammer).');
-  candidate = candidate.replace(/,\s*([}\]])/g, '$1');
+
+  if (closed) {
+    candidate = candidate.replace(/,\s*([}\]])/g, '$1');
+    try {
+      return JSON.parse(candidate);
+    } catch(e) {
+      throw new Error('JSON-Parse fehlgeschlagen: ' + e.message + '. Bitte erneut versuchen.');
+    }
+  }
+
+  if (!opts.salvage) throw new Error('JSON-Objekt ist unvollständig (Antwort wurde abgeschnitten, evtl. Token-Limit).');
+
+  // Letzter Rettungsversuch: offene Struktur schließen und parsen
+  var salvage = candidate;
+  if (inStr) salvage += '"';
+  salvage = salvage.replace(/,\s*$/, '');
+  for (var k = stack.length - 1; k >= 0; k--) salvage += (stack[k] === '{' ? '}' : ']');
+  salvage = salvage.replace(/,\s*([}\]])/g, '$1');
   try {
-    return JSON.parse(candidate);
-  } catch(e) {
-    throw new Error('JSON-Parse fehlgeschlagen: ' + e.message + '. Bitte erneut versuchen.');
+    return JSON.parse(salvage);
+  } catch(e2) {
+    throw new Error('JSON-Objekt ist unvollständig und konnte nicht gerettet werden (Antwort wurde abgeschnitten).');
   }
 }
 
@@ -866,6 +931,8 @@ async function generateAll(active) {
   // Grosse Landingpages (viele Sections) werden in kleineren Batches generiert,
   // damit einzelne Antworten nicht am max_tokens-Limit abgeschnitten werden
   // (abgeschnittene Antworten führen zu "JSON-Objekt ist unvollständig").
+  // Die Requests laufen zwar parallel los, callClaude() staffelt sie intern
+  // damit das Org-Rate-Limit (5 req/min) nicht überschritten wird.
   var chunks = [];
   for (var i = 0; i < active.length; i += GEN_CHUNK_SIZE) chunks.push(active.slice(i, i + GEN_CHUNK_SIZE));
 
@@ -876,7 +943,9 @@ async function generateAll(active) {
   return data;
 }
 
-async function generateChunk(chunk, sys) {
+async function generateChunk(chunk, sys, attempt) {
+  attempt = attempt || 1;
+  var maxAttempts = 3;
   var schemaLines = chunk.map(function(s) {
     return '"'+s.id+'": ' + sectionSchemaHint(s) + (s.custom ? '  // Custom: "'+s.name+'": '+s.desc : '');
   }).join(',\n  ');
@@ -906,24 +975,36 @@ async function generateChunk(chunk, sys) {
     '- Sprache: Deutsch\n' +
     '- NUR das JSON-Objekt, absolut kein anderer Text';
 
-  var resp = await fetch(PROXY_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 8000,
-      system: sys,
-      messages: [{role:'user', content:usr}]
-    })
-  });
+  var d = await callClaude({
+    model: 'claude-sonnet-4-6',
+    max_tokens: 8000,
+    system: sys,
+    messages: [{role:'user', content:usr}]
+  }, function(){ updateReviewLoadingMsg('Rate-Limit erreicht, warte kurz und versuche erneut...'); });
 
-  var d = await resp.json();
-  if (d.error) throw new Error(d.error.message);
   var raw = d.content.map(function(b){return b.text||'';}).join('');
+  var truncated = d.stop_reason === 'max_tokens';
 
-  return extractJSON(raw);
+  try {
+    if (truncated) throw new Error('__TRUNCATED__');
+    return extractJSON(raw);
+  } catch(e) {
+    if (attempt < maxAttempts) {
+      updateReviewLoadingMsg((truncated ? 'Antwort abgeschnitten' : 'Ungültiges JSON erhalten') + ' - generiere "'+chunk.map(function(s){return s.name;}).join(', ')+'" erneut...');
+      return generateChunk(chunk, sys, attempt + 1);
+    }
+    // Letzter Versuch: so viel wie möglich aus der Antwort retten statt komplett zu scheitern
+    try { return extractJSON(raw, {salvage:true}); }
+    catch(e2) {
+      var label = chunk.map(function(s){return s.name;}).join(', ');
+      throw new Error('Generierung für "'+label+'" fehlgeschlagen nach '+maxAttempts+' Versuchen' + (truncated ? ' (Antwort wurde wiederholt am Token-Limit abgeschnitten).' : ': ' + e.message));
+    }
+  }
+}
+
+function updateReviewLoadingMsg(text) {
+  var el = document.getElementById('review-loading-msg');
+  if (el) el.textContent = text;
 }
 
 /* ===== REVIEW RENDERING (Phase 3) ===== */
@@ -1094,24 +1175,31 @@ async function regenSection(secId) {
       'Feedback: ' + (fb || 'Allgemein verbessern, Konsistenz mit Rest der Page wahren.') + '\n\n' +
       'Gib NUR das JSON-Objekt für diese Section zurück - kein Wrapper, kein Markdown, kein Text drumherum.';
 
-    var resp = await fetch(PROXY_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
+    var maxAttempts = 3, parsed = null, lastErr = null;
+    for (var attempt = 1; attempt <= maxAttempts && !parsed; attempt++) {
+      if (attempt > 1) document.getElementById('rs-'+secId).textContent = 'erneuter Versuch ('+attempt+')...';
+      var d = await callClaude({
         model: 'claude-sonnet-4-6',
-        max_tokens: 1500,
+        max_tokens: 4000,
         system: sys,
         messages: [{role:'user', content:usr}]
-      })
-    });
+      }, function(){ document.getElementById('rs-'+secId).textContent = 'Rate-Limit, warte...'; });
 
-    var d = await resp.json();
-    if (d.error) throw new Error(d.error.message);
-    var raw = d.content.map(function(b){return b.text||'';}).join('');
+      var raw = d.content.map(function(b){return b.text||'';}).join('');
+      var truncated = d.stop_reason === 'max_tokens';
+      try {
+        if (truncated) throw new Error('__TRUNCATED__');
+        parsed = extractJSON(raw);
+      } catch(e) {
+        lastErr = e;
+        if (attempt === maxAttempts) {
+          try { parsed = extractJSON(raw, {salvage:true}); }
+          catch(e2) { throw new Error('Fehlgeschlagen nach '+maxAttempts+' Versuchen' + (truncated ? ' (Antwort wiederholt abgeschnitten).' : ': ' + lastErr.message)); }
+        }
+      }
+    }
 
-    sectionData[secId] = extractJSON(raw);
+    sectionData[secId] = parsed;
     document.getElementById('rb-'+secId).innerHTML = renderSectionFields(s);
     document.getElementById('rs-'+secId).textContent = 'aktualisiert';
   } catch(e) {
