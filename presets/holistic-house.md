@@ -64,6 +64,7 @@ Jede LP folgt derselben Grundlogik, unabhängig vom Angebot:
 - Keine aggressiven Versal-CTAs („Starten Sie JETZT!", „Veränderung JETZT!"). Ruhige Handlungsaufforderung statt Ausrufezeichen-Druck.
 - Keine Heilversprechen, keine Symptom- oder Krankheitssprache als Verkaufsargument.
 - **Kontrollfrage:** Könnte der Satz auch für Yoga, Business-Coaching oder Finanzberatung stehen? Dann umschreiben, bis er spezifisch zu Bauhofer, zum Angebot und zur Zielgruppe passt.
+- Keine Gedankenstriche verwenden
 
 > **Altbestand-Hinweis:** Die älteren Salespages (z. B. Gesundheitsplan 2023) nutzen noch Gedankenstriche, „ganzheitlich", „transformieren", „kein X, sondern Y" und Versal-CTAs. Das ist überholt. Der aktuelle Standard entfernt diese Muster (siehe Snippet C).
 
