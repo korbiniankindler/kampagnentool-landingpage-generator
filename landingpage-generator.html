@@ -173,7 +173,7 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
     <div id="hf-display" style="display:none">
       <div class="hf-box" id="hf-preview"></div>
       <button class="primary-btn" onclick="goSections()">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 12 11 14 15 10"/></svg>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
         Bestätigt - weiter zu Sections
       </button>
     </div>
@@ -233,7 +233,7 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
 
     <div id="ft-err"></div>
     <button class="primary-btn" onclick="submitFreitext()">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 12 11 14 15 10"/></svg>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
       Bestätigt - weiter zu Sections
     </button>
   </div>
@@ -304,7 +304,7 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
         </div>
       </div>
       <button class="primary-btn" style="margin-top:0" onclick="applyPresetAndShow()">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 12 11 14 15 10"/></svg>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
         Preset übernehmen &amp; anpassen
       </button>
     </div>
@@ -376,7 +376,7 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
   <div id="review-loading" class="loading-card" style="display:none"><div class="spinner"></div><span id="review-loading-msg">Landingpage wird generiert...</span></div>
   <div id="review-list"></div>
   <button class="primary-btn" id="to-export-btn" style="display:none" onclick="goExport()">
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 12 11 14 15 10"/></svg>
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
     Weiter zum Export
   </button>
 </div>
@@ -384,7 +384,7 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
 <!-- PHASE EXPORT -->
 <div id="phase-export" style="display:none">
   <div class="success-banner">
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="20 6 9 17 4 12"/></svg>
     Landingpage-Briefing bereit
   </div>
   <div class="card">
@@ -1103,7 +1103,7 @@ function setP(step){
   [1,2,3,4].forEach(function(n){
     var el=document.getElementById('prog-'+n),num=document.getElementById('pn-'+n);
     el.classList.remove('active','done');
-    if(n<step){el.classList.add('done');num.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="9 12 11 14 15 10"/></svg>';}
+    if(n<step){el.classList.add('done');num.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';}
     else if(n===step){el.classList.add('active');num.textContent=n;}
     else num.textContent=n;
   });
