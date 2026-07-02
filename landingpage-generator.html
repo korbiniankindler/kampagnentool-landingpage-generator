@@ -146,6 +146,11 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
   <p class="page-desc">Kampagnen-Infos laden und Landingpage-Sections festlegen.</p>
 
   <div id="import-edit">
+  <div class="card">
+    <div class="section-label" style="margin-top:0">Copywriter-Preset <span style="font-weight:400;color:var(--text-tertiary)">(optional)</span></div>
+    <p style="font-size:12px;color:var(--text-tertiary);margin-bottom:10px">Feste Stil- und Tonalitätsvorgabe einer Marke. Ohne Auswahl wird generisch anhand der Hardfacts generiert.</p>
+    <div class="preset-grid" id="copy-preset-grid" style="margin-bottom:0"></div>
+  </div>
   <div id="import-err"></div>
 
   <div class="tab-row">
@@ -429,9 +434,54 @@ var isGenerating = false;
 
 var GMSG = ['Landingpage wird generiert...','Sections werden geschrieben...','Tonalität wird abgestimmt...','Fast fertig...'];
 
+/* ===== COPYWRITER PRESETS (Schritt 1) ===== */
+var COPYWRITER_PRESETS = [
+  {id:'holistic-house', name:'Holistic House', desc:'Marken-Stilvorgabe (Inhalt folgt)', file:'presets/holistic-house.md'},
+  {id:'hellinger', name:'Hellinger', desc:'Marken-Stilvorgabe (Inhalt folgt)', file:'presets/hellinger.md'}
+];
+var selectedCopyPreset = null;
+var copyPresetCache = {};
+
+function renderCopyPresetPicker() {
+  var all = [{id:null, name:'Kein Preset', desc:'Generisch anhand der Hardfacts generieren'}].concat(COPYWRITER_PRESETS);
+  var html = all.map(function(p) {
+    var key = p.id === null ? 'none' : p.id;
+    var checkedSvg = '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>';
+    return '<div class="preset-card'+(selectedCopyPreset===p.id?' selected':'')+'" id="cwpreset-'+key+'" onclick="selectCopyPreset('+(p.id===null?'null':"'"+p.id+"'")+')">' +
+      '<div class="preset-card-name"><div class="preset-check" id="cwpc-'+key+'">'+(selectedCopyPreset===p.id?checkedSvg:'')+'</div>'+ex(p.name)+'</div>' +
+      '<div class="preset-card-desc">'+ex(p.desc)+'</div>' +
+      '</div>';
+  }).join('');
+  document.getElementById('copy-preset-grid').innerHTML = html;
+}
+
+function selectCopyPreset(id) {
+  selectedCopyPreset = id;
+  renderCopyPresetPicker();
+}
+
+async function loadCopyPresetContent(id) {
+  if (!id) return '';
+  if (copyPresetCache[id] !== undefined) return copyPresetCache[id];
+  var preset = COPYWRITER_PRESETS.find(function(p){return p.id === id;});
+  if (!preset) return '';
+  try {
+    var resp = await fetch(preset.file);
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    var text = (await resp.text()).trim();
+    copyPresetCache[id] = text;
+    return text;
+  } catch (e) {
+    console.warn('Copywriter-Preset konnte nicht geladen werden: ' + preset.file, e);
+    copyPresetCache[id] = '';
+    return '';
+  }
+}
+
 window.addEventListener('DOMContentLoaded', function() {
   setP(1);
   updateProgClickability();
+  renderCopyPresetPicker();
   try {
     var raw = sessionStorage.getItem('wkt_hardfacts');
     if (raw) { HF = JSON.parse(raw); renderHF(); return; }
@@ -779,10 +829,13 @@ async function startGeneration() {
 var GEN_CHUNK_SIZE = 3;
 
 async function generateAll(active) {
+  var presetText = await loadCopyPresetContent(selectedCopyPreset);
   var sys = [
     'Du bist ein Team aus Senior Online-Marketing-Stratege, Conversion-Copywriter und UI/UX-Designer.',
-    'Du schreibst komplette deutsche Webinar-Landingpages im BrandLift-Stil (Holistic House / Dr. Bauhofer Kampagnen).',
-    'Stil: direkt, vertrauenswürdig, Frage-Formate, Curiosity Gaps, Sie-Anrede bei Gesundheitsthemen.',
+    'Du schreibst komplette deutsche Webinar-Landingpages.',
+    presetText
+      ? 'WICHTIG: Halte dich strikt an folgendes Copywriter-Preset für Tonalität, Sprache, Anrede und Stilregeln - es hat Vorrang vor allgemeinen Stilvorgaben und ist eng mit den Kampagnen-Hardfacts zu kombinieren:\n\n' + presetText
+      : 'Stil: direkt, vertrauenswürdig, Frage-Formate, Curiosity Gaps. Passe Tonalität und Anrede (Du/Sie) an Zielgruppe und Strategie der Kampagne an; wähle im Zweifel die förmliche Sie-Anrede.',
     '',
     'KRITISCH: Antworte AUSSCHLIESSLICH mit einem einzigen gültigen JSON-Objekt.',
     'KEINE Erklärungen, KEINE Kommentare, KEINE Markdown-Backticks (``` oder ```json), KEIN Text vor oder nach dem JSON.',
@@ -823,7 +876,7 @@ async function generateChunk(chunk, sys) {
     (strategie ? 'Strategie / Positionierung: ' + strategie + '\n' : '') + '\n' +
     'Generiere folgende Sections als JSON-Objekt mit exakt diesen Keys:\n{\n  ' + schemaLines + '\n}\n\n' +
     'Regeln:\n' +
-    '- Hero: Verwende die Hardfacts DIREKT und ungekürzt: preHeadline = exakt aus "Pre-Headline", h1 = exakt aus "Titel", h2 = exakt aus "Sub-Headline". Die bulletpoints kommen 1:1 aus "Webinar-Inhalte" - parse jeden Bullet als {"title":"...", "text":"..."} wobei title der Hauptpunkt ist und text die Erklärung (falls vorhanden, sonst leer lassen). Generiere 4 Bulletpoints. ctaButton = "Jetzt kostenlos anmelden", ctaSubline = "100% kostenfrei am [Termin]", videoPlaceholder = "[16:9 Video-Platzhalter: Anmeldeseiten-Video mit Dr. Bauhofer]"\n' +
+    '- Hero: Verwende die Hardfacts DIREKT und ungekürzt: preHeadline = exakt aus "Pre-Headline", h1 = exakt aus "Titel", h2 = exakt aus "Sub-Headline". Die bulletpoints kommen 1:1 aus "Webinar-Inhalte" - parse jeden Bullet als {"title":"...", "text":"..."} wobei title der Hauptpunkt ist und text die Erklärung (falls vorhanden, sonst leer lassen). Generiere 4 Bulletpoints. ctaButton = "Jetzt kostenlos anmelden", ctaSubline = "100% kostenfrei am [Termin]", videoPlaceholder = "[16:9 Video-Platzhalter: Anmeldeseiten-Video mit Referent]"\n' +
     '- introtext (Intro Text): badge = kurze Pill-Kategorie (max 5 Worte), headline = aufmerksamkeitsstarke H2, para1/para2/para3 = je ein langer Fließtext-Absatz (3-5 Sätze) der eine Kontext-Story aufbaut (gesellschaftlicher Wandel, Warum-jetzt-Narrativ, Marktentwicklung oder ähnliches passend zur Kampagne), closingLine = Brücken-Satz der auf den Referenten und das Webinar leitet\n' +
     '- Educational Gap (framework): headline + bodyCopy als erklärenden Fließtext-Block, KEIN Kompass-Prinzip\n' +
     '- Problem-Checklist: exakt 5 Einträge als Array mit je "title" und "text"\n' +
@@ -831,7 +884,7 @@ async function generateChunk(chunk, sys) {
     '- Benefits items: exakt 3 Einträge als Array mit je "title" und "text"\n' +
     '- Alle String-Werte EINZEILIG (kein echter Zeilenumbruch, ggf. \\n verwenden)\n' +
     '- Alle CTAs auf kostenfreie Webinar-Anmeldung\n' +
-    '- Sprache: Deutsch, Sie-Anrede\n' +
+    '- Sprache: Deutsch\n' +
     '- NUR das JSON-Objekt, absolut kein anderer Text';
 
   var resp = await fetch(PROXY_URL, {
@@ -1001,9 +1054,13 @@ async function regenSection(secId) {
   isGenerating = true;
   document.getElementById('progress-bar').classList.add('nav-locked');
   try {
+    var presetText = await loadCopyPresetContent(selectedCopyPreset);
     var sys = [
       'Du bist ein Team aus Online-Marketing-Stratege, Conversion-Copywriter und UI/UX-Designer.',
-      'Du überarbeitest EINE Section einer deutschen Webinar-Landingpage im BrandLift-Stil.',
+      'Du überarbeitest EINE Section einer deutschen Webinar-Landingpage.',
+      presetText
+        ? 'WICHTIG: Halte dich strikt an folgendes Copywriter-Preset für Tonalität, Sprache, Anrede und Stilregeln - es hat Vorrang vor allgemeinen Stilvorgaben und ist eng mit den Kampagnen-Hardfacts zu kombinieren:\n\n' + presetText
+        : 'Stil: Passe Tonalität und Anrede (Du/Sie) an Zielgruppe und Strategie der Kampagne an; wähle im Zweifel die förmliche Sie-Anrede.',
       '',
       'KRITISCH: Antworte AUSSCHLIESSLICH mit einem einzigen gültigen JSON-Objekt.',
       'KEINE Erklärungen, KEINE Markdown-Backticks, KEIN Text vor oder nach dem JSON.',
@@ -1013,7 +1070,7 @@ async function regenSection(secId) {
 
     var usr = 'Gesamtkontext (zur Konsistenz, NICHT neu generieren):\n' + JSON.stringify(sectionData) + '\n\n' +
       'Kampagne: ' + (HF.titel||HF.kampagnenname||'') + ' | Zielgruppe: ' + (HF.zielgruppe||HF.strategie_titel||'') + '\n\n' +
-      'Ueberarbeite NUR die Section "'+s.name+'" ('+s.id+'). Erwartetes Schema:\n' + sectionSchemaHint(s) + '\n\n' +
+      'Überarbeite NUR die Section "'+s.name+'" ('+s.id+'). Erwartetes Schema:\n' + sectionSchemaHint(s) + '\n\n' +
       'Feedback: ' + (fb || 'Allgemein verbessern, Konsistenz mit Rest der Page wahren.') + '\n\n' +
       'Gib NUR das JSON-Objekt für diese Section zurück - kein Wrapper, kein Markdown, kein Text drumherum.';
 
@@ -1426,7 +1483,7 @@ function renderSecListView() {
 
 function restartAll() {
   HF = null; sections = []; sectionData = {}; activePreset = 'webinar'; customCounter = 0;
-  currentStep = 1; maxStep = 1;
+  currentStep = 1; maxStep = 1; selectedCopyPreset = null;
 
   ['ft-titel','ft-pre','ft-h1','ft-h2','ft-termin','ft-offer','ft-zielgruppe','ft-strategie','ft-bullets'].forEach(function(id) {
     document.getElementById(id).value = '';
@@ -1441,6 +1498,7 @@ function restartAll() {
   hide('import-view'); show('import-edit');
   hide('phase-sections'); hide('phase-review'); hide('phase-export'); show('phase-import');
   selectPreset('webinar');
+  renderCopyPresetPicker();
   updateProgClickability();
   setP(1);
 }
