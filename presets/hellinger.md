@@ -1,6 +1,6 @@
 ---
 name: Hellinger
-description: Copywriter-Preset für Hellinger Kampagnen (Platzhalter - Inhalt folgt)
+description: Copywriter-Preset für Hellinger Kampagnen
 ---
 
 # Hellinger - Copywriter Preset
