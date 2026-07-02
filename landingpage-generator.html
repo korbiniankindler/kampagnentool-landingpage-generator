@@ -826,7 +826,7 @@ async function startGeneration() {
   }
 }
 
-var GEN_CHUNK_SIZE = 3;
+var GEN_CHUNK_SIZE = 2;
 
 async function generateAll(active) {
   var presetText = await loadCopyPresetContent(selectedCopyPreset);
@@ -894,7 +894,7 @@ async function generateChunk(chunk, sys) {
     },
     body: JSON.stringify({
       model: 'claude-sonnet-4-6',
-      max_tokens: 4000,
+      max_tokens: 8000,
       system: sys,
       messages: [{role:'user', content:usr}]
     })
