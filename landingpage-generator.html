@@ -461,6 +461,13 @@ function isRateLimitError(err) {
   return s.indexOf('rate limit') !== -1 || s.indexOf('rate_limit') !== -1;
 }
 
+/* System-Prompt als Content-Block mit Prompt Caching: identische System-
+   Prompts (Preset + Referenzen) werden serverseitig 5 Minuten gecacht,
+   Folge-Requests zahlen nur ~10% der Input-Tokens. */
+function cachedSystem(sys) {
+  return [{type:'text', text:sys, cache_control:{type:'ephemeral'}}];
+}
+
 async function callClaude(body, onRetry, attempt) {
   attempt = attempt || 1;
   await throttleClaudeRequest();
@@ -481,10 +488,20 @@ async function callClaude(body, onRetry, attempt) {
   return d;
 }
 
-/* ===== COPYWRITER PRESETS (Schritt 1) ===== */
+/* ===== COPYWRITER PRESETS (Schritt 1) =====
+   Jedes Preset lädt mehrere Dateien (Reihenfolge = Prompt-Reihenfolge):
+   Regeln -> Wissensdatenbank -> Referenz-Copys. Siehe presets/README.md */
 var COPYWRITER_PRESETS = [
-  {id:'holistic-house', name:'Holistic House', desc:'Marken-Stilvorgabe', file:'presets/holistic-house.md'},
-  {id:'hellinger', name:'Hellinger', desc:'Marken-Stilvorgabe', file:'presets/hellinger.md'}
+  {id:'holistic-house', name:'Holistic House', desc:'Regelwerk + Wissensdatenbank + 5 Referenz-Copys', files:[
+    'presets/holistic-house/regeln.md',
+    'presets/holistic-house/wissensdatenbank.md',
+    'presets/holistic-house/referenzen/webinar-gesundheit-neu-denken-b2c.md',
+    'presets/holistic-house/referenzen/webinar-stille-gesundheitskrise-b2c.md',
+    'presets/holistic-house/referenzen/webinar-supplements-vom-chaos-zum-system.md',
+    'presets/holistic-house/referenzen/webinar-supplements-wissenschaftlich-geprueft.md',
+    'presets/holistic-house/referenzen/webinar-evolution-der-medizin-b2b.md'
+  ]},
+  {id:'hellinger', name:'Hellinger', desc:'Marken-Stilvorgabe', files:['presets/hellinger/regeln.md']}
 ];
 var selectedCopyPreset = null;
 var copyPresetCache = {};
@@ -512,17 +529,19 @@ async function loadCopyPresetContent(id) {
   if (copyPresetCache[id] !== undefined) return copyPresetCache[id];
   var preset = COPYWRITER_PRESETS.find(function(p){return p.id === id;});
   if (!preset) return '';
-  try {
-    var resp = await fetch(preset.file);
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    var text = (await resp.text()).trim();
-    copyPresetCache[id] = text;
-    return text;
-  } catch (e) {
-    console.warn('Copywriter-Preset konnte nicht geladen werden: ' + preset.file, e);
-    copyPresetCache[id] = '';
-    return '';
-  }
+  var parts = await Promise.all(preset.files.map(async function(file) {
+    try {
+      var resp = await fetch(file);
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      return (await resp.text()).trim();
+    } catch (e) {
+      console.warn('Preset-Datei konnte nicht geladen werden: ' + file, e);
+      return '';
+    }
+  }));
+  var text = parts.filter(function(t){return t;}).join('\n\n---\n\n');
+  copyPresetCache[id] = text;
+  return text;
 }
 
 window.addEventListener('DOMContentLoaded', function() {
@@ -917,7 +936,7 @@ async function generateAll(active) {
     'Du bist ein Team aus Senior Online-Marketing-Stratege, Conversion-Copywriter und UI/UX-Designer.',
     'Du schreibst komplette deutsche Webinar-Landingpages.',
     presetText
-      ? 'WICHTIG: Halte dich strikt an folgendes Copywriter-Preset für Tonalität, Sprache, Anrede und Stilregeln - es hat Vorrang vor allgemeinen Stilvorgaben und ist eng mit den Kampagnen-Hardfacts zu kombinieren:\n\n' + presetText
+      ? 'WICHTIG: Es folgt das Copywriter-Preset der Marke (Regelwerk, Wissensdatenbank, Referenz-Copys). Halte dich strikt an das Regelwerk für Tonalität, Sprache, Anrede und Stilregeln. Verwende nur Fakten, Zahlen und Zitate aus der Wissensdatenbank oder den Kampagnen-Hardfacts. Schreibe neue Copy so, wie die Referenz-Copys klingen (Satzrhythmus, Argumentationsführung, Section-Dramaturgie), aber übernimm deren im Kopf jeder Referenz gelistete Regelverstöße NICHT: bei Konflikt gilt immer das Regelwerk. Das Preset hat Vorrang vor allgemeinen Stilvorgaben und ist eng mit den Kampagnen-Hardfacts zu kombinieren:\n\n' + presetText
       : 'Stil: direkt, vertrauenswürdig, Frage-Formate, Curiosity Gaps. Passe Tonalität und Anrede (Du/Sie) an Zielgruppe und Strategie der Kampagne an; wähle im Zweifel die förmliche Sie-Anrede.',
     '',
     'KRITISCH: Antworte AUSSCHLIESSLICH mit einem einzigen gültigen JSON-Objekt.',
@@ -936,7 +955,15 @@ async function generateAll(active) {
   var chunks = [];
   for (var i = 0; i < active.length; i += GEN_CHUNK_SIZE) chunks.push(active.slice(i, i + GEN_CHUNK_SIZE));
 
-  var results = await Promise.all(chunks.map(function(chunk) { return generateChunk(chunk, sys); }));
+  // Der erste Chunk läuft allein vor und schreibt den Prompt-Cache für den
+  // grossen System-Prompt (Preset + Referenzen). Alle weiteren Chunks lesen
+  // den Cache und kosten dadurch nur ~10% der Input-Tokens.
+  var results = [];
+  if (chunks.length) {
+    results.push(await generateChunk(chunks[0], sys));
+    var rest = await Promise.all(chunks.slice(1).map(function(chunk) { return generateChunk(chunk, sys); }));
+    results = results.concat(rest);
+  }
 
   var data = {};
   results.forEach(function(r) { Object.keys(r).forEach(function(k){ data[k] = r[k]; }); });
@@ -978,7 +1005,7 @@ async function generateChunk(chunk, sys, attempt) {
   var d = await callClaude({
     model: 'claude-sonnet-4-6',
     max_tokens: 8000,
-    system: sys,
+    system: cachedSystem(sys),
     messages: [{role:'user', content:usr}]
   }, function(){ updateReviewLoadingMsg('Rate-Limit erreicht, warte kurz und versuche erneut...'); });
 
@@ -1159,7 +1186,7 @@ async function regenSection(secId) {
       'Du bist ein Team aus Online-Marketing-Stratege, Conversion-Copywriter und UI/UX-Designer.',
       'Du überarbeitest EINE Section einer deutschen Webinar-Landingpage.',
       presetText
-        ? 'WICHTIG: Halte dich strikt an folgendes Copywriter-Preset für Tonalität, Sprache, Anrede und Stilregeln - es hat Vorrang vor allgemeinen Stilvorgaben und ist eng mit den Kampagnen-Hardfacts zu kombinieren:\n\n' + presetText
+        ? 'WICHTIG: Es folgt das Copywriter-Preset der Marke (Regelwerk, Wissensdatenbank, Referenz-Copys). Halte dich strikt an das Regelwerk für Tonalität, Sprache, Anrede und Stilregeln. Verwende nur Fakten, Zahlen und Zitate aus der Wissensdatenbank oder den Kampagnen-Hardfacts. Schreibe so, wie die Referenz-Copys klingen, aber übernimm deren gelistete Regelverstöße NICHT: bei Konflikt gilt immer das Regelwerk:\n\n' + presetText
         : 'Stil: Passe Tonalität und Anrede (Du/Sie) an Zielgruppe und Strategie der Kampagne an; wähle im Zweifel die förmliche Sie-Anrede.',
       '',
       'KRITISCH: Antworte AUSSCHLIESSLICH mit einem einzigen gültigen JSON-Objekt.',
@@ -1181,7 +1208,7 @@ async function regenSection(secId) {
       var d = await callClaude({
         model: 'claude-sonnet-4-6',
         max_tokens: 4000,
-        system: sys,
+        system: cachedSystem(sys),
         messages: [{role:'user', content:usr}]
       }, function(){ document.getElementById('rs-'+secId).textContent = 'Rate-Limit, warte...'; });
 
