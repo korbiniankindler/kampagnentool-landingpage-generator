@@ -726,6 +726,7 @@ function confirmHardfacts() {
  const t = selectedTitleIdx !== null ? generatedTitles[selectedTitleIdx] : {pre:'',titel:'(kein Titel gewählt)',sub:''};
  window._hardfacts = {
  kampagnenname: document.getElementById('f-name').value,
+ beschreibung: document.getElementById('f-desc').value.trim(),
  live_termin: document.getElementById('f-live').value,
  offer: `${document.getElementById('f-product').value} · ${document.getElementById('f-price').value}`,
  pre_headline: t.pre||'',

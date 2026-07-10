@@ -72,7 +72,9 @@ var CopyPresets = (function () {
     if (!id) return '';
     if (cache[id] !== undefined) return cache[id];
     var preset = CATALOG.find(function (p) { return p.id === id; });
-    if (!preset) return '';
+    // Unbekannte IDs sind ein Programmier-/Datenfehler: laut scheitern statt
+    // still ohne Markenwissen zu generieren.
+    if (!preset) throw new Error('Unbekanntes Copywriter-Preset: "' + id + '" (nicht im CATALOG in shared/copywriter-presets.js)');
     var parts = await Promise.all(preset.files.map(fetchFile));
     var text = parts.map(function (p) { return p.text; }).join('\n\n---\n\n');
     var sources = parts.map(function (p) { return p.source; });
@@ -101,5 +103,11 @@ var CopyPresets = (function () {
     });
   }
 
-  return { CATALOG: CATALOG, getSelected: getSelected, setSelected: setSelected, load: load, renderPicker: renderPicker };
+  function getName(id) {
+    if (!id) return null;
+    var p = CATALOG.find(function (x) { return x.id === id; });
+    return p ? p.name : id;
+  }
+
+  return { CATALOG: CATALOG, getSelected: getSelected, setSelected: setSelected, load: load, getName: getName, renderPicker: renderPicker };
 })();

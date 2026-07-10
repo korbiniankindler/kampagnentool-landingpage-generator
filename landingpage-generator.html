@@ -236,6 +236,10 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
       <div class="card-header"><div class="card-num">3</div><div class="card-label">Zielgruppe &amp; Strategie</div></div>
       <div style="display:grid;gap:12px">
         <div>
+          <label class="field-label">Beschreibung / Referent (Thema, Host, Besonderheiten)</label>
+          <textarea id="ft-beschreibung" style="min-height:80px" placeholder="z.B. Live-Webinar mit Dr. med. Ulrich Bauhofer. Thema: Ayurveda und Prävention für Frauen ab 45."></textarea>
+        </div>
+        <div>
           <label class="field-label">Zielgruppe</label>
           <textarea id="ft-zielgruppe" style="min-height:80px" placeholder="z.B. Frauen 45-65, gesundheitsbewusst, erste Wechseljahresbeschwerden, suchen nach ganzheitlichen Lösungen statt Medikamenten"></textarea>
         </div>
@@ -370,6 +374,7 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
       </div>
     </div>
     <div id="sec-error"></div>
+    <div id="copy-preset-hint" style="font-size:12px;color:var(--text-tertiary);margin-top:10px"></div>
     <button class="primary-btn" onclick="startGeneration()">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
       Landingpage generieren
@@ -528,6 +533,23 @@ function selectCopyPreset(id) {
   }
 }
 
+/* Macht bei jeder Generierung sichtbar, ob Markenwissen im Prompt steckt -
+   das war zuvor nur indirekt an input_tokens ~2k statt ~27k erkennbar. */
+function logPresetUsage(presetText) {
+  if (presetText) {
+    console.log('Generierung MIT Copywriter-Preset "' + CopyPresets.getName(selectedCopyPreset) + '" (' + Math.round(presetText.length / 1024) + ' KB Markenwissen im System-Prompt)');
+  } else {
+    console.warn('Generierung OHNE Copywriter-Preset (generische Copy anhand der Hardfacts).');
+  }
+}
+
+function copyPresetHintHTML() {
+  var name = CopyPresets.getName(selectedCopyPreset);
+  return name
+    ? 'Copywriter-Preset: <strong>' + ex(name) + '</strong>'
+    : '<strong>Kein Copywriter-Preset</strong> gewählt - es wird generisch anhand der Hardfacts getextet (Auswahl in Schritt 1).';
+}
+
 window.addEventListener('DOMContentLoaded', function() {
   setP(1);
   updateProgClickability();
@@ -567,6 +589,7 @@ function submitFreitext() {
   var bullets = rawBullets ? rawBullets.split('\n').map(function(l){return l.trim();}).filter(Boolean) : [];
   HF = {
     kampagnenname: titel,
+    beschreibung: document.getElementById('ft-beschreibung').value.trim(),
     titel: document.getElementById('ft-h1').value.trim() || titel,
     pre_headline: document.getElementById('ft-pre').value.trim(),
     sub_headline: document.getElementById('ft-h2').value.trim(),
@@ -597,6 +620,7 @@ function hfPreviewHTML() {
       '<div class="hf-detail-label">Webinar-Inhalte (Bulletpoints)</div>' +
       bulletHTML +
     '</div>' +
+    (HF.beschreibung ? '<div class="hf-detail"><div class="hf-detail-label">Beschreibung / Referent</div><div class="hf-detail-val">'+ex(HF.beschreibung)+'</div></div>' : '') +
     (zielgruppe ? '<div class="hf-detail"><div class="hf-detail-label">Zielgruppe</div><div class="hf-detail-val">'+ex(zielgruppe)+'</div></div>' : '') +
     (strategie ? '<div class="hf-detail"><div class="hf-detail-label">Strategie</div><div class="hf-detail-val">'+ex(strategie)+'</div></div>' : '');
 }
@@ -672,6 +696,7 @@ function applyPresetAndShow() {
   var labels = {webinar:'Webinar Standard', leadgen:'Lead Gen Kompakt', sales:'Sales / Produkt', custom:'Eigene Sections'};
   document.getElementById('sec-editor-label').textContent = 'Sections – ' + (labels[activePreset]||'Preset');
   hide('sec-mode-picker'); show('sec-editor');
+  document.getElementById('copy-preset-hint').innerHTML = copyPresetHintHTML();
   renderSecList();
 }
 
@@ -692,6 +717,7 @@ async function suggestSectionsAI() {
       'Kampagne: ' + (HF.titel||HF.kampagnenname||'') + '\n' +
       'Pre-Headline: ' + (HF.pre_headline||'') + '\n' +
       'Sub-Headline: ' + (HF.sub_headline||'') + '\n' +
+      (HF.beschreibung ? 'Beschreibung: ' + HF.beschreibung + '\n' : '') +
       'Zielgruppe: ' + (HF.zielgruppe||HF.strategie_titel||'') + '\n' +
       'Angebot: ' + (HF.offer||'Kostenfreies Webinar') + '\n' +
       (hint ? 'Zusätzliche Hinweise: ' + hint + '\n' : '') + '\n' +
@@ -726,6 +752,7 @@ async function suggestSectionsAI() {
 
     document.getElementById('sec-editor-label').textContent = 'Sections – KI-Vorschlag';
     hide('sec-mode-picker'); show('sec-editor');
+    document.getElementById('copy-preset-hint').innerHTML = copyPresetHintHTML();
     renderSecList();
 
   } catch(e) {
@@ -918,6 +945,7 @@ var GEN_CHUNK_SIZE = 4;
 
 async function generateAll(active) {
   var presetText = await CopyPresets.load(selectedCopyPreset);
+  logPresetUsage(presetText);
   var sys = [
     'Du bist ein Team aus Senior Online-Marketing-Stratege, Conversion-Copywriter und UI/UX-Designer.',
     'Du schreibst komplette deutsche Webinar-Landingpages.',
@@ -929,7 +957,7 @@ async function generateAll(active) {
     'KEINE Erklärungen, KEINE Kommentare, KEINE Markdown-Backticks (``` oder ```json), KEIN Text vor oder nach dem JSON.',
     'Alle String-Werte müssen einzeilig sein - KEINE echten Zeilenumbrüche innerhalb von Strings.',
     'Verwende \\n für Zeilenumbrüche innerhalb von Strings wenn nötig.',
-    'Falls in einem Textwert wörtlich zitiert oder ein Begriff hervorgehoben wird, nutze deutsche Anführungszeichen „..." statt gerader Anführungszeichen; falls doch gerade Anführungszeichen " im Text vorkommen, escape sie zwingend als \\".',
+    'Setze Wörter oder Begriffe NICHT dekorativ in Anführungszeichen - Anführungszeichen nur für wörtliche, belegte Zitate. Falls zitiert wird, nutze deutsche Anführungszeichen „..." statt gerader Anführungszeichen; falls doch gerade Anführungszeichen " im Text vorkommen, escape sie zwingend als \\".',
     'KEINE trailing commas. Valides JSON nach RFC 8259.'
   ].join('\n');
 
@@ -982,6 +1010,7 @@ async function generateChunk(chunk, sys, attempt) {
     'Sub-Headline: ' + (HF.sub_headline||'') + '\n' +
     'Termin: ' + (HF.live_termin||'') + '\n' +
     'Offer: ' + (HF.offer||'') + '\n' +
+    (HF.beschreibung ? 'Kampagnen-Beschreibung (Thema, Host/Referent, Zielgruppe, Besonderheiten): ' + HF.beschreibung + '\n' : '') +
     'Webinar-Inhalte (Bulletpoints 1:1 für Hero verwenden):\n' + (bpList||'(keine Bulletpoints angegeben)') + '\n' +
     'Zielgruppe: ' + (zielgruppe||'(keine Angabe)') + '\n' +
     (strategie ? 'Strategie / Positionierung: ' + strategie + '\n' : '') + '\n' +
@@ -994,6 +1023,7 @@ async function generateChunk(chunk, sys, attempt) {
     '- Testimonials: exakt 3 Einträge als Array mit je "quote", "name", "role"\n' +
     '- Benefits items: exakt 3 Einträge als Array mit je "title" und "text"\n' +
     '- Alle String-Werte EINZEILIG (kein echter Zeilenumbruch, ggf. \\n verwenden)\n' +
+    '- Referent/Host NIEMALS erfinden: Verwende für Authority/Speaker und alle Referenten-Nennungen ausschließlich die Person aus der Kampagnen-Beschreibung bzw. dem Copywriter-Preset (Name, Titel, belegte Fakten). Fehlen Angaben zur Person komplett, schreibe neutral ohne erfundene Namen, Qualifikationen oder Erfahrungsjahre und setze Platzhalter in eckigen Klammern, z.B. [Name Referent].\n' +
     '- Alle CTAs auf kostenfreie Webinar-Anmeldung\n' +
     '- Sprache: Deutsch\n' +
     '- NUR das JSON-Objekt, absolut kein anderer Text';
@@ -1174,6 +1204,7 @@ async function regenSection(secId) {
   document.getElementById('progress-bar').classList.add('nav-locked');
   try {
     var presetText = await CopyPresets.load(selectedCopyPreset);
+    logPresetUsage(presetText);
     var sys = [
       'Du bist ein Team aus Online-Marketing-Stratege, Conversion-Copywriter und UI/UX-Designer.',
       'Du überarbeitest EINE Section einer deutschen Webinar-Landingpage.',
@@ -1184,12 +1215,13 @@ async function regenSection(secId) {
       'KRITISCH: Antworte AUSSCHLIESSLICH mit einem einzigen gültigen JSON-Objekt.',
       'KEINE Erklärungen, KEINE Markdown-Backticks, KEIN Text vor oder nach dem JSON.',
       'Alle String-Werte EINZEILIG - KEINE echten Zeilenumbrüche in Strings.',
-      'Falls in einem Textwert wörtlich zitiert oder ein Begriff hervorgehoben wird, nutze deutsche Anführungszeichen „..." statt gerader Anführungszeichen; falls doch gerade Anführungszeichen " im Text vorkommen, escape sie zwingend als \\".',
+      'Setze Wörter oder Begriffe NICHT dekorativ in Anführungszeichen - Anführungszeichen nur für wörtliche, belegte Zitate. Falls zitiert wird, nutze deutsche Anführungszeichen „..." statt gerader Anführungszeichen; falls doch gerade Anführungszeichen " im Text vorkommen, escape sie zwingend als \\".',
       'KEINE trailing commas. Valides JSON nach RFC 8259.'
     ].join('\n');
 
     var usr = 'Gesamtkontext (zur Konsistenz, NICHT neu generieren):\n' + JSON.stringify(sectionData) + '\n\n' +
-      'Kampagne: ' + (HF.titel||HF.kampagnenname||'') + ' | Zielgruppe: ' + (HF.zielgruppe||HF.strategie_titel||'') + '\n\n' +
+      'Kampagne: ' + (HF.titel||HF.kampagnenname||'') + ' | Zielgruppe: ' + (HF.zielgruppe||HF.strategie_titel||'') + '\n' +
+      (HF.beschreibung ? 'Kampagnen-Beschreibung (Thema, Host/Referent, Zielgruppe, Besonderheiten): ' + HF.beschreibung + '\n' : '') + '\n' +
       'Überarbeite NUR die Section "'+s.name+'" ('+s.id+'). Erwartetes Schema:\n' + sectionSchemaHint(s) + '\n\n' +
       'Feedback: ' + (fb || 'Allgemein verbessern, Konsistenz mit Rest der Page wahren.') + '\n\n' +
       'Gib NUR das JSON-Objekt für diese Section zurück - kein Wrapper, kein Markdown, kein Text drumherum.';
@@ -1610,11 +1642,13 @@ function renderSecListView() {
 
 function restartAll() {
   HF = null; sections = []; sectionData = {}; activePreset = 'webinar'; customCounter = 0;
-  currentStep = 1; maxStep = 1; selectedCopyPreset = null;
-  CopyPresets.setSelected(null);
+  currentStep = 1; maxStep = 1;
+  // Copywriter-Preset bewusst BEHALTEN: es ist eine Marken-Einstellung, keine
+  // Kampagnen-Eingabe. Ein stiller Reset führte dazu, dass nach "Komplett neu
+  // erstellen" ohne Markenwissen generiert wurde, ohne dass man es merkt.
   try { sessionStorage.removeItem('wkt_hardfacts'); } catch(e) {}
 
-  ['ft-titel','ft-pre','ft-h1','ft-h2','ft-termin','ft-offer','ft-zielgruppe','ft-strategie','ft-bullets'].forEach(function(id) {
+  ['ft-titel','ft-pre','ft-h1','ft-h2','ft-termin','ft-offer','ft-beschreibung','ft-zielgruppe','ft-strategie','ft-bullets'].forEach(function(id) {
     document.getElementById(id).value = '';
   });
   document.getElementById('ft-err').innerHTML = '';
