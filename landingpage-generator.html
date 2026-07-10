@@ -494,7 +494,7 @@ async function callClaude(body, onRetry, attempt) {
    Jedes Preset lädt mehrere Dateien (Reihenfolge = Prompt-Reihenfolge):
    Regeln -> Wissensdatenbank -> Referenz-Copys. Siehe presets/README.md */
 var COPYWRITER_PRESETS = [
-  {id:'holistic-house', name:'Holistic House', desc:'Regelwerk + Wissensdatenbank + 5 Referenz-Copys', files:[
+  {id:'holistic-house', name:'Holistic House', desc:'Regelwerk der Brand', files:[
     'presets/holistic-house/regeln.md',
     'presets/holistic-house/wissensdatenbank.md',
     'presets/holistic-house/referenzen/webinar-gesundheit-neu-denken-b2c.md',
@@ -503,7 +503,7 @@ var COPYWRITER_PRESETS = [
     'presets/holistic-house/referenzen/webinar-supplements-wissenschaftlich-geprueft.md',
     'presets/holistic-house/referenzen/webinar-evolution-der-medizin-b2b.md'
   ]},
-  {id:'hellinger', name:'Hellinger', desc:'Marken-Stilvorgabe', files:['presets/hellinger/regeln.md']}
+  {id:'hellinger', name:'Hellinger', desc:'Regelwerk der Brand', files:['presets/hellinger/regeln.md']}
 ];
 var selectedCopyPreset = null;
 var copyPresetCache = {};
