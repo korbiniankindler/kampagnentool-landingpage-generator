@@ -524,25 +524,38 @@ function renderCopyPresetPicker() {
 function selectCopyPreset(id) {
   selectedCopyPreset = id;
   renderCopyPresetPicker();
+  // Preset sofort beim Auswählen laden: Fehler fallen so schon in Schritt 1
+  // auf statt erst bei der Generierung.
+  if (id) {
+    loadCopyPresetContent(id).catch(function(e) {
+      alert('Preset "' + id + '" konnte nicht geladen werden:\n\n' + e.message + '\n\nOhne behobenes Problem bricht die Generierung ab.');
+    });
+  }
 }
 
+/* Lädt alle Dateien eines Presets. Wirft bei Fehlern, statt still ohne
+   Markenwissen weiterzumachen - sonst entsteht generische Copy, ohne dass
+   man es merkt (Symptom: input_tokens ~2k statt ~27k in der Konsole). */
 async function loadCopyPresetContent(id) {
   if (!id) return '';
   if (copyPresetCache[id] !== undefined) return copyPresetCache[id];
   var preset = COPYWRITER_PRESETS.find(function(p){return p.id === id;});
   if (!preset) return '';
   var parts = await Promise.all(preset.files.map(async function(file) {
+    var resp;
     try {
-      var resp = await fetch(file);
-      if (!resp.ok) throw new Error('HTTP ' + resp.status);
-      return (await resp.text()).trim();
+      resp = await fetch(file);
     } catch (e) {
-      console.warn('Preset-Datei konnte nicht geladen werden: ' + file, e);
-      return '';
+      throw new Error('Preset-Datei nicht erreichbar: ' + file + ' (' + e.message + '). Läuft das Tool über file:// statt über einen Webserver? Der Browser blockiert dann das Nachladen der presets/-Dateien.');
     }
+    if (!resp.ok) throw new Error('Preset-Datei fehlt auf dem Server (HTTP ' + resp.status + '): ' + file + '. Wurde der presets/-Ordner mit deployed? HTML und presets/ müssen zusammen auf denselben Host.');
+    var text = (await resp.text()).trim();
+    if (!text) throw new Error('Preset-Datei ist leer: ' + file);
+    return text;
   }));
-  var text = parts.filter(function(t){return t;}).join('\n\n---\n\n');
+  var text = parts.join('\n\n---\n\n');
   copyPresetCache[id] = text;
+  console.log('Copywriter-Preset "' + preset.name + '" geladen: ' + preset.files.length + ' Dateien, ' + Math.round(text.length / 1024) + ' KB');
   return text;
 }
 
