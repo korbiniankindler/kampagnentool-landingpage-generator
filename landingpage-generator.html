@@ -9,7 +9,11 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:var(--font);background:var(--bg-tertiary);min-height:100vh;padding:2rem 1rem 4rem;color:var(--text-primary)}
 .app{max-width:960px;margin:0 auto}
-.header{display:flex;align-items:center;gap:10px;margin-bottom:2rem}
+.header{display:flex;align-items:center;gap:10px;margin-bottom:1rem}
+.module-nav{display:flex;gap:6px;margin-bottom:1.75rem;flex-wrap:wrap}
+.module-nav a{font-size:12px;padding:6px 12px;border-radius:20px;border:.5px solid var(--border-light);color:var(--text-secondary);text-decoration:none;background:var(--bg-primary);transition:border-color .15s,color .15s}
+.module-nav a:hover{border-color:var(--border-medium);color:var(--text-primary)}
+.module-nav a.active{background:#111;color:#fff;border-color:#111}
 .logo{width:36px;height:36px;background:#111;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:500;flex-shrink:0}
 .header-name{font-size:14px;font-weight:500}.header-sub{font-size:13px;color:var(--text-secondary)}
 .progress-bar{display:flex;align-items:center;margin-bottom:2rem}
@@ -128,6 +132,12 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
 <div class="header">
   <div class="logo">BL</div>
   <div><div class="header-name">Webinar-Kampagnen Tool</div><div class="header-sub">Modul 2 - Landingpage Generator v2.1</div></div>
+</div>
+
+<div class="module-nav">
+  <a href="index.html">Start</a>
+  <a href="hardfacts-generator.html">Modul 1 · Hardfacts</a>
+  <a href="landingpage-generator.html" class="active">Modul 2 · Landingpage</a>
 </div>
 
 <div class="progress-bar" id="progress-bar">
@@ -421,6 +431,7 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
 </div>
 
 </div>
+<script src="shared/copywriter-presets.js"></script>
 <script>
 var PROXY_URL = 'https://claude.korbinian.workers.dev/';
 var HF = null;
@@ -494,92 +505,36 @@ async function callClaude(body, onRetry, attempt) {
 }
 
 /* ===== COPYWRITER PRESETS (Schritt 1) =====
-   Jedes Preset lädt mehrere Dateien (Reihenfolge = Prompt-Reihenfolge):
-   Regeln -> Wissensdatenbank -> Referenz-Copys. Siehe presets/README.md */
-var COPYWRITER_PRESETS = [
-  {id:'holistic-house', name:'Holistic House', desc:'Regelwerk der Brand', files:[
-    'presets/holistic-house/regeln.md',
-    'presets/holistic-house/wissensdatenbank.md',
-    'presets/holistic-house/referenzen/webinar-gesundheit-neu-denken-b2c.md',
-    'presets/holistic-house/referenzen/webinar-stille-gesundheitskrise-b2c.md',
-    'presets/holistic-house/referenzen/webinar-supplements-vom-chaos-zum-system.md',
-    'presets/holistic-house/referenzen/webinar-supplements-wissenschaftlich-geprueft.md',
-    'presets/holistic-house/referenzen/webinar-evolution-der-medizin-b2b.md'
-  ]},
-  {id:'hellinger', name:'Hellinger', desc:'Regelwerk der Brand', files:['presets/hellinger/regeln.md']}
-];
-var selectedCopyPreset = null;
-var copyPresetCache = {};
+   Katalog + Ladelogik liegen in shared/copywriter-presets.js und werden
+   von Modul 1 und Modul 2 gemeinsam genutzt. Die in Modul 1 (oder auf der
+   Startseite) getroffene Auswahl kommt über sessionStorage automatisch an.
+   Siehe presets/README.md */
+var selectedCopyPreset = CopyPresets.getSelected();
 
 function renderCopyPresetPicker() {
-  var all = [{id:null, name:'Kein Preset', desc:'Generisch anhand der Hardfacts generieren'}].concat(COPYWRITER_PRESETS);
-  var html = all.map(function(p) {
-    var key = p.id === null ? 'none' : p.id;
-    var checkedSvg = '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>';
-    return '<div class="preset-card'+(selectedCopyPreset===p.id?' selected':'')+'" id="cwpreset-'+key+'" onclick="selectCopyPreset('+(p.id===null?'null':"'"+p.id+"'")+')">' +
-      '<div class="preset-card-name"><div class="preset-check" id="cwpc-'+key+'">'+(selectedCopyPreset===p.id?checkedSvg:'')+'</div>'+ex(p.name)+'</div>' +
-      '<div class="preset-card-desc">'+ex(p.desc)+'</div>' +
-      '</div>';
-  }).join('');
-  document.getElementById('copy-preset-grid').innerHTML = html;
+  CopyPresets.renderPicker(document.getElementById('copy-preset-grid'), selectedCopyPreset, selectCopyPreset);
 }
 
 function selectCopyPreset(id) {
   selectedCopyPreset = id;
+  CopyPresets.setSelected(id);
   renderCopyPresetPicker();
   // Preset sofort beim Auswählen laden: Fehler fallen so schon in Schritt 1
   // auf statt erst bei der Generierung.
   if (id) {
-    loadCopyPresetContent(id).catch(function(e) {
+    CopyPresets.load(id).catch(function(e) {
       alert('Preset "' + id + '" konnte nicht geladen werden:\n\n' + e.message + '\n\nOhne behobenes Problem bricht die Generierung ab.');
     });
   }
-}
-
-/* Lädt eine einzelne Preset-Datei. Reihenfolge:
-   1. fetch vom Server (immer aktuellste Version, wenn gehostet)
-   2. Fallback: eingebetteter Snapshot aus dem PRESET-DATA-Block am Datei-
-      ende (funktioniert auch bei file:// oder wenn presets/ nicht mit
-      deployed wurde). Snapshots werden von `node sync-presets.js` erzeugt. */
-async function fetchPresetFile(file) {
-  try {
-    var resp = await fetch(file);
-    if (resp.ok) {
-      var text = (await resp.text()).trim();
-      if (text) return { text: text, source: 'live' };
-      console.warn('Preset-Datei ist leer auf dem Server: ' + file);
-    } else {
-      console.warn('Preset-Datei nicht auf dem Server (HTTP ' + resp.status + '): ' + file + ' - nutze eingebetteten Snapshot.');
-    }
-  } catch (e) {
-    console.warn('Preset-Datei nicht per fetch ladbar (' + e.message + '): ' + file + ' - nutze eingebetteten Snapshot.');
-  }
-  var el = document.querySelector('script[type="text/plain"][data-preset-file="' + file + '"]');
-  var embedded = el ? el.textContent.trim() : '';
-  if (embedded) return { text: embedded, source: 'eingebettet' };
-  throw new Error('Preset-Datei weder vom Server ladbar noch eingebettet: ' + file + '. Nach Änderungen an presets/ muss "node sync-presets.js" ausgeführt werden.');
-}
-
-/* Lädt alle Dateien eines Presets. Wirft bei Fehlern, statt still ohne
-   Markenwissen weiterzumachen - sonst entsteht generische Copy, ohne dass
-   man es merkt (Symptom: input_tokens ~2k statt ~27k in der Konsole). */
-async function loadCopyPresetContent(id) {
-  if (!id) return '';
-  if (copyPresetCache[id] !== undefined) return copyPresetCache[id];
-  var preset = COPYWRITER_PRESETS.find(function(p){return p.id === id;});
-  if (!preset) return '';
-  var parts = await Promise.all(preset.files.map(fetchPresetFile));
-  var text = parts.map(function(p){return p.text;}).join('\n\n---\n\n');
-  var sources = parts.map(function(p){return p.source;});
-  copyPresetCache[id] = text;
-  console.log('Copywriter-Preset "' + preset.name + '" geladen: ' + preset.files.length + ' Dateien, ' + Math.round(text.length / 1024) + ' KB (Quellen: ' + sources.join(', ') + ')');
-  return text;
 }
 
 window.addEventListener('DOMContentLoaded', function() {
   setP(1);
   updateProgClickability();
   renderCopyPresetPicker();
+  // Aus Modul 1 übernommenes Preset direkt vorladen (Fehler nur loggen,
+  // kein Alert beim reinen Seitenaufruf).
+  if (selectedCopyPreset) CopyPresets.load(selectedCopyPreset).catch(function(e){ console.warn(e); });
   try {
     var raw = sessionStorage.getItem('wkt_hardfacts');
     if (raw) { HF = JSON.parse(raw); renderHF(); return; }
@@ -962,7 +917,7 @@ async function startGeneration() {
 var GEN_CHUNK_SIZE = 4;
 
 async function generateAll(active) {
-  var presetText = await loadCopyPresetContent(selectedCopyPreset);
+  var presetText = await CopyPresets.load(selectedCopyPreset);
   var sys = [
     'Du bist ein Team aus Senior Online-Marketing-Stratege, Conversion-Copywriter und UI/UX-Designer.',
     'Du schreibst komplette deutsche Webinar-Landingpages.',
@@ -1218,7 +1173,7 @@ async function regenSection(secId) {
   isGenerating = true;
   document.getElementById('progress-bar').classList.add('nav-locked');
   try {
-    var presetText = await loadCopyPresetContent(selectedCopyPreset);
+    var presetText = await CopyPresets.load(selectedCopyPreset);
     var sys = [
       'Du bist ein Team aus Online-Marketing-Stratege, Conversion-Copywriter und UI/UX-Designer.',
       'Du überarbeitest EINE Section einer deutschen Webinar-Landingpage.',
@@ -1656,6 +1611,8 @@ function renderSecListView() {
 function restartAll() {
   HF = null; sections = []; sectionData = {}; activePreset = 'webinar'; customCounter = 0;
   currentStep = 1; maxStep = 1; selectedCopyPreset = null;
+  CopyPresets.setSelected(null);
+  try { sessionStorage.removeItem('wkt_hardfacts'); } catch(e) {}
 
   ['ft-titel','ft-pre','ft-h1','ft-h2','ft-termin','ft-offer','ft-zielgruppe','ft-strategie','ft-bullets'].forEach(function(id) {
     document.getElementById(id).value = '';

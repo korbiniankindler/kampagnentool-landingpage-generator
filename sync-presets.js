@@ -1,17 +1,20 @@
 #!/usr/bin/env node
 /* Bettet alle presets/**\/*.md (außer README.md) als inaktive
-   <script type="text/plain">-Blöcke in landingpage-generator.html ein.
-   Das Tool nutzt diese Snapshots als Fallback, wenn die Dateien nicht
+   <script type="text/plain">-Blöcke in die Modul-HTMLs ein.
+   Die Tools nutzen diese Snapshots als Fallback, wenn die Dateien nicht
    per fetch ladbar sind (file:// oder presets/ nicht mit deployed).
 
    Nach jeder Änderung an den Preset-Dateien ausführen:
      node sync-presets.js
-   und beide (presets/ + landingpage-generator.html) committen. */
+   und alles (presets/ + beide Modul-HTMLs) committen. */
 'use strict';
 const fs = require('fs');
 const path = require('path');
 
-const HTML_FILE = path.join(__dirname, 'landingpage-generator.html');
+const HTML_FILES = [
+  path.join(__dirname, 'landingpage-generator.html'),
+  path.join(__dirname, 'hardfacts-generator.html'),
+];
 const PRESET_DIR = path.join(__dirname, 'presets');
 const START = '<!-- PRESET-DATA:START (generiert von sync-presets.js - nicht von Hand editieren, Quelle sind die presets/*.md Dateien) -->';
 const END = '<!-- PRESET-DATA:END -->';
@@ -36,15 +39,18 @@ const blocks = files.map((f) => {
   return '<script type="text/plain" data-preset-file="' + rel + '">\n' + text + '\n</script>';
 });
 
-const html = fs.readFileSync(HTML_FILE, 'utf8');
-const startIdx = html.indexOf(START);
-const endIdx = html.indexOf(END);
-if (startIdx === -1 || endIdx === -1 || endIdx < startIdx) {
-  throw new Error('PRESET-DATA-Marker nicht in ' + HTML_FILE + ' gefunden');
+for (const htmlFile of HTML_FILES) {
+  const html = fs.readFileSync(htmlFile, 'utf8');
+  const startIdx = html.indexOf(START);
+  const endIdx = html.indexOf(END);
+  if (startIdx === -1 || endIdx === -1 || endIdx < startIdx) {
+    throw new Error('PRESET-DATA-Marker nicht in ' + htmlFile + ' gefunden');
+  }
+  const updated = html.slice(0, startIdx + START.length) + '\n' + blocks.join('\n') + '\n' + html.slice(endIdx);
+  fs.writeFileSync(htmlFile, updated);
+  console.log(path.basename(htmlFile) + ' aktualisiert.');
 }
-const updated = html.slice(0, startIdx + START.length) + '\n' + blocks.join('\n') + '\n' + html.slice(endIdx);
-fs.writeFileSync(HTML_FILE, updated);
 
 const kb = Math.round(blocks.join('\n').length / 1024);
-console.log(files.length + ' Preset-Dateien eingebettet (' + kb + ' KB):');
+console.log(files.length + ' Preset-Dateien eingebettet (' + kb + ' KB pro HTML):');
 files.forEach((f) => console.log('  ' + path.relative(__dirname, f)));

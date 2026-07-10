@@ -1,6 +1,6 @@
 # Copywriter-Presets
 
-Jedes Kundenprojekt bekommt einen eigenen Ordner. Das Tool lädt beim Generieren **alle** in `landingpage-generator.html` (→ `COPYWRITER_PRESETS`) eingetragenen Dateien des gewählten Presets und hängt sie in dieser Reihenfolge in den System-Prompt:
+Jedes Kundenprojekt bekommt einen eigenen Ordner. Der Preset-Katalog liegt zentral in `shared/copywriter-presets.js` (→ `CATALOG`) und wird von **beiden Modulen** genutzt: Modul 1 (`hardfacts-generator.html`, Titel + Bulletpoints) und Modul 2 (`landingpage-generator.html`, Landingpage-Copy). Die Tools laden beim Generieren **alle** eingetragenen Dateien des gewählten Presets und hängen sie in dieser Reihenfolge in den System-Prompt:
 
 ```
 presets/
@@ -30,7 +30,7 @@ Danach folgt die Original-Copy **wortgetreu** (nichts umschreiben!), gegliedert 
 
 1. Ordner `presets/<projekt>/` mit mindestens `regeln.md` anlegen.
 2. Optional `wissensdatenbank.md` und `referenzen/*.md` ergänzen (2-5 kuratierte Referenzen reichen; Masse verwässert).
-3. In `landingpage-generator.html` einen Eintrag in `COPYWRITER_PRESETS` ergänzen:
+3. In `shared/copywriter-presets.js` einen Eintrag in `CATALOG` ergänzen (gilt damit automatisch für Modul 1 und Modul 2):
 
 ```js
 {id:'projekt', name:'Projekt', desc:'Marken-Stilvorgabe + Referenzen', files:[
@@ -42,7 +42,7 @@ Danach folgt die Original-Copy **wortgetreu** (nichts umschreiben!), gegliedert 
 
 Reihenfolge = Prompt-Reihenfolge: Regeln zuerst, dann Fakten, dann Referenzen.
 
-4. **Wichtig:** danach einmal `node sync-presets.js` im Repo-Root ausführen und die geänderte `landingpage-generator.html` mitcommitten. Das Script bettet alle Preset-Dateien als Fallback-Snapshots in die HTML ein — nur so laden die Presets auch, wenn die Datei per `file://` geöffnet oder ohne den `presets/`-Ordner deployed wird. Das Tool bevorzugt immer die Live-Dateien vom Server und nutzt die Snapshots nur als Fallback (sichtbar in der Browser-Konsole: „Quellen: live" vs. „eingebettet").
+4. **Wichtig:** danach einmal `node sync-presets.js` im Repo-Root ausführen und die geänderten `landingpage-generator.html` **und** `hardfacts-generator.html` mitcommitten. Das Script bettet alle Preset-Dateien als Fallback-Snapshots in beide Modul-HTMLs ein — nur so laden die Presets auch, wenn die Datei per `file://` geöffnet oder ohne den `presets/`-Ordner deployt wird. Die Tools bevorzugen immer die Live-Dateien vom Server und nutzen die Snapshots nur als Fallback (sichtbar in der Browser-Konsole: „Quellen: live" vs. „eingebettet").
 
 ## Token-Budget
 
