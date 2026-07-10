@@ -462,10 +462,13 @@ function isRateLimitError(err) {
 }
 
 /* System-Prompt als Content-Block mit Prompt Caching: identische System-
-   Prompts (Preset + Referenzen) werden serverseitig 5 Minuten gecacht,
-   Folge-Requests zahlen nur ~10% der Input-Tokens. */
+   Prompts (Preset + Referenzen) werden serverseitig gecacht, Folge-Requests
+   zahlen nur ~10% der Input-Tokens. TTL 1h statt der Standard-5-Minuten:
+   der Write kostet einmalig 2x statt 1.25x, dafür bleibt der Cache über die
+   ganze Arbeitssession warm - Feedback-Regenerierungen nach Lese-Pausen
+   (>5 Min) zahlen sonst jedes Mal den vollen Cache-Write (~10 Cent). */
 function cachedSystem(sys) {
-  return [{type:'text', text:sys, cache_control:{type:'ephemeral'}}];
+  return [{type:'text', text:sys, cache_control:{type:'ephemeral', ttl:'1h'}}];
 }
 
 async function callClaude(body, onRetry, attempt) {
