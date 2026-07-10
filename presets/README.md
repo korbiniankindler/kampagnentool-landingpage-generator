@@ -42,6 +42,8 @@ Danach folgt die Original-Copy **wortgetreu** (nichts umschreiben!), gegliedert 
 
 Reihenfolge = Prompt-Reihenfolge: Regeln zuerst, dann Fakten, dann Referenzen.
 
+4. **Wichtig:** danach einmal `node sync-presets.js` im Repo-Root ausführen und die geänderte `landingpage-generator.html` mitcommitten. Das Script bettet alle Preset-Dateien als Fallback-Snapshots in die HTML ein — nur so laden die Presets auch, wenn die Datei per `file://` geöffnet oder ohne den `presets/`-Ordner deployed wird. Das Tool bevorzugt immer die Live-Dateien vom Server und nutzt die Snapshots nur als Fallback (sichtbar in der Browser-Konsole: „Quellen: live" vs. „eingebettet").
+
 ## Token-Budget
 
 Der gesamte Preset-Inhalt wird per Prompt Caching nur einmal pro 5-Minuten-Fenster voll bezahlt; Folge-Requests lesen ihn für ~10 % des Preises. Richtwert: 40-80 KB Gesamtumfang pro Preset sind unkritisch. Kuratieren statt kippen: lieber wenige, starke Referenzen pro LP-Typ als das ganze Archiv.
