@@ -281,7 +281,7 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
             Webinar Standard
           </div>
           <div class="preset-card-desc">Bewährte Struktur für kostenfreie Live-Webinare mit Anmeldung. Announcement, Hero, Social Proof, Authority, CTA.</div>
-          <div class="preset-card-count">11 Sections</div>
+          <div class="preset-card-count">10 Sections</div>
         </div>
         <div class="preset-card" id="preset-leadgen" onclick="selectPreset('leadgen')">
           <div class="preset-card-name">
@@ -289,7 +289,7 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
             Lead Gen Kompakt
           </div>
           <div class="preset-card-desc">Platzhalter - nicht ausgearbeitet</div>
-          <div class="preset-card-count">6 Sections</div>
+          <div class="preset-card-count">5 Sections</div>
         </div>
         <div class="preset-card" id="preset-sales" onclick="selectPreset('sales')">
           <div class="preset-card-name">
@@ -297,7 +297,7 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
             Sales / Produkt
           </div>
           <div class="preset-card-desc">Platzhalter - nicht ausgearbeitet</div>
-          <div class="preset-card-count">9 Sections</div>
+          <div class="preset-card-count">8 Sections</div>
         </div>
         <div class="preset-card" id="preset-custom" onclick="selectPreset('custom')">
           <div class="preset-card-name">
@@ -663,16 +663,14 @@ var PRESETS = {
     {id:'social', name:'Social Proof', desc:'3 Testimonials', active:true, custom:false},
     {id:'authority', name:'Authority / Speaker', desc:'Experten-Bio, Webinar-Rolle', active:true, custom:false},
     {id:'benefits', name:'Benefit Stack', desc:'3 Gründe teilzunehmen', active:true, custom:false},
-    {id:'finalcta', name:'Final CTA / Scarcity', desc:'Abschluss mit Verknappung', active:true, custom:false},
-    {id:'footer', name:'Footer', desc:'Rechtliche Links (Platzhalter)', active:true, custom:false}
+    {id:'finalcta', name:'Final CTA / Scarcity', desc:'Abschluss mit Verknappung', active:true, custom:false}
   ],
   leadgen: [
     {id:'hero', name:'Hero', desc:'Pre-Headline, H1, H2, CTA', active:true, custom:false},
     {id:'problem', name:'Problem / Mirror Effect', desc:'Selbstreflexions-Checkliste', active:true, custom:false},
     {id:'social', name:'Social Proof', desc:'3 Testimonials', active:true, custom:false},
     {id:'authority', name:'Authority / Speaker', desc:'Experten-Bio, Webinar-Rolle', active:true, custom:false},
-    {id:'finalcta', name:'Final CTA / Scarcity', desc:'Abschluss mit Verknappung', active:true, custom:false},
-    {id:'footer', name:'Footer', desc:'Rechtliche Links (Platzhalter)', active:true, custom:false}
+    {id:'finalcta', name:'Final CTA / Scarcity', desc:'Abschluss mit Verknappung', active:true, custom:false}
   ],
   sales: [
     {id:'hero', name:'Hero', desc:'Pre-Headline, H1, H2, CTA', active:true, custom:false},
@@ -682,8 +680,7 @@ var PRESETS = {
     {id:'authority', name:'Authority / Speaker', desc:'Experten-Bio, Webinar-Rolle', active:true, custom:false},
     {id:'benefits', name:'Benefit Stack', desc:'3 Gründe teilzunehmen', active:true, custom:false},
     {id:'custom_price', name:'Preis & Angebot', desc:'Preisdarstellung, Boni, Vergleich', active:true, custom:true},
-    {id:'finalcta', name:'Final CTA / Scarcity', desc:'Abschluss mit Verknappung', active:true, custom:false},
-    {id:'footer', name:'Footer', desc:'Rechtliche Links (Platzhalter)', active:true, custom:false}
+    {id:'finalcta', name:'Final CTA / Scarcity', desc:'Abschluss mit Verknappung', active:true, custom:false}
   ],
   custom: []
 };
@@ -748,7 +745,7 @@ async function suggestSectionsAI() {
       '- "id": einzigartiger snake_case Identifier\n' +
       '- "name": Anzeigename der Section (kurz, max 4 Worte)\n' +
       '- "desc": kurze Beschreibung was diese Section enthält (max 12 Worte)\n\n' +
-      'Nutze diese Standard-IDs wenn passend (damit das Rendering-System greift): announcement, hero, trustbar, introtext, problem, framework, social, authority, benefits, finalcta, footer\n' +
+      'Nutze diese Standard-IDs wenn passend (damit das Rendering-System greift): announcement, hero, trustbar, introtext, problem, framework, social, authority, benefits, finalcta\n' +
       'Für neue/eigene Sections wähle beschreibende IDs wie "faq", "guarantee", "price", "video_section" etc.\n\n' +
       'Beispiel-Output:\n[{"id":"hero","name":"Hero","desc":"Hauptheadline, CTA und Video"},{"id":"problem","name":"Problem","desc":"Selbstreflexions-Checkliste"}]\n\n' +
       'NUR das JSON-Array, kein anderer Text, keine Backticks.';
@@ -769,7 +766,7 @@ async function suggestSectionsAI() {
     var parsed = JSON.parse(cleaned.slice(arrStart, arrEnd+1));
 
     sections = parsed.map(function(s) {
-      return { id: s.id||('custom_'+Math.random().toString(36).slice(2,6)), name: s.name||s.id, desc: s.desc||'', active: true, custom: !['announcement','hero','trustbar','introtext','problem','framework','social','authority','benefits','finalcta','footer'].includes(s.id) };
+      return { id: s.id||('custom_'+Math.random().toString(36).slice(2,6)), name: s.name||s.id, desc: s.desc||'', active: true, custom: !['announcement','hero','trustbar','introtext','problem','framework','social','authority','benefits','finalcta'].includes(s.id) };
     });
 
     document.getElementById('sec-editor-label').textContent = 'Sections – KI-Vorschlag';
@@ -922,8 +919,7 @@ function sectionSchemaHint(s) {
     social: '{"headline":"...", "testimonials":[{"quote":"...","name":"...","role":"..."},{"quote":"...","name":"...","role":"..."},{"quote":"...","name":"...","role":"..."}]}',
     authority: '{"headline":"...", "bioBlock":"...", "webinarRole":"...", "ctaButton":"..."}',
     benefits: '{"headline":"...", "items":[{"title":"...","text":"..."},{"title":"...","text":"..."},{"title":"...","text":"..."}]}',
-    finalcta: '{"headline":"...", "scarcityCopy":"...", "ctaButton":"...", "ctaSubline":"..."}',
-    footer: '{"links":["Datenschutz","Impressum","Webinar Hinweise"]}'
+    finalcta: '{"headline":"...", "scarcityCopy":"...", "ctaButton":"...", "ctaSubline":"..."}'
   };
   return schemas[s.id] || '{"headline":"...", "bodyCopy":"...", "ctaButton":"... (falls passend)"}';
 }
@@ -960,7 +956,7 @@ async function startGeneration() {
   }
 }
 
-/* 4 Sections pro Request: bei 11 Sections entstehen so nur 3 Requests
+/* 4 Sections pro Request: bei 10 Sections entstehen so nur 3 Requests
    (+1 Cache-Primer) und alles passt in ein Rate-Limit-Fenster (4/min).
    Truncation wird über max_tokens 12000 + Retry/Salvage abgefangen. */
 var GEN_CHUNK_SIZE = 4;
@@ -1172,10 +1168,6 @@ function renderSectionFields(s) {
     }).join('');
     return fieldBlock(s.id,'headline','Headline',d.headline) + '<div class="field-tag">Benefits</div>' + bens;
   }
-  if (s.id === 'footer' && d.links) {
-    return '<div class="field-tag">Links</div><div class="field-editable" contenteditable="true" data-sec="'+s.id+'" data-path="links">'+ex(d.links.join(' | '))+'</div>';
-  }
-
   var out = '';
   Object.keys(d).forEach(function(k) {
     if (typeof d[k] === 'string') out += fieldBlock(s.id, k, labelFor(k), d[k]);
