@@ -485,6 +485,8 @@ async function callClaude(body, onRetry, attempt) {
     }
     throw new Error(d.error.message);
   }
+  // Diagnose: cache_read_input_tokens > 0 heisst, Prompt Caching greift.
+  if (d.usage) console.log('Claude usage:', JSON.stringify(d.usage));
   return d;
 }
 
@@ -928,7 +930,10 @@ async function startGeneration() {
   }
 }
 
-var GEN_CHUNK_SIZE = 2;
+/* 4 Sections pro Request: bei 11 Sections entstehen so nur 3 Requests
+   (+1 Cache-Primer) und alles passt in ein Rate-Limit-Fenster (4/min).
+   Truncation wird über max_tokens 12000 + Retry/Salvage abgefangen. */
+var GEN_CHUNK_SIZE = 4;
 
 async function generateAll(active) {
   var presetText = await loadCopyPresetContent(selectedCopyPreset);
@@ -955,15 +960,25 @@ async function generateAll(active) {
   var chunks = [];
   for (var i = 0; i < active.length; i += GEN_CHUNK_SIZE) chunks.push(active.slice(i, i + GEN_CHUNK_SIZE));
 
-  // Der erste Chunk läuft allein vor und schreibt den Prompt-Cache für den
-  // grossen System-Prompt (Preset + Referenzen). Alle weiteren Chunks lesen
-  // den Cache und kosten dadurch nur ~10% der Input-Tokens.
-  var results = [];
-  if (chunks.length) {
-    results.push(await generateChunk(chunks[0], sys));
-    var rest = await Promise.all(chunks.slice(1).map(function(chunk) { return generateChunk(chunk, sys); }));
-    results = results.concat(rest);
+  // Cache-Primer: ein Mini-Request (1 Output-Token) schreibt den Prompt-Cache
+  // für den grossen System-Prompt (Preset + Referenzen), bevor alle Chunks
+  // parallel starten. Cache-Reads zählen nicht gegen das Input-Token-Limit
+  // der API - ohne Primer reicht jeder Chunk die vollen ~25k Tokens ein und
+  // provoziert 429-Retries.
+  if (presetText && chunks.length > 1) {
+    updateReviewLoadingMsg('Markenwissen wird vorbereitet...');
+    try {
+      await callClaude({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1,
+        system: cachedSystem(sys),
+        messages: [{role:'user', content:'ok'}]
+      });
+    } catch (e) { console.warn('Cache-Primer fehlgeschlagen (unkritisch):', e); }
+    updateReviewLoadingMsg(GMSG[0]);
   }
+
+  var results = await Promise.all(chunks.map(function(chunk) { return generateChunk(chunk, sys); }));
 
   var data = {};
   results.forEach(function(r) { Object.keys(r).forEach(function(k){ data[k] = r[k]; }); });
@@ -1004,7 +1019,7 @@ async function generateChunk(chunk, sys, attempt) {
 
   var d = await callClaude({
     model: 'claude-sonnet-4-6',
-    max_tokens: 8000,
+    max_tokens: 12000,
     system: cachedSystem(sys),
     messages: [{role:'user', content:usr}]
   }, function(){ updateReviewLoadingMsg('Rate-Limit erreicht, warte kurz und versuche erneut...'); });
