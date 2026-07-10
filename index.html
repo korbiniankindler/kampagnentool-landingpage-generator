@@ -4,60 +4,39 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Webinar-Kampagnen Tool – Start</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23FEFD4B'/><rect x='9' y='9' width='14' height='14' rx='3' fill='%230a0a0a'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared/theme.css">
 <style>
-:root{--bg-primary:#fff;--bg-secondary:#f7f7f5;--bg-tertiary:#f0efec;--text-primary:#1a1a1a;--text-secondary:#6b6b67;--text-tertiary:#9b9b96;--border-light:rgba(0,0,0,.10);--border-medium:rgba(0,0,0,.18);--radius-md:8px;--radius-lg:12px;--font:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif}
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:var(--font);background:var(--bg-tertiary);min-height:100vh;padding:2rem 1rem 4rem;color:var(--text-primary)}
-.app{max-width:960px;margin:0 auto}
-.header{display:flex;align-items:center;gap:10px;margin-bottom:1rem}
-.logo{width:36px;height:36px;background:#111;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:500;flex-shrink:0}
-.header-name{font-size:14px;font-weight:500}.header-sub{font-size:13px;color:var(--text-secondary)}
-.module-nav{display:flex;gap:6px;margin-bottom:1.75rem;flex-wrap:wrap}
-.module-nav a{font-size:12px;padding:6px 12px;border-radius:20px;border:.5px solid var(--border-light);color:var(--text-secondary);text-decoration:none;background:var(--bg-primary);transition:border-color .15s,color .15s}
-.module-nav a:hover{border-color:var(--border-medium);color:var(--text-primary)}
-.module-nav a.active{background:#111;color:#fff;border-color:#111}
-.page-title{font-size:22px;font-weight:500;margin-bottom:.25rem}
-.page-desc{font-size:13px;color:var(--text-secondary);margin-bottom:1.75rem}
-.card{border:.5px solid var(--border-light);border-radius:var(--radius-lg);padding:1.25rem 1.5rem;margin-bottom:.875rem;background:var(--bg-primary)}
-.card-header{display:flex;align-items:center;gap:10px;margin-bottom:.75rem}
-.card-num{width:22px;height:22px;border-radius:50%;border:.5px solid var(--border-medium);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--text-secondary);flex-shrink:0}
-.card-label{font-size:15px;font-weight:500}
-.card-optional{font-size:11px;color:var(--text-tertiary)}
-.field-hint{font-size:12px;color:var(--text-tertiary);margin:0 0 10px}
-.preset-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.preset-card{border:.5px solid var(--border-light);border-radius:var(--radius-md);padding:12px 14px;cursor:pointer;background:var(--bg-primary);transition:border-color .15s,background .15s;position:relative}
-.preset-card:hover{border-color:var(--border-medium);background:var(--bg-secondary)}
-.preset-card.selected{border-color:#111;background:#f8f8f6}
-.preset-card-name{font-size:13px;font-weight:500;margin-bottom:3px;display:flex;align-items:center;gap:6px}
-.preset-card-desc{font-size:11px;color:var(--text-tertiary);line-height:1.4}
-.preset-check{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--border-medium);flex-shrink:0;display:flex;align-items:center;justify-content:center}
-.preset-card.selected .preset-check{background:#111;border-color:#111}
+/* Startseite - spezifische Styles. Basis-Design: shared/theme.css */
 .module-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.module-card{border:.5px solid var(--border-light);border-radius:var(--radius-lg);padding:1.25rem 1.5rem;background:var(--bg-primary);display:flex;flex-direction:column;gap:8px}
-.module-card-badge{font-size:11px;padding:2px 8px;border-radius:20px;border:.5px solid var(--border-light);color:var(--text-secondary);align-self:flex-start}
-.module-card-title{font-size:15px;font-weight:500}
+.module-card{border:1px solid var(--border-light);border-radius:var(--radius-lg);padding:1.25rem 1.4rem;background:var(--bg-primary);display:flex;flex-direction:column;gap:8px;box-shadow:var(--shadow-card)}
+.module-card-badge{font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;background:var(--accent);color:var(--ink);align-self:flex-start}
+.module-card-title{font-size:15px;font-weight:650}
 .module-card-desc{font-size:13px;color:var(--text-secondary);line-height:1.55;flex:1}
-.go-btn{width:100%;padding:11px;background:#111;color:#fff;border:none;border-radius:var(--radius-md);font-size:14px;font-weight:500;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:7px;transition:opacity .15s;margin-top:.5rem}
-.go-btn:hover{opacity:.85}
-.go-btn.secondary{background:transparent;color:var(--text-primary);border:.5px solid var(--border-medium)}
-.go-btn.secondary:hover{background:var(--bg-secondary)}
-@media(max-width:640px){.module-grid{grid-template-columns:1fr}.preset-grid{grid-template-columns:1fr}}
-svg{display:inline-block;vertical-align:middle;flex-shrink:0}
+.module-card .primary-btn,.module-card .secondary-btn{margin-top:.5rem;width:100%;justify-content:center}
+@media(max-width:640px){.module-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <div class="app">
 
-<div class="header">
-  <div class="logo">BL</div>
-  <div><div class="header-name">Webinar-Kampagnen Tool</div><div class="header-sub">Basierend auf BrandLift Best Practices 2024–2026</div></div>
-</div>
-
-<div class="module-nav">
-  <a href="index.html" class="active">Start</a>
-  <a href="hardfacts-generator.html">Modul 1 · Hardfacts</a>
-  <a href="landingpage-generator.html">Modul 2 · Landingpage</a>
-</div>
+<header class="app-header">
+  <div class="brand">
+    <img class="brand-logo" src="https://cdn.prod.website-files.com/61dc3b2d623c7b5d59599bc8/62d50d7649ba53fbe3ebf994_220715_BL_Logo_Bildmarke_black.svg" alt="BRANDLIFT" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'brand-logo-fallback',textContent:'BL'}))">
+    <div>
+      <span class="brand-title">BRANDLIFT Kampagnen-Tool</span>
+      <span class="brand-version">Version 0.3</span>
+    </div>
+  </div>
+  <nav class="module-nav">
+    <a href="index.html" class="active">Start</a>
+    <a href="hardfacts-generator.html">Modul 1 &middot; Hardfacts</a>
+    <a href="landingpage-generator.html">Modul 2 &middot; Landingpage</a>
+  </nav>
+</header>
 
 <div class="page-title">Neue Kampagne starten</div>
 <p class="page-desc">Zuerst das Copywriter-Preset wählen, dann mit den Hardfacts (Modul 1) beginnen – oder direkt zur Landingpage (Modul 2) springen.</p>
@@ -65,7 +44,7 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
 <div class="card">
   <div class="card-header"><div class="card-num">1</div><div class="card-label">Copywriter-Preset</div><span class="card-optional">optional</span></div>
   <p class="field-hint">Feste Stil- und Tonalitätsvorgabe einer Marke. Die Auswahl gilt für alle Module und kann dort jederzeit geändert werden.</p>
-  <div class="preset-grid" id="copy-preset-grid"></div>
+  <div class="preset-grid preset-grid-3" id="copy-preset-grid" style="margin-bottom:0"></div>
 </div>
 
 <div class="card" style="padding-bottom:1.5rem">
@@ -75,7 +54,7 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
       <span class="module-card-badge">Modul 1</span>
       <div class="module-card-title">Hardfacts erstellen</div>
       <div class="module-card-desc">KI generiert Webinar-Titel und Inhalts-Bulletpoints in zwei Schritten. Empfohlener Einstieg – die Ergebnisse fließen direkt in Modul 2.</div>
-      <button class="go-btn" onclick="go('hardfacts-generator.html')">
+      <button class="primary-btn" onclick="go('hardfacts-generator.html')">
         Mit Hardfacts starten
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
       </button>
@@ -84,7 +63,7 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
       <span class="module-card-badge">Modul 2</span>
       <div class="module-card-title">Landingpage generieren</div>
       <div class="module-card-desc">Direkt zur Landingpage – Kampagnen-Infos per JSON-Import aus Modul 1 oder als Freitext eingeben, wenn die Hardfacts schon feststehen.</div>
-      <button class="go-btn secondary" onclick="go('landingpage-generator.html')">
+      <button class="secondary-btn" onclick="go('landingpage-generator.html')">
         Direkt zu Modul 2
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
       </button>
