@@ -423,16 +423,11 @@ function isRateLimitError(err) {
   return s.indexOf('rate limit') !== -1 || s.indexOf('rate_limit') !== -1;
 }
 
-/* System-Prompt als Content-Block mit Prompt Caching: identische System-
-   Prompts (Preset + Referenzen) werden serverseitig gecacht, Folge-Requests
-   zahlen nur ~10% der Input-Tokens. TTL 1h statt der Standard-5-Minuten:
-   der Write kostet einmalig 2x statt 1.25x, dafür bleibt der Cache über die
-   ganze Arbeitssession warm - Feedback-Regenerierungen nach Lese-Pausen
-   (>5 Min) zahlen sonst jedes Mal den vollen Cache-Write (~10 Cent). */
-function cachedSystem(sys) {
-  return [{type:'text', text:sys, cache_control:{type:'ephemeral', ttl:'1h'}}];
-}
-
+/* Prompt Caching: System-Prompts werden über CopyPresets.systemBlocks()
+   gebaut - das Preset ist dort ein eigener, modulübergreifend identischer
+   Cache-Block (TTL 1h). Landingpage-Generierung, Section-Regenerierungen
+   UND Modul 1 teilen sich so einen einzigen Prompt-Cache: Write 1x pro
+   Stunde, alle Folge-Requests zahlen nur ~10% der Input-Tokens. */
 async function callClaude(body, onRetry, attempt) {
   attempt = attempt || 1;
   await throttleClaudeRequest();
@@ -904,7 +899,7 @@ function buildPageMap(active) {
    Prompt-Cache für den grossen System-Prompt (Preset + Referenzen), bevor
    alle Chunks parallel starten. Fehler sind unkritisch - dann generieren
    die Chunks wie bisher ohne Plan (nur mit Seitenaufbau-Kontext). */
-async function generateContentPlan(active, sys) {
+async function generateContentPlan(active, sysBlocks) {
   updateReviewLoadingMsg('Roter Faden der Landingpage wird geplant...');
   try {
     var usr = 'Kampagne:\n' +
@@ -914,7 +909,7 @@ async function generateContentPlan(active, sys) {
       'Zielgruppe: ' + (HF.zielgruppe||HF.strategie_titel||'(keine Angabe)') + '\n' +
       (HF.strategie ? 'Strategie / Positionierung: ' + HF.strategie + '\n' : '') + '\n' +
       'Aufbau der Landingpage:\n' + buildPageMap(active) + '\n\n' +
-      'Erstelle einen Content-Plan für diese Landingpage: Lege für jede Section EINE Kernbotschaft mit eigenem Blickwinkel fest (je 1-2 Sätze). Die Kernbotschaften müssen klar voneinander abgegrenzt sein - kein Argument, Beispiel oder Narrativ darf in zwei Sections vorkommen. Zusammen ergeben sie eine schlüssige Dramaturgie von der ersten bis zur letzten Section.\n\n' +
+      'Erstelle einen Content-Plan für diese Landingpage: Lege für jede Section EINE Kernbotschaft mit eigenem Blickwinkel fest - je genau EIN prägnanter Satz (max 20 Wörter), keine Ausschmückung. Die Kernbotschaften müssen klar voneinander abgegrenzt sein - kein Argument, Beispiel oder Narrativ darf in zwei Sections vorkommen. Zusammen ergeben sie eine schlüssige Dramaturgie von der ersten bis zur letzten Section.\n\n' +
       'Antworte NUR mit einem JSON-Objekt mit exakt diesen Keys:\n{ ' + active.map(function(s){return '"'+s.id+'": "..."';}).join(', ') + ' }';
     var d = await callClaude({
       model: 'claude-sonnet-4-6',
@@ -923,7 +918,7 @@ async function generateContentPlan(active, sys) {
       // wird. max_tokens ist nur eine Obergrenze - abgerechnet werden immer
       // nur tatsächlich erzeugte Tokens.
       max_tokens: Math.min(4000, 400 + active.length * 120),
-      system: cachedSystem(sys),
+      system: sysBlocks,
       messages: [{role:'user', content:usr}]
     });
     var plan = extractJSON(d.content.map(function(b){return b.text||'';}).join(''), {salvage:true});
@@ -942,11 +937,11 @@ async function generateContentPlan(active, sys) {
 async function generateAll(active) {
   var presetText = await CopyPresets.load(selectedCopyPreset);
   logPresetUsage(presetText);
-  var sys = [
+  var instr = [
     'Du bist ein Team aus Senior Online-Marketing-Stratege, Conversion-Copywriter und UI/UX-Designer.',
     'Du schreibst komplette deutsche Webinar-Landingpages.',
     presetText
-      ? 'WICHTIG: Es folgt das Copywriter-Preset der Marke (Regelwerk, Wissensdatenbank, Referenz-Copys). Halte dich strikt an das Regelwerk für Tonalität, Sprache, Anrede und Stilregeln. Verwende nur Fakten, Zahlen und Zitate aus der Wissensdatenbank oder den Kampagnen-Hardfacts. Schreibe neue Copy so, wie die Referenz-Copys klingen (Satzrhythmus, Argumentationsführung, Section-Dramaturgie), aber übernimm deren im Kopf jeder Referenz gelistete Regelverstöße NICHT: bei Konflikt gilt immer das Regelwerk. Die Referenz-Copys sind reine Stil-Referenz, KEINE Textquelle: Übernimm daraus niemals Headlines, Sätze oder ganze Absätze wörtlich oder nur leicht umformuliert - jede Formulierung wird neu und spezifisch für DIESE Kampagne geschrieben (belegte Fakten und Zitate aus der Wissensdatenbank sind erlaubt). Das Preset hat Vorrang vor allgemeinen Stilvorgaben und ist eng mit den Kampagnen-Hardfacts zu kombinieren:\n\n' + presetText
+      ? 'WICHTIG: Am Anfang dieses System-Prompts steht das Copywriter-Preset der Marke (Regelwerk, Wissensdatenbank, Referenz-Copys). Halte dich strikt an das Regelwerk für Tonalität, Sprache, Anrede und Stilregeln. Verwende nur Fakten, Zahlen und Zitate aus der Wissensdatenbank oder den Kampagnen-Hardfacts. Schreibe neue Copy so, wie die Referenz-Copys klingen (Satzrhythmus, Argumentationsführung, Section-Dramaturgie), aber übernimm deren im Kopf jeder Referenz gelistete Regelverstöße NICHT: bei Konflikt gilt immer das Regelwerk. Die Referenz-Copys sind reine Stil-Referenz, KEINE Textquelle: Übernimm daraus niemals Headlines, Sätze oder ganze Absätze wörtlich oder nur leicht umformuliert - jede Formulierung wird neu und spezifisch für DIESE Kampagne geschrieben (belegte Fakten und Zitate aus der Wissensdatenbank sind erlaubt). Das Preset hat Vorrang vor allgemeinen Stilvorgaben und ist eng mit den Kampagnen-Hardfacts zu kombinieren.'
       : 'Stil: direkt, vertrauenswürdig, Frage-Formate, Curiosity Gaps. Passe Tonalität und Anrede (Du/Sie) an Zielgruppe und Strategie der Kampagne an; wähle im Zweifel die förmliche Sie-Anrede.',
     '',
     'KRITISCH: Antworte AUSSCHLIESSLICH mit einem einzigen gültigen JSON-Objekt.',
@@ -956,6 +951,7 @@ async function generateAll(active) {
     'Setze Wörter oder Begriffe NICHT dekorativ in Anführungszeichen - Anführungszeichen nur für wörtliche, belegte Zitate. Falls zitiert wird, nutze deutsche Anführungszeichen „..." statt gerader Anführungszeichen; falls doch gerade Anführungszeichen " im Text vorkommen, escape sie zwingend als \\".',
     'KEINE trailing commas. Valides JSON nach RFC 8259.'
   ].join('\n');
+  var sysBlocks = CopyPresets.systemBlocks(presetText, instr);
 
   // Grosse Landingpages (viele Sections) werden in kleineren Batches generiert,
   // damit einzelne Antworten nicht am max_tokens-Limit abgeschnitten werden
@@ -975,7 +971,7 @@ async function generateAll(active) {
   // vollen ~25k Tokens ein und provoziert 429-Retries).
   var ctx = { pageMap: buildPageMap(active), planText: null };
   if (chunks.length > 1) {
-    var plan = await generateContentPlan(active, sys);
+    var plan = await generateContentPlan(active, sysBlocks);
     if (plan) {
       ctx.planText = active.map(function(s, i) {
         return plan[s.id] ? (i+1) + '. ' + s.name + ' (' + s.id + '): ' + plan[s.id] : null;
@@ -983,14 +979,14 @@ async function generateAll(active) {
     }
   }
 
-  var results = await Promise.all(chunks.map(function(chunk) { return generateChunk(chunk, sys, ctx); }));
+  var results = await Promise.all(chunks.map(function(chunk) { return generateChunk(chunk, sysBlocks, ctx); }));
 
   var data = {};
   results.forEach(function(r) { Object.keys(r).forEach(function(k){ data[k] = r[k]; }); });
   return data;
 }
 
-async function generateChunk(chunk, sys, ctx, attempt) {
+async function generateChunk(chunk, sysBlocks, ctx, attempt) {
   ctx = ctx || {};
   attempt = attempt || 1;
   var maxAttempts = 3;
@@ -1031,7 +1027,7 @@ async function generateChunk(chunk, sys, ctx, attempt) {
   var d = await callClaude({
     model: 'claude-sonnet-4-6',
     max_tokens: 12000,
-    system: cachedSystem(sys),
+    system: sysBlocks,
     messages: [{role:'user', content:usr}]
   }, function(){ updateReviewLoadingMsg('Rate-Limit erreicht, warte kurz und versuche erneut...'); });
 
@@ -1044,7 +1040,7 @@ async function generateChunk(chunk, sys, ctx, attempt) {
   } catch(e) {
     if (attempt < maxAttempts) {
       updateReviewLoadingMsg((truncated ? 'Antwort abgeschnitten' : 'Ungültiges JSON erhalten') + ' - generiere "'+chunk.map(function(s){return s.name;}).join(', ')+'" erneut...');
-      return generateChunk(chunk, sys, ctx, attempt + 1);
+      return generateChunk(chunk, sysBlocks, ctx, attempt + 1);
     }
     // Letzter Versuch: so viel wie möglich aus der Antwort retten statt komplett zu scheitern
     try { return extractJSON(raw, {salvage:true}); }
@@ -1205,11 +1201,11 @@ async function regenSection(secId) {
   try {
     var presetText = await CopyPresets.load(selectedCopyPreset);
     logPresetUsage(presetText);
-    var sys = [
+    var instr = [
       'Du bist ein Team aus Online-Marketing-Stratege, Conversion-Copywriter und UI/UX-Designer.',
       'Du überarbeitest EINE Section einer deutschen Webinar-Landingpage.',
       presetText
-        ? 'WICHTIG: Es folgt das Copywriter-Preset der Marke (Regelwerk, Wissensdatenbank, Referenz-Copys). Halte dich strikt an das Regelwerk für Tonalität, Sprache, Anrede und Stilregeln. Verwende nur Fakten, Zahlen und Zitate aus der Wissensdatenbank oder den Kampagnen-Hardfacts. Schreibe so, wie die Referenz-Copys klingen, aber übernimm deren gelistete Regelverstöße NICHT: bei Konflikt gilt immer das Regelwerk. Die Referenz-Copys sind reine Stil-Referenz, KEINE Textquelle: niemals Headlines, Sätze oder Absätze daraus wörtlich oder nur leicht umformuliert übernehmen - alles neu für diese Kampagne formulieren:\n\n' + presetText
+        ? 'WICHTIG: Am Anfang dieses System-Prompts steht das Copywriter-Preset der Marke (Regelwerk, Wissensdatenbank, Referenz-Copys). Halte dich strikt an das Regelwerk für Tonalität, Sprache, Anrede und Stilregeln. Verwende nur Fakten, Zahlen und Zitate aus der Wissensdatenbank oder den Kampagnen-Hardfacts. Schreibe so, wie die Referenz-Copys klingen, aber übernimm deren gelistete Regelverstöße NICHT: bei Konflikt gilt immer das Regelwerk. Die Referenz-Copys sind reine Stil-Referenz, KEINE Textquelle: niemals Headlines, Sätze oder Absätze daraus wörtlich oder nur leicht umformuliert übernehmen - alles neu für diese Kampagne formulieren.'
         : 'Stil: Passe Tonalität und Anrede (Du/Sie) an Zielgruppe und Strategie der Kampagne an; wähle im Zweifel die förmliche Sie-Anrede.',
       '',
       'KRITISCH: Antworte AUSSCHLIESSLICH mit einem einzigen gültigen JSON-Objekt.',
@@ -1218,6 +1214,7 @@ async function regenSection(secId) {
       'Setze Wörter oder Begriffe NICHT dekorativ in Anführungszeichen - Anführungszeichen nur für wörtliche, belegte Zitate. Falls zitiert wird, nutze deutsche Anführungszeichen „..." statt gerader Anführungszeichen; falls doch gerade Anführungszeichen " im Text vorkommen, escape sie zwingend als \\".',
       'KEINE trailing commas. Valides JSON nach RFC 8259.'
     ].join('\n');
+    var sysBlocks = CopyPresets.systemBlocks(presetText, instr);
 
     var usr = 'Gesamtkontext (zur Konsistenz, NICHT neu generieren):\n' + JSON.stringify(sectionData) + '\n\n' +
       'Kampagne: ' + (HF.titel||HF.kampagnenname||'') + ' | Zielgruppe: ' + (HF.zielgruppe||HF.strategie_titel||'') + '\n' +
@@ -1233,7 +1230,7 @@ async function regenSection(secId) {
       var d = await callClaude({
         model: 'claude-sonnet-4-6',
         max_tokens: 4000,
-        system: cachedSystem(sys),
+        system: sysBlocks,
         messages: [{role:'user', content:usr}]
       }, function(){ document.getElementById('rs-'+secId).textContent = 'Rate-Limit, warte...'; });
 

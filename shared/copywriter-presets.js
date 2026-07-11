@@ -109,5 +109,30 @@ var CopyPresets = (function () {
     return p ? p.name : id;
   }
 
-  return { CATALOG: CATALOG, getSelected: getSelected, setSelected: setSelected, load: load, getName: getName, renderPicker: renderPicker };
+  /* Baut die system-Blöcke für Claude-Requests. Das Preset (~22k Tokens)
+     steht als eigener, über alle Module byte-identischer Block ZUERST und
+     trägt den Cache-Breakpoint. Prompt-Caching ist ein exakter Präfix-Match:
+     nur wenn der Anfang des System-Prompts überall identisch ist, teilen
+     sich Modul 1 (Titel + Inhalte), Modul 2 (Landingpage) und alle
+     Regenerierungen EINEN Prompt-Cache. Vorher baute jedes Modul einen
+     leicht anderen System-Prompt und zahlte damit je einen eigenen
+     Cache-Write zum 2x-Preis (~50% der Gesamtkosten eines Durchlaufs).
+     Die kleinen modulspezifischen Instruktionen folgen dahinter uncached,
+     damit sie den gemeinsamen Präfix nicht invalidieren.
+     TTL 1h: der einmalige Write kostet 2x statt 1.25x, dafür bleibt der
+     Cache über die ganze Arbeitssession (Modulwechsel, Lese-Pausen,
+     Feedback-Runden) warm - alle Folge-Requests zahlen nur ~10%. */
+  function systemBlocks(presetText, instructions) {
+    if (!presetText) return [{ type: 'text', text: instructions }];
+    return [
+      {
+        type: 'text',
+        text: 'COPYWRITER-PRESET DER MARKE (Regelwerk, Wissensdatenbank, Referenz-Copys) - die Arbeitsanweisungen dazu folgen am Ende des System-Prompts:\n\n' + presetText,
+        cache_control: { type: 'ephemeral', ttl: '1h' }
+      },
+      { type: 'text', text: instructions }
+    ];
+  }
+
+  return { CATALOG: CATALOG, getSelected: getSelected, setSelected: setSelected, load: load, getName: getName, renderPicker: renderPicker, systemBlocks: systemBlocks };
 })();

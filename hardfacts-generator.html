@@ -313,14 +313,10 @@ function isRateLimitError(err) {
  return s.indexOf('rate limit') !== -1 || s.indexOf('rate_limit') !== -1;
 }
 
-/* System-Prompt mit Prompt Caching (TTL 1h): Titel-Generierung, Feedback-
-   Runden und Bullet-Generierung nutzen denselben System-Prompt (Basis +
-   Preset). Der große Preset-Text wird so nur einmal pro Session voll
-   bezahlt, alle Folge-Requests lesen ihn für ~10% der Input-Tokens. */
-function cachedSystem(sys) {
- return [{type:'text', text:sys, cache_control:{type:'ephemeral', ttl:'1h'}}];
-}
-
+/* Prompt Caching: Der System-Prompt wird über CopyPresets.systemBlocks()
+   gebaut - das Preset ist dort ein eigener, modulübergreifend identischer
+   Cache-Block. Titel, Bullets, Feedback-Runden UND Modul 2 teilen sich so
+   einen einzigen Prompt-Cache (Write 1x pro Stunde, danach ~10% Lesekosten). */
 async function callClaude(body, attempt) {
  attempt = attempt || 1;
  await throttleClaudeRequest();
@@ -357,7 +353,7 @@ async function callAPI(systemP, userP) {
  const data = await callClaude({
  model: 'claude-sonnet-4-6',
  max_tokens: 4000,
- system: cachedSystem(systemP),
+ system: systemP,
  messages: [{role:'user', content:userContent}]
  });
  const raw = data.content.map(b=>b.text||'').join('');
@@ -375,14 +371,16 @@ TONALITÄT: direkt, klar, Experten-Kontext, Curiosity Gaps, bei Gesundheit forma
 Nur gültiges JSON zurückgeben - kein Markdown, keine Backticks.`;
 }
 
-/* Basis-Prompt + optionales Copywriter-Preset. Identischer Prompt für
+/* System-Prompt als Blöcke: gemeinsamer Preset-Cache-Block (siehe
+   CopyPresets.systemBlocks) + modulspezifische Instruktionen. Identisch für
    Titel UND Bullets, damit der Prompt-Cache über beide Schritte greift. */
 async function buildSystemPrompt() {
  var base = baseSystemPrompt();
- if (!selectedCopyPreset) return base;
+ if (!selectedCopyPreset) return CopyPresets.systemBlocks('', base);
  var presetText = await CopyPresets.load(selectedCopyPreset);
- if (!presetText) return base;
- return base + '\n\nWICHTIG: Es folgt das Copywriter-Preset der Marke (Regelwerk, Wissensdatenbank, Referenz-Copys). Halte dich strikt an das Regelwerk für Tonalität, Sprache, Anrede und Stilregeln. Verwende nur Fakten, Zahlen und Zitate aus der Wissensdatenbank oder den Kampagnen-Angaben. Formuliere Titel und Bulletpoints so, wie die Referenz-Copys klingen (Satzrhythmus, Tonalität, Dramaturgie), aber übernimm deren im Kopf jeder Referenz gelistete Regelverstöße NICHT: bei Konflikt gilt immer das Regelwerk. Die Referenz-Copys sind reine Stil-Referenz, KEINE Textquelle: Übernimm daraus niemals Headlines, Pre-Headlines, Sublines oder ganze Sätze wörtlich oder nur leicht umformuliert - jede Formulierung wird neu und spezifisch für DIESE Kampagne geschrieben. Das Preset hat Vorrang vor den allgemeinen Stilvorgaben oben (z.B. bei der Anrede Du/Sie):\n\n' + presetText;
+ if (!presetText) return CopyPresets.systemBlocks('', base);
+ var instr = base + '\n\nWICHTIG: Am Anfang dieses System-Prompts steht das Copywriter-Preset der Marke (Regelwerk, Wissensdatenbank, Referenz-Copys). Halte dich strikt an das Regelwerk für Tonalität, Sprache, Anrede und Stilregeln. Verwende nur Fakten, Zahlen und Zitate aus der Wissensdatenbank oder den Kampagnen-Angaben. Formuliere Titel und Bulletpoints so, wie die Referenz-Copys klingen (Satzrhythmus, Tonalität, Dramaturgie), aber übernimm deren im Kopf jeder Referenz gelistete Regelverstöße NICHT: bei Konflikt gilt immer das Regelwerk. Die Referenz-Copys sind reine Stil-Referenz, KEINE Textquelle: Übernimm daraus niemals Headlines, Pre-Headlines, Sublines oder ganze Sätze wörtlich oder nur leicht umformuliert - jede Formulierung wird neu und spezifisch für DIESE Kampagne geschrieben. Das Preset hat Vorrang vor den allgemeinen Stilvorgaben oben (z.B. bei der Anrede Du/Sie).';
+ return CopyPresets.systemBlocks(presetText, instr);
 }
 
 async function generateTitles(feedback) {
