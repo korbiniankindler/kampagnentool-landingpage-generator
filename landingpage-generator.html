@@ -240,8 +240,8 @@
             <div class="preset-check" id="pc-webinar"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
             Webinar Standard
           </div>
-          <div class="preset-card-desc">Bewährte Struktur für kostenfreie Live-Webinare mit Anmeldung. Announcement, Hero, Social Proof, Authority, CTA.</div>
-          <div class="preset-card-count">10 Sections</div>
+          <div class="preset-card-desc">Bewährte Struktur für kostenfreie Live-Webinare mit Anmeldung. Hero (mit Announcement Bar), Social Proof, Authority, CTA.</div>
+          <div class="preset-card-count">9 Sections</div>
         </div>
         <div class="preset-card" id="preset-leadgen" onclick="selectPreset('leadgen')">
           <div class="preset-card-name">
@@ -574,8 +574,7 @@ function renderHF() {
 
 var PRESETS = {
   webinar: [
-    {id:'announcement', name:'Announcement Bar', desc:'Termin-Hinweis mit Live-Badge', active:true, custom:false},
-    {id:'hero', name:'Hero', desc:'Pre-Headline, H1, H2, CTA, Dozenten-Zeile', active:true, custom:false},
+    {id:'hero', name:'Hero', desc:'Announcement Bar (Termin-Hinweis), Pre-Headline, H1, H2, CTA, Dozenten-Zeile', active:true, custom:false},
     {id:'trustbar', name:'Trust Bar', desc:'Presselogo-Platzhalter', active:true, custom:false},
     {id:'introtext', name:'Intro Text', desc:'Kontext-Story, Warum-jetzt-Narrativ, Referenten-Brücke', active:true, custom:false},
     {id:'problem', name:'Problem / Mirror Effect', desc:'Selbstreflexions-Checkliste', active:true, custom:false},
@@ -667,7 +666,7 @@ async function suggestSectionsAI() {
       '- "id": einzigartiger snake_case Identifier\n' +
       '- "name": Anzeigename der Section (kurz, max 4 Worte)\n' +
       '- "desc": kurze Beschreibung was diese Section enthält (max 12 Worte)\n\n' +
-      'Nutze diese Standard-IDs wenn passend (damit das Rendering-System greift): announcement, hero, trustbar, introtext, problem, framework, social, authority, benefits, finalcta\n' +
+      'Nutze diese Standard-IDs wenn passend (damit das Rendering-System greift): hero, trustbar, introtext, problem, framework, social, authority, benefits, finalcta\n' +
       'Für neue/eigene Sections wähle beschreibende IDs wie "faq", "guarantee", "price", "video_section" etc.\n\n' +
       'Beispiel-Output:\n[{"id":"hero","name":"Hero","desc":"Hauptheadline, CTA und Video"},{"id":"problem","name":"Problem","desc":"Selbstreflexions-Checkliste"}]\n\n' +
       'NUR das JSON-Array, kein anderer Text, keine Backticks.';
@@ -688,7 +687,7 @@ async function suggestSectionsAI() {
     var parsed = JSON.parse(cleaned.slice(arrStart, arrEnd+1));
 
     sections = parsed.map(function(s) {
-      return { id: s.id||('custom_'+Math.random().toString(36).slice(2,6)), name: s.name||s.id, desc: s.desc||'', active: true, custom: !['announcement','hero','trustbar','introtext','problem','framework','social','authority','benefits','finalcta'].includes(s.id) };
+      return { id: s.id||('custom_'+Math.random().toString(36).slice(2,6)), name: s.name||s.id, desc: s.desc||'', active: true, custom: !['hero','trustbar','introtext','problem','framework','social','authority','benefits','finalcta'].includes(s.id) };
     });
 
     document.getElementById('sec-editor-label').textContent = 'Sections – KI-Vorschlag';
@@ -833,8 +832,7 @@ function extractJSON(raw, opts) {
 
 function sectionSchemaHint(s) {
   var schemas = {
-    announcement: '{"text": "..."}',
-    hero: '{"preHeadline":"...", "h1":"...", "h2":"...", "bulletpoints":[{"title":"...","text":"..."},{"title":"...","text":"..."},{"title":"...","text":"..."},{"title":"...","text":"..."}], "ctaButton":"...", "ctaSubline":"...", "videoPlaceholder":"[16:9 Video-Platzhalter]"}',
+    hero: '{"announcement":"...", "preHeadline":"...", "h1":"...", "h2":"...", "bulletpoints":[{"title":"...","text":"..."},{"title":"...","text":"..."},{"title":"...","text":"..."},{"title":"...","text":"..."}], "ctaButton":"...", "ctaSubline":"...", "videoPlaceholder":"[16:9 Video-Platzhalter]"}',
     trustbar: '{"note":"Platzhalter-Hinweis Text für Presselogos"}',
     introtext: '{"badge":"...", "headline":"...", "para1":"...", "para2":"...", "para3":"...", "closingLine":"..."}',
     problem: '{"headline":"...", "introCopy":"...", "checklist":[{"title":"...","text":"..."},{"title":"...","text":"..."},{"title":"...","text":"..."},{"title":"...","text":"..."},{"title":"...","text":"..."}], "transitionCopy":"...", "ctaButton":"..."}',
@@ -1012,7 +1010,7 @@ async function generateChunk(chunk, sysBlocks, ctx, attempt) {
     'Generiere folgende Sections als JSON-Objekt mit exakt diesen Keys:\n{\n  ' + schemaLines + '\n}\n\n' +
     'Regeln:\n' +
     '- KEINE inhaltlichen Dopplungen zwischen Sections: Jede Section erfüllt exakt ihre Rolle laut Seitenaufbau' + (ctx.planText ? ' und Content-Plan' : '') + '. Argumente, Beispiele, Formulierungen und Narrative, die zu einer anderen Section gehören, hier NICHT wiederholen - auch nicht umformuliert. Schreibe jede Section aus ihrem eigenen Blickwinkel.\n' +
-    '- Hero: Verwende die Hardfacts DIREKT und ungekürzt: preHeadline = exakt aus "Pre-Headline", h1 = exakt aus "Titel", h2 = exakt aus "Sub-Headline". Die bulletpoints kommen 1:1 aus "Webinar-Inhalte" - parse jeden Bullet als {"title":"...", "text":"..."} wobei title der Hauptpunkt ist und text die Erklärung (falls vorhanden, sonst leer lassen). Generiere 4 Bulletpoints. ctaButton = "Jetzt kostenlos anmelden", ctaSubline = "100% kostenfrei am [Termin]", videoPlaceholder = "[16:9 Video-Platzhalter: Anmeldeseiten-Video mit Referent]"\n' +
+    '- Hero: announcement = kurzer Termin-Hinweis für die Announcement-Bar ganz oben (Live-Charakter, basierend auf "Termin", z.B. "LIVE-Webinar am [Termin]"). Verwende die Hardfacts DIREKT und ungekürzt: preHeadline = exakt aus "Pre-Headline", h1 = exakt aus "Titel", h2 = exakt aus "Sub-Headline". Die bulletpoints kommen 1:1 aus "Webinar-Inhalte" - parse jeden Bullet als {"title":"...", "text":"..."} wobei title der Hauptpunkt ist und text die Erklärung (falls vorhanden, sonst leer lassen). Generiere 4 Bulletpoints. ctaButton = "Jetzt kostenlos anmelden", ctaSubline = "100% kostenfrei am [Termin]", videoPlaceholder = "[16:9 Video-Platzhalter: Anmeldeseiten-Video mit Referent]"\n' +
     '- introtext (Intro Text): badge = kurze Pill-Kategorie (max 5 Worte), headline = aufmerksamkeitsstarke H2, para1/para2/para3 = je ein langer Fließtext-Absatz (3-5 Sätze) der eine Kontext-Story aufbaut (gesellschaftlicher Wandel, Warum-jetzt-Narrativ, Marktentwicklung oder ähnliches passend zur Kampagne), closingLine = Brücken-Satz der auf den Referenten und das Webinar leitet\n' +
     '- Educational Gap (framework): headline + bodyCopy als erklärenden Fließtext-Block, KEIN Kompass-Prinzip\n' +
     '- Problem-Checklist: exakt 5 Einträge als Array mit je "title" und "text"\n' +
@@ -1088,7 +1086,8 @@ function renderSectionFields(s) {
   if (!d) return '<div class="field-block"><div class="field-editable">Keine Daten.</div></div>';
 
   if (s.id === 'hero') {
-    var out = fieldBlock(s.id,'preHeadline','Pre-Headline',d.preHeadline);
+    var out = fieldBlock(s.id,'announcement','Announcement Bar (Termin-Hinweis)',d.announcement);
+    out += fieldBlock(s.id,'preHeadline','Pre-Headline',d.preHeadline);
     out += fieldBlock(s.id,'h1','H1 - Haupttitel',d.h1);
     out += fieldBlock(s.id,'h2','H2 - Sub-Headline',d.h2);
     if (d.bulletpoints && d.bulletpoints.length) {
@@ -1162,7 +1161,7 @@ function fieldBlock(secId, path, label, value) {
 }
 
 function labelFor(k) {
-  var map = {h1:'H1 Haupttitel',h2:'H2 Sub-Headline',preHeadline:'Pre-Headline',ctaButton:'CTA Button',ctaSubline:'CTA Subline',dozentLine:'Dozenten-Zeile',announcement:'Announcement',bodyCopy:'Body Copy',badge:'Badge/Pill',para1:'Absatz 1',para2:'Absatz 2',para3:'Absatz 3',closingLine:'Abschluss-Satz (Brücke zum Webinar)',bioBlock:'Bio',webinarRole:'Rolle im Webinar',scarcityCopy:'Scarcity Copy',note:'Hinweis',headline:'Headline',introCopy:'Intro Copy',transitionCopy:'Transition Copy',text:'Text',title:'Titel',bulletpoints:'Inhalts-Bulletpoints',videoPlaceholder:'Video (16:9 Platzhalter)',testimonials:'Testimonials',links:'Links',checklist:'Checkliste',items:'Punkte',quote:'Zitat',name:'Name',role:'Rolle'};
+  var map = {h1:'H1 Haupttitel',h2:'H2 Sub-Headline',preHeadline:'Pre-Headline',ctaButton:'CTA Button',ctaSubline:'CTA Subline',dozentLine:'Dozenten-Zeile',announcement:'Announcement Bar (Termin-Hinweis)',bodyCopy:'Body Copy',badge:'Badge/Pill',para1:'Absatz 1',para2:'Absatz 2',para3:'Absatz 3',closingLine:'Abschluss-Satz (Brücke zum Webinar)',bioBlock:'Bio',webinarRole:'Rolle im Webinar',scarcityCopy:'Scarcity Copy',note:'Hinweis',headline:'Headline',introCopy:'Intro Copy',transitionCopy:'Transition Copy',text:'Text',title:'Titel',bulletpoints:'Inhalts-Bulletpoints',videoPlaceholder:'Video (16:9 Platzhalter)',testimonials:'Testimonials',links:'Links',checklist:'Checkliste',items:'Punkte',quote:'Zitat',name:'Name',role:'Rolle'};
   return map[k] || k;
 }
 
