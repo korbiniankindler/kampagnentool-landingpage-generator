@@ -1,6 +1,6 @@
 # Copywriter-Presets
 
-Jedes Kundenprojekt bekommt einen eigenen Ordner. Der Preset-Katalog liegt zentral in `shared/copywriter-presets.js` (→ `CATALOG`) und wird von **beiden Modulen** genutzt: Modul 1 (`hardfacts-generator.html`, Titel + Bulletpoints) und Modul 2 (`landingpage-generator.html`, Landingpage-Copy). Die Tools laden beim Generieren **alle** eingetragenen Dateien des gewählten Presets und hängen sie in dieser Reihenfolge in den System-Prompt:
+Jedes Kundenprojekt bekommt einen eigenen Ordner. Der Preset-Katalog liegt zentral in `shared/copywriter-presets.js` (→ `CATALOG`) und wird von **beiden Modulen** genutzt: Modul 1 (`hardfacts-generator.html`, Titel + Bulletpoints) und Modul 2 (`landingpage-generator.html`, Landingpage-Copy). Die Tools laden beim Generieren alle unter `files` eingetragenen Dateien des gewählten Presets (Regelwerk, Wissensdatenbank) und hängen sie in dieser Reihenfolge in den System-Prompt. Definiert ein Preset zusätzlich `referenzen` (wählbare Referenz-Copys nach Register), wird davon **genau eine** pro Auftrag mitgeladen - die Auswahl erscheint im Preset-Picker, Default ist der erste Eintrag:
 
 ```
 presets/
@@ -15,7 +15,7 @@ presets/
 
 - **regeln.md** sagt dem Modell, *was erlaubt und verboten* ist. Regeln allein reichen aber nicht, um Tonalität zu treffen.
 - **wissensdatenbank.md** verhindert erfundene Zahlen, Zitate und Features (Source-Discipline).
-- **referenzen/** sind der größte Qualitätshebel: echte Copys, aus denen das Modell Satzrhythmus, Dramaturgie und Wortwahl lernt (Few-Shot-Prinzip).
+- **referenzen/** sind der größte Qualitätshebel: echte Copys, aus denen das Modell Satzrhythmus, Dramaturgie und Wortwahl lernt (Few-Shot-Prinzip). Pro Auftrag wird genau eine Referenz geladen - die zum Register des Auftrags passende (z. B. B2C-Webinar, B2B/Fachpublikum, Themen-Webinar mit Produktnähe). Mehrere Referenzen gleichzeitig würden die Register-Tonalitäten mischen.
 
 ## Konventionen für Referenz-Dateien
 
@@ -35,12 +35,14 @@ Danach folgt die Original-Copy **wortgetreu** (nichts umschreiben!), gegliedert 
 ```js
 {id:'projekt', name:'Projekt', desc:'Marken-Stilvorgabe + Referenzen', files:[
   'presets/projekt/regeln.md',
-  'presets/projekt/wissensdatenbank.md',
-  'presets/projekt/referenzen/beispiel.md'
+  'presets/projekt/wissensdatenbank.md'
+], referenzen:[
+  {id:'b2c', name:'B2C-Webinar', desc:'Gold-Standard (Default)', file:'presets/projekt/referenzen/beispiel-b2c.md'},
+  {id:'b2b', name:'B2B / Fachpublikum', desc:'…', file:'presets/projekt/referenzen/beispiel-b2b.md'}
 ]}
 ```
 
-Reihenfolge = Prompt-Reihenfolge: Regeln zuerst, dann Fakten, dann Referenzen.
+Reihenfolge = Prompt-Reihenfolge: Regeln zuerst, dann Fakten, dann die eine gewählte Referenz. `referenzen` ist optional: Presets ohne Register-Varianten (z. B. Hellinger) tragen einfach alle Dateien in `files` ein. Der erste `referenzen`-Eintrag ist der Default bei unklarem Auftrag.
 
 4. **Wichtig:** danach einmal `node sync-presets.js` im Repo-Root ausführen und die geänderten `landingpage-generator.html` **und** `hardfacts-generator.html` mitcommitten. Das Script bettet alle Preset-Dateien als Fallback-Snapshots in beide Modul-HTMLs ein — nur so laden die Presets auch, wenn die Datei per `file://` geöffnet oder ohne den `presets/`-Ordner deployt wird. Die Tools bevorzugen immer die Live-Dateien vom Server und nutzen die Snapshots nur als Fallback (sichtbar in der Browser-Konsole: „Quellen: live" vs. „eingebettet").
 

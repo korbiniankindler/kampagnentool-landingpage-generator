@@ -9,17 +9,30 @@ description: Copywriter-Regelwerk für Holistic House Kampagnen
 
 ## 0. Arbeitsweise mit diesem Preset
 
-Dieses Preset besteht aus drei Ebenen, die zusammen geladen werden:
+Dieses Preset besteht aus drei Ebenen:
 
-1. **Regelwerk** (diese Datei): verbindliche Regeln für Tonalität, Sprache, Compliance. Hat immer Vorrang.
-2. **Wissensdatenbank** (`wissensdatenbank.md`): belegte Fakten zu Marke, Person, Produkten und Zahlen. Nur diese Fakten verwenden, nichts erfinden.
-3. **Referenz-Copys** (`referenzen/*.md`): vollständige, real veröffentlichte Landingpage-Texte. Sie zeigen die Ziel-Tonalität, den Satzrhythmus, die Argumentationsführung und die Section-Dramaturgie. **Schreibe neue Copy so, wie diese Referenzen klingen.**
+1. **Regelwerk** (diese Datei, immer laden): verbindliche Regeln für Tonalität, Sprache, Compliance. Hat immer Vorrang.
+2. **Wissensdatenbank** (`wissensdatenbank.md`, immer laden): belegte Fakten zu Marke, Person, Produkten und Zahlen. Nur diese Fakten verwenden, nichts erfinden.
+3. **Referenz-Copys** (`referenzen/*.md`, pro Auftrag genau eine laden): vollständige, real veröffentlichte Landingpage-Texte. Sie zeigen die Ziel-Tonalität, den Satzrhythmus, die Argumentationsführung und die Section-Dramaturgie. **Schreibe neue Copy so, wie die geladene Referenz klingt.**
 
-**Vorrangregel:** Die Referenzen enthalten teilweise Altbestand, der gegen einzelne Regeln verstößt (Gedankenstriche, „nicht X, sondern Y", „ganzheitlich" als Floskel). Jede Referenz-Datei listet ihre bekannten Abweichungen im Kopf. Übernimm Tonalität, Struktur und Argumentation der Referenzen, aber wende immer das aktuelle Regelwerk an. Bei Konflikt gilt: Regelwerk schlägt Referenz.
+**Referenz-Auswahl nach Register:**
+- B2C-Webinar → `webinar-gesundheit-neu-denken-b2c.md` (Gold-Standard, auch Default bei unklarem Auftrag)
+- B2B-/Fachpublikums-Webinar → `webinar-evolution-der-medizin-b2b.md`
+- Themen-Webinar mit Produktnähe (NEM/DAYA) → `webinar-supplements-vom-chaos-zum-system.md`
+
+**Vorrangregel:** Die Referenzen enthalten teilweise Altbestand, der gegen einzelne Regeln verstößt (Gedankenstriche, „nicht X, sondern Y", „ganzheitlich" als Floskel). Jede Referenz-Datei listet ihre bekannten Abweichungen im Kopf. Übernimm Tonalität, Struktur und Argumentation der Referenzen, aber wende immer das aktuelle Regelwerk an. Bei Konflikt gilt: Regelwerk schlägt Referenz, Wissensdatenbank schlägt Referenz bei Fakten, Kampagnen-Briefing schlägt beide bei kampagnenspezifischen Angaben (Datum, Uhrzeit, Thema).
 
 ## 1. Zielgruppe & Markenkontext
 
 Holistic House verbindet Schulmedizin mit Ayurveda, verkörpert durch Dr. med. Ulrich Bauhofer (über 40 Jahre Arzt, 500.000+ YouTube-Abonnenten). Die Leserschaft ist gesundheitsbewusst, überwiegend weiblich, ab 40, mit hohem Anspruch an Qualität, Fundiertheit und Natürlichkeit. Sie kauft kein Produkt, sondern Verständnis für die eigene Gesundheit, Prävention im Alltag und, im Backend, eine sinnstiftende berufliche Perspektive.
+
+### Register (vor dem Schreiben festlegen, gilt für die gesamte LP)
+
+- **B2C (Standard, Frauen 40+):** Argumentation über System und Alltag, nie über Krankheitsbilder. Keine Symptomlisten und keine „Volkskrankheiten" als Verkaufsargument. Empowerment-Frame: „Wer dieses Gefühl kennt, hat nichts falsch gemacht." Die berufliche Perspektive läuft als zweiter Strang mit, dominiert aber nicht.
+- **B2B (Ärzte, Heilpraktiker, Therapeuten, Coaches, Trainer):** fachlich dichter; wirtschaftliche Argumente sind erlaubt und erwünscht (Positionierung, Wettbewerbsvorteil, tragfähige berufliche Existenz). Klinische Begriffe wie funktionelle Dysbalancen oder Frühzeichen sind hier vertretbar, für B2C tabu.
+- **Themen-Webinar mit Produktnähe (NEM/DAYA):** Bauhofer als neutraler Aufklärer in einem unübersichtlichen Markt. Sprache der Bewertung und Orientierung (Qualität, Struktur, Einordnung), nie Wirkungs- oder Ergebnissprache. Nutzenrahmen: Fehlkäufe vermeiden, Überflüssiges streichen, Souveränität bei Entscheidungen.
+
+Jede Referenz-Copy gehört zu genau einem Register. Ton und Argumentationsgrenzen des jeweils anderen Registers nicht mischen.
 
 ## 2. Tonalität & Anrede
 
