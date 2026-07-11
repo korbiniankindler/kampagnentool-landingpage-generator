@@ -382,7 +382,7 @@ async function buildSystemPrompt() {
  if (!selectedCopyPreset) return base;
  var presetText = await CopyPresets.load(selectedCopyPreset);
  if (!presetText) return base;
- return base + '\n\nWICHTIG: Es folgt das Copywriter-Preset der Marke (Regelwerk, Wissensdatenbank, Referenz-Copys). Halte dich strikt an das Regelwerk für Tonalität, Sprache, Anrede und Stilregeln. Verwende nur Fakten, Zahlen und Zitate aus der Wissensdatenbank oder den Kampagnen-Angaben. Formuliere Titel und Bulletpoints so, wie die Referenz-Copys klingen (Satzrhythmus, Wortwahl, Dramaturgie), aber übernimm deren im Kopf jeder Referenz gelistete Regelverstöße NICHT: bei Konflikt gilt immer das Regelwerk. Das Preset hat Vorrang vor den allgemeinen Stilvorgaben oben (z.B. bei der Anrede Du/Sie):\n\n' + presetText;
+ return base + '\n\nWICHTIG: Es folgt das Copywriter-Preset der Marke (Regelwerk, Wissensdatenbank, Referenz-Copys). Halte dich strikt an das Regelwerk für Tonalität, Sprache, Anrede und Stilregeln. Verwende nur Fakten, Zahlen und Zitate aus der Wissensdatenbank oder den Kampagnen-Angaben. Formuliere Titel und Bulletpoints so, wie die Referenz-Copys klingen (Satzrhythmus, Tonalität, Dramaturgie), aber übernimm deren im Kopf jeder Referenz gelistete Regelverstöße NICHT: bei Konflikt gilt immer das Regelwerk. Die Referenz-Copys sind reine Stil-Referenz, KEINE Textquelle: Übernimm daraus niemals Headlines, Pre-Headlines, Sublines oder ganze Sätze wörtlich oder nur leicht umformuliert - jede Formulierung wird neu und spezifisch für DIESE Kampagne geschrieben. Das Preset hat Vorrang vor den allgemeinen Stilvorgaben oben (z.B. bei der Anrede Du/Sie):\n\n' + presetText;
 }
 
 async function generateTitles(feedback) {
@@ -441,10 +441,16 @@ REGELN FÜR PRE-HEADLINES (kritisch wichtig):
 - Immer auf DEUTSCH - niemals Englisch
 - 3-6 Wörter, inhaltsstark und kontextgebend
 - Erzeugt Spannung oder Kontext, der den Haupttitel emotional auflädt
-- Bewährte Formate: "DAS VERSCHWEIGT DIE SCHULMEDIZIN", "WARUM IMMER MEHR FRAUEN AB 45 UMDENKEN", "STATT MEHR - DAS RICHTIGE", "WAEHREND DAS GESUNDHEITSSYSTEM UMBRICHT", "DIE FRAGE, DIE ALLES VERAENDERT", "DAS STECKT WIRKLICH DAHINTER", "WAS IHNEN NIEMAND ERKLAERT"
+- Bewährte MUSTER (nur Stil-Vorbilder aus fremden Kampagnen - NIEMALS wörtlich oder leicht abgewandelt übernehmen, immer neu und themenspezifisch formulieren): "DAS VERSCHWEIGT DIE SCHULMEDIZIN", "WARUM IMMER MEHR FRAUEN AB 45 UMDENKEN", "STATT MEHR - DAS RICHTIGE", "DIE FRAGE, DIE ALLES VERAENDERT"
 - ABSOLUT VERBOTEN: Einwort-Labels wie "ZEITGESCHEHEN", "FAKTENCHECK", "VERSPRECHEN", "CURIOSITY GAP" - interne Kategorien, keine Pre-Headlines
 
 5 Varianten mit je eigenem Winkel: Curiosity Gap, Zeitgeschehen, Versprechen, Frage-Format, Faktencheck.
+
+ORIGINALITÄT (kritisch wichtig):
+- Alle Pre-Headlines, Titel und Sublines müssen NEU und spezifisch für diese Kampagne geschrieben sein
+- Wörtliche oder fast wörtliche Übernahmen aus Referenz-Copys, Beispiel-Formaten oder früheren Kampagnen sind VERBOTEN
+- Belegte Fakten und Zahlen aus der Wissensdatenbank dürfen verwendet werden - aber in eigener, neuer Formulierung
+
 Nur JSON.`;
 
  try {
