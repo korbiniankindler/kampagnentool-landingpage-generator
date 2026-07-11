@@ -918,7 +918,11 @@ async function generateContentPlan(active, sys) {
       'Antworte NUR mit einem JSON-Objekt mit exakt diesen Keys:\n{ ' + active.map(function(s){return '"'+s.id+'": "..."';}).join(', ') + ' }';
     var d = await callClaude({
       model: 'claude-sonnet-4-6',
-      max_tokens: 1500,
+      // Skaliert mit der Section-Zahl (~120 Tokens je Kernbotschaft + Puffer),
+      // damit der Plan bei grossen Seiten nicht am Token-Limit abgeschnitten
+      // wird. max_tokens ist nur eine Obergrenze - abgerechnet werden immer
+      // nur tatsächlich erzeugte Tokens.
+      max_tokens: Math.min(4000, 400 + active.length * 120),
       system: cachedSystem(sys),
       messages: [{role:'user', content:usr}]
     });
