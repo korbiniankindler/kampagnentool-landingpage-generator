@@ -885,9 +885,55 @@ async function startGeneration() {
 }
 
 /* 4 Sections pro Request: bei 10 Sections entstehen so nur 3 Requests
-   (+1 Cache-Primer) und alles passt in ein Rate-Limit-Fenster (4/min).
+   (+1 Content-Plan-Pass) und alles passt in ein Rate-Limit-Fenster (4/min).
    Truncation wird über max_tokens 12000 + Retry/Salvage abgefangen. */
 var GEN_CHUNK_SIZE = 4;
+
+/* Kompakte Übersicht aller aktiven Sections in Seitenreihenfolge. Geht in
+   jeden Chunk-Prompt, damit jeder Request weiss, welche Sections die anderen
+   parallel laufenden Requests schreiben - sonst doppeln sich Argumente und
+   Textblöcke zwischen Sections, weil der Gesamtkontext fehlt. */
+function buildPageMap(active) {
+  return active.map(function(s, i) { return (i+1) + '. ' + s.name + ' (' + s.id + '): ' + s.desc; }).join('\n');
+}
+
+/* Content-Plan-Pass: EIN kurzer Request vor den parallelen Chunks legt für
+   jede Section eine eigene Kernbotschaft fest. Die Chunks halten sich daran
+   und schreiben dadurch überschneidungsfrei. Ersetzt den früheren 1-Token-
+   Cache-Primer und übernimmt dessen Aufgabe mit: der Request schreibt den
+   Prompt-Cache für den grossen System-Prompt (Preset + Referenzen), bevor
+   alle Chunks parallel starten. Fehler sind unkritisch - dann generieren
+   die Chunks wie bisher ohne Plan (nur mit Seitenaufbau-Kontext). */
+async function generateContentPlan(active, sys) {
+  updateReviewLoadingMsg('Roter Faden der Landingpage wird geplant...');
+  try {
+    var usr = 'Kampagne:\n' +
+      'Titel: ' + (HF.titel||HF.kampagnenname||'') + '\n' +
+      'Offer: ' + (HF.offer||'') + '\n' +
+      (HF.beschreibung ? 'Kampagnen-Beschreibung: ' + HF.beschreibung + '\n' : '') +
+      'Zielgruppe: ' + (HF.zielgruppe||HF.strategie_titel||'(keine Angabe)') + '\n' +
+      (HF.strategie ? 'Strategie / Positionierung: ' + HF.strategie + '\n' : '') + '\n' +
+      'Aufbau der Landingpage:\n' + buildPageMap(active) + '\n\n' +
+      'Erstelle einen Content-Plan für diese Landingpage: Lege für jede Section EINE Kernbotschaft mit eigenem Blickwinkel fest (je 1-2 Sätze). Die Kernbotschaften müssen klar voneinander abgegrenzt sein - kein Argument, Beispiel oder Narrativ darf in zwei Sections vorkommen. Zusammen ergeben sie eine schlüssige Dramaturgie von der ersten bis zur letzten Section.\n\n' +
+      'Antworte NUR mit einem JSON-Objekt mit exakt diesen Keys:\n{ ' + active.map(function(s){return '"'+s.id+'": "..."';}).join(', ') + ' }';
+    var d = await callClaude({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 1500,
+      system: cachedSystem(sys),
+      messages: [{role:'user', content:usr}]
+    });
+    var plan = extractJSON(d.content.map(function(b){return b.text||'';}).join(''), {salvage:true});
+    // Nur brauchbare String-Werte übernehmen; leerer/unbrauchbarer Plan wird verworfen
+    var clean = {};
+    active.forEach(function(s) { if (typeof plan[s.id] === 'string' && plan[s.id].trim()) clean[s.id] = plan[s.id].trim(); });
+    return Object.keys(clean).length ? clean : null;
+  } catch(e) {
+    console.warn('Content-Plan fehlgeschlagen (unkritisch, Generierung läuft ohne Plan weiter):', e);
+    return null;
+  } finally {
+    updateReviewLoadingMsg(GMSG[0]);
+  }
+}
 
 async function generateAll(active) {
   var presetText = await CopyPresets.load(selectedCopyPreset);
@@ -915,32 +961,33 @@ async function generateAll(active) {
   var chunks = [];
   for (var i = 0; i < active.length; i += GEN_CHUNK_SIZE) chunks.push(active.slice(i, i + GEN_CHUNK_SIZE));
 
-  // Cache-Primer: ein Mini-Request (1 Output-Token) schreibt den Prompt-Cache
-  // für den grossen System-Prompt (Preset + Referenzen), bevor alle Chunks
-  // parallel starten. Cache-Reads zählen nicht gegen das Input-Token-Limit
-  // der API - ohne Primer reicht jeder Chunk die vollen ~25k Tokens ein und
-  // provoziert 429-Retries.
-  if (presetText && chunks.length > 1) {
-    updateReviewLoadingMsg('Markenwissen wird vorbereitet...');
-    try {
-      await callClaude({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 1,
-        system: cachedSystem(sys),
-        messages: [{role:'user', content:'ok'}]
-      });
-    } catch (e) { console.warn('Cache-Primer fehlgeschlagen (unkritisch):', e); }
-    updateReviewLoadingMsg(GMSG[0]);
+  // Gemeinsamer Kontext für alle Chunks: der Gesamt-Seitenaufbau immer, dazu
+  // bei mehreren Chunks ein vorab generierter Content-Plan (eine Kernbotschaft
+  // je Section), damit parallel generierte Sections sich nicht inhaltlich
+  // doppeln. Der Plan-Request übernimmt zugleich die frühere Cache-Primer-
+  // Rolle: er schreibt den Prompt-Cache für den grossen System-Prompt, bevor
+  // alle Chunks parallel starten (Cache-Reads zählen nicht gegen das
+  // Input-Token-Limit der API - ohne Vorlauf-Request reicht jeder Chunk die
+  // vollen ~25k Tokens ein und provoziert 429-Retries).
+  var ctx = { pageMap: buildPageMap(active), planText: null };
+  if (chunks.length > 1) {
+    var plan = await generateContentPlan(active, sys);
+    if (plan) {
+      ctx.planText = active.map(function(s, i) {
+        return plan[s.id] ? (i+1) + '. ' + s.name + ' (' + s.id + '): ' + plan[s.id] : null;
+      }).filter(Boolean).join('\n');
+    }
   }
 
-  var results = await Promise.all(chunks.map(function(chunk) { return generateChunk(chunk, sys); }));
+  var results = await Promise.all(chunks.map(function(chunk) { return generateChunk(chunk, sys, ctx); }));
 
   var data = {};
   results.forEach(function(r) { Object.keys(r).forEach(function(k){ data[k] = r[k]; }); });
   return data;
 }
 
-async function generateChunk(chunk, sys, attempt) {
+async function generateChunk(chunk, sys, ctx, attempt) {
+  ctx = ctx || {};
   attempt = attempt || 1;
   var maxAttempts = 3;
   var schemaLines = chunk.map(function(s) {
@@ -960,8 +1007,11 @@ async function generateChunk(chunk, sys, attempt) {
     'Webinar-Inhalte (Bulletpoints 1:1 für Hero verwenden):\n' + (bpList||'(keine Bulletpoints angegeben)') + '\n' +
     'Zielgruppe: ' + (zielgruppe||'(keine Angabe)') + '\n' +
     (strategie ? 'Strategie / Positionierung: ' + strategie + '\n' : '') + '\n' +
+    (ctx.pageMap ? 'Aufbau der GESAMTEN Landingpage (dieser Request generiert nur einen Teil davon, die übrigen Sections werden separat generiert):\n' + ctx.pageMap + '\n\n' : '') +
+    (ctx.planText ? 'Content-Plan (verbindliche Kernbotschaft je Section - auch die separat generierten Sections halten sich daran):\n' + ctx.planText + '\n\n' : '') +
     'Generiere folgende Sections als JSON-Objekt mit exakt diesen Keys:\n{\n  ' + schemaLines + '\n}\n\n' +
     'Regeln:\n' +
+    '- KEINE inhaltlichen Dopplungen zwischen Sections: Jede Section erfüllt exakt ihre Rolle laut Seitenaufbau' + (ctx.planText ? ' und Content-Plan' : '') + '. Argumente, Beispiele, Formulierungen und Narrative, die zu einer anderen Section gehören, hier NICHT wiederholen - auch nicht umformuliert. Schreibe jede Section aus ihrem eigenen Blickwinkel.\n' +
     '- Hero: Verwende die Hardfacts DIREKT und ungekürzt: preHeadline = exakt aus "Pre-Headline", h1 = exakt aus "Titel", h2 = exakt aus "Sub-Headline". Die bulletpoints kommen 1:1 aus "Webinar-Inhalte" - parse jeden Bullet als {"title":"...", "text":"..."} wobei title der Hauptpunkt ist und text die Erklärung (falls vorhanden, sonst leer lassen). Generiere 4 Bulletpoints. ctaButton = "Jetzt kostenlos anmelden", ctaSubline = "100% kostenfrei am [Termin]", videoPlaceholder = "[16:9 Video-Platzhalter: Anmeldeseiten-Video mit Referent]"\n' +
     '- introtext (Intro Text): badge = kurze Pill-Kategorie (max 5 Worte), headline = aufmerksamkeitsstarke H2, para1/para2/para3 = je ein langer Fließtext-Absatz (3-5 Sätze) der eine Kontext-Story aufbaut (gesellschaftlicher Wandel, Warum-jetzt-Narrativ, Marktentwicklung oder ähnliches passend zur Kampagne), closingLine = Brücken-Satz der auf den Referenten und das Webinar leitet\n' +
     '- Educational Gap (framework): headline + bodyCopy als erklärenden Fließtext-Block, KEIN Kompass-Prinzip\n' +
@@ -990,7 +1040,7 @@ async function generateChunk(chunk, sys, attempt) {
   } catch(e) {
     if (attempt < maxAttempts) {
       updateReviewLoadingMsg((truncated ? 'Antwort abgeschnitten' : 'Ungültiges JSON erhalten') + ' - generiere "'+chunk.map(function(s){return s.name;}).join(', ')+'" erneut...');
-      return generateChunk(chunk, sys, attempt + 1);
+      return generateChunk(chunk, sys, ctx, attempt + 1);
     }
     // Letzter Versuch: so viel wie möglich aus der Antwort retten statt komplett zu scheitern
     try { return extractJSON(raw, {salvage:true}); }
@@ -1170,6 +1220,7 @@ async function regenSection(secId) {
       (HF.beschreibung ? 'Kampagnen-Beschreibung (Thema, Host/Referent, Zielgruppe, Besonderheiten): ' + HF.beschreibung + '\n' : '') + '\n' +
       'Überarbeite NUR die Section "'+s.name+'" ('+s.id+'). Erwartetes Schema:\n' + sectionSchemaHint(s) + '\n\n' +
       'Feedback: ' + (fb || 'Allgemein verbessern, Konsistenz mit Rest der Page wahren.') + '\n\n' +
+      'Wichtig: KEINE inhaltlichen Dopplungen mit den anderen Sections aus dem Gesamtkontext - Argumente, Beispiele und Formulierungen, die dort bereits vorkommen, nicht wiederholen (auch nicht umformuliert). Diese Section behält ihren eigenen Blickwinkel.\n\n' +
       'Gib NUR das JSON-Objekt für diese Section zurück - kein Wrapper, kein Markdown, kein Text drumherum.';
 
     var maxAttempts = 3, parsed = null, lastErr = null;
