@@ -26,6 +26,9 @@
 .import-banner{border:1px solid var(--border-light);border-radius:var(--radius-lg);padding:1.1rem 1.25rem;background:var(--bg-primary);box-shadow:var(--shadow-card);margin-bottom:1.25rem}
 .import-upload{border:1px dashed var(--border-medium);border-radius:var(--radius-md);padding:11px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:var(--text-secondary);background:var(--bg-secondary);transition:border-color .15s;margin-top:8px}
 .import-upload:hover{border-color:var(--border-strong)}
+.upload-zone{border:1px dashed var(--border-medium);border-radius:var(--radius-md);padding:11px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:var(--text-secondary);background:var(--bg-secondary);transition:border-color .15s;margin-top:8px}
+.upload-zone:hover{border-color:var(--border-strong)}
+.file-chip{display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:3px 9px;border-radius:20px;background:var(--bg-secondary);border:1px solid var(--border-light);color:var(--text-secondary);margin:6px 4px 0 0}
 .sec-list{display:flex;flex-direction:column;gap:6px}
 .sec-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border-light);border-radius:var(--radius-md);background:var(--bg-primary);cursor:default;transition:border-color .15s,opacity .15s}
 .sec-row.dragging{opacity:.4}
@@ -106,6 +109,19 @@
     <div class="section-label" style="margin-top:0">Copywriter-Preset <span style="font-weight:400;color:var(--text-tertiary)">(optional)</span></div>
     <p style="font-size:12px;color:var(--text-tertiary);margin-bottom:10px">Feste Stil- und Tonalitätsvorgabe einer Marke. Ohne Auswahl wird generisch anhand der Hardfacts generiert.</p>
     <div class="preset-grid" id="copy-preset-grid" style="margin-bottom:0;grid-template-columns:repeat(3,1fr)"></div>
+  </div>
+
+  <div class="card">
+    <div class="section-label" style="margin-top:0">Kampagnen-Kontext <span style="font-weight:400;color:var(--text-tertiary)">(optional)</span></div>
+    <p style="font-size:12px;color:var(--text-tertiary);margin-bottom:10px">Thema, Zielgruppe, Experte / Host, Besonderheiten und Wünsche zur Landingpage – gilt zusätzlich zu den Hardfacts (JSON-Import oder Freitext).</p>
+    <textarea id="lp-ctx" style="min-height:90px" placeholder="Thema, Host, Zielgruppe, Besonderheiten, Wünsche zur Landingpage…"></textarea>
+    <p class="field-hint">Je mehr Kontext, desto passgenauer der Output.</p>
+    <div class="upload-zone" onclick="document.getElementById('lp-ctx-file').click()">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <span>PDF oder Bild ablegen oder klicken (optional)</span>
+    </div>
+    <input type="file" id="lp-ctx-file" accept=".pdf,.png,.jpg,.jpeg" style="display:none" onchange="addCtxFile(this)">
+    <div id="lp-ctx-chips"></div>
   </div>
   <div id="import-err"></div>
 
@@ -512,6 +528,78 @@ function switchTab(tab) {
   document.getElementById('tab-free').classList.toggle('active', tab === 'free');
 }
 
+/* ===== KAMPAGNEN-KONTEXT (Schritt 1): Freitext + PDF/Bild-Upload =====
+   Wie die Kampagnenbeschreibung in Modul 1: der Text fliesst als eigener
+   Block in jeden Prompt, hochgeladene Dateien gehen als document/image-
+   Blöcke in jeden Claude-Request (Section-Vorschlag, Content-Plan,
+   Generierung, Regenerierung). */
+var ctxFiles = [];
+
+function addCtxFile(input) {
+  var f = input.files[0]; if (!f) return;
+  ctxFiles.push(f); renderCtxChips(); input.value = '';
+}
+function removeCtxFile(i) { ctxFiles.splice(i,1); renderCtxChips(); }
+function renderCtxChips() {
+  document.getElementById('lp-ctx-chips').innerHTML = ctxFiles.map(function(f,i){
+    return '<span class="file-chip">' +
+      '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>' +
+      ex(f.name) + '<span style="cursor:pointer;margin-left:5px" onclick="removeCtxFile('+i+')">x</span>' +
+    '</span>';
+  }).join('');
+}
+function toBase64(file) {
+  return new Promise(function(ok,err){
+    var r = new FileReader();
+    r.onload = function(){ ok(r.result.split(',')[1]); };
+    r.onerror = function(){ err(new Error('Datei konnte nicht gelesen werden')); };
+    r.readAsDataURL(file);
+  });
+}
+
+function lpContext() {
+  var el = document.getElementById('lp-ctx');
+  return el ? el.value.trim() : '';
+}
+
+/* Prompt-Block für den Kampagnen-Kontext; leerer String wenn nichts angegeben. */
+function ctxPromptBlock() {
+  var parts = [];
+  var t = lpContext();
+  if (t) parts.push('Zusätzlicher Kontext (Kampagne & gewünschte Landingpage):\n' + t);
+  if (ctxFiles.length) parts.push('Angehängte Datei(en) (PDF/Bild) sind zusätzliches Kampagnen-Briefing - nutze deren Inhalte als Fakten- und Kontextquelle.');
+  return parts.length ? parts.join('\n') + '\n' : '';
+}
+
+/* User-Content für callClaude: hochgeladene PDFs/Bilder als Blöcke vor dem
+   Prompt-Text. Ohne Dateien bleibt es beim einfachen String. */
+/* Read-only-Ansicht von Schritt 1: zeigt den zusätzlichen Kontext unter der
+   Hardfacts-Vorschau, damit sichtbar bleibt, was in die Prompts einfliesst. */
+function ctxPreviewHTML() {
+  var t = lpContext();
+  if (!t && !ctxFiles.length) return '';
+  return '<div class="hf-detail"><div class="hf-detail-label">Zusätzlicher Kampagnen-Kontext</div>' +
+    (t ? '<div class="hf-detail-val">' + ex(t) + '</div>' : '') +
+    (ctxFiles.length ? '<div class="hf-detail-val">Datei(en): ' + ctxFiles.map(function(f){ return ex(f.name); }).join(', ') + '</div>' : '') +
+    '</div>';
+}
+
+async function buildUserContent(usr) {
+  if (!ctxFiles.length) return usr;
+  var content = [];
+  for (var i = 0; i < ctxFiles.length; i++) {
+    var f = ctxFiles[i];
+    try {
+      var b64 = await toBase64(f);
+      content.push(f.type === 'application/pdf'
+        ? {type:'document', source:{type:'base64', media_type:'application/pdf', data:b64}}
+        : {type:'image', source:{type:'base64', media_type:f.type, data:b64}});
+    } catch(e) { console.warn('Kontext-Datei "' + f.name + '" konnte nicht gelesen werden:', e); }
+  }
+  content.push({type:'text', text:usr});
+  return content;
+}
+
 function loadJSON(inp) {
   var f = inp.files[0]; if (!f) return;
   var r = new FileReader();
@@ -660,7 +748,8 @@ async function suggestSectionsAI() {
       (HF.beschreibung ? 'Beschreibung: ' + HF.beschreibung + '\n' : '') +
       'Zielgruppe: ' + (HF.zielgruppe||HF.strategie_titel||'') + '\n' +
       'Angebot: ' + (HF.offer||'Kostenfreies Webinar') + '\n' +
-      (hint ? 'Zusätzliche Hinweise: ' + hint + '\n' : '') + '\n' +
+      (hint ? 'Zusätzliche Hinweise: ' + hint + '\n' : '') +
+      ctxPromptBlock() + '\n' +
       'Schlage die optimale Section-Struktur für diese Landingpage vor.\n\n' +
       'Antworte AUSSCHLIESSLICH mit einem JSON-Array. Jedes Element hat:\n' +
       '- "id": einzigartiger snake_case Identifier\n' +
@@ -674,7 +763,7 @@ async function suggestSectionsAI() {
     var d = await callClaude({
       model: 'claude-sonnet-4-6',
       max_tokens: 1000,
-      messages: [{ role: 'user', content: usr }]
+      messages: [{ role: 'user', content: await buildUserContent(usr) }]
     }, function(attempt){ loadEl.innerHTML = '<div class="spinner"></div> Rate-Limit erreicht, versuche erneut (' + attempt + ')...'; });
 
     var raw = d.content.map(function(b){return b.text||'';}).join('').trim();
@@ -905,7 +994,8 @@ async function generateContentPlan(active, sysBlocks) {
       'Offer: ' + (HF.offer||'') + '\n' +
       (HF.beschreibung ? 'Kampagnen-Beschreibung: ' + HF.beschreibung + '\n' : '') +
       'Zielgruppe: ' + (HF.zielgruppe||HF.strategie_titel||'(keine Angabe)') + '\n' +
-      (HF.strategie ? 'Strategie / Positionierung: ' + HF.strategie + '\n' : '') + '\n' +
+      (HF.strategie ? 'Strategie / Positionierung: ' + HF.strategie + '\n' : '') +
+      ctxPromptBlock() + '\n' +
       'Aufbau der Landingpage:\n' + buildPageMap(active) + '\n\n' +
       'Erstelle einen Content-Plan für diese Landingpage: Lege für jede Section EINE Kernbotschaft mit eigenem Blickwinkel fest - je genau EIN prägnanter Satz (max 20 Wörter), keine Ausschmückung. Die Kernbotschaften müssen klar voneinander abgegrenzt sein - kein Argument, Beispiel oder Narrativ darf in zwei Sections vorkommen. Zusammen ergeben sie eine schlüssige Dramaturgie von der ersten bis zur letzten Section.\n\n' +
       'Antworte NUR mit einem JSON-Objekt mit exakt diesen Keys:\n{ ' + active.map(function(s){return '"'+s.id+'": "..."';}).join(', ') + ' }';
@@ -917,7 +1007,7 @@ async function generateContentPlan(active, sysBlocks) {
       // nur tatsächlich erzeugte Tokens.
       max_tokens: Math.min(4000, 400 + active.length * 120),
       system: sysBlocks,
-      messages: [{role:'user', content:usr}]
+      messages: [{role:'user', content: await buildUserContent(usr)}]
     });
     var plan = extractJSON(d.content.map(function(b){return b.text||'';}).join(''), {salvage:true});
     // Nur brauchbare String-Werte übernehmen; leerer/unbrauchbarer Plan wird verworfen
@@ -1004,7 +1094,8 @@ async function generateChunk(chunk, sysBlocks, ctx, attempt) {
     (HF.beschreibung ? 'Kampagnen-Beschreibung (Thema, Host/Referent, Zielgruppe, Besonderheiten): ' + HF.beschreibung + '\n' : '') +
     'Webinar-Inhalte (Bulletpoints 1:1 für Hero verwenden):\n' + (bpList||'(keine Bulletpoints angegeben)') + '\n' +
     'Zielgruppe: ' + (zielgruppe||'(keine Angabe)') + '\n' +
-    (strategie ? 'Strategie / Positionierung: ' + strategie + '\n' : '') + '\n' +
+    (strategie ? 'Strategie / Positionierung: ' + strategie + '\n' : '') +
+    ctxPromptBlock() + '\n' +
     (ctx.pageMap ? 'Aufbau der GESAMTEN Landingpage (dieser Request generiert nur einen Teil davon, die übrigen Sections werden separat generiert):\n' + ctx.pageMap + '\n\n' : '') +
     (ctx.planText ? 'Content-Plan (verbindliche Kernbotschaft je Section - auch die separat generierten Sections halten sich daran):\n' + ctx.planText + '\n\n' : '') +
     'Generiere folgende Sections als JSON-Objekt mit exakt diesen Keys:\n{\n  ' + schemaLines + '\n}\n\n' +
@@ -1026,7 +1117,7 @@ async function generateChunk(chunk, sysBlocks, ctx, attempt) {
     model: 'claude-sonnet-4-6',
     max_tokens: 12000,
     system: sysBlocks,
-    messages: [{role:'user', content:usr}]
+    messages: [{role:'user', content: await buildUserContent(usr)}]
   }, function(){ updateReviewLoadingMsg('Rate-Limit erreicht, warte kurz und versuche erneut...'); });
 
   var raw = d.content.map(function(b){return b.text||'';}).join('');
@@ -1217,12 +1308,14 @@ async function regenSection(secId) {
 
     var usr = 'Gesamtkontext (zur Konsistenz, NICHT neu generieren):\n' + JSON.stringify(sectionData) + '\n\n' +
       'Kampagne: ' + (HF.titel||HF.kampagnenname||'') + ' | Zielgruppe: ' + (HF.zielgruppe||HF.strategie_titel||'') + '\n' +
-      (HF.beschreibung ? 'Kampagnen-Beschreibung (Thema, Host/Referent, Zielgruppe, Besonderheiten): ' + HF.beschreibung + '\n' : '') + '\n' +
+      (HF.beschreibung ? 'Kampagnen-Beschreibung (Thema, Host/Referent, Zielgruppe, Besonderheiten): ' + HF.beschreibung + '\n' : '') +
+      ctxPromptBlock() + '\n' +
       'Überarbeite NUR die Section "'+s.name+'" ('+s.id+'). Erwartetes Schema:\n' + sectionSchemaHint(s) + '\n\n' +
       'Feedback: ' + (fb || 'Allgemein verbessern, Konsistenz mit Rest der Page wahren.') + '\n\n' +
       'Wichtig: KEINE inhaltlichen Dopplungen mit den anderen Sections aus dem Gesamtkontext - Argumente, Beispiele und Formulierungen, die dort bereits vorkommen, nicht wiederholen (auch nicht umformuliert). Diese Section behält ihren eigenen Blickwinkel.\n\n' +
       'Gib NUR das JSON-Objekt für diese Section zurück - kein Wrapper, kein Markdown, kein Text drumherum.';
 
+    var userContent = await buildUserContent(usr);
     var maxAttempts = 3, parsed = null, lastErr = null;
     for (var attempt = 1; attempt <= maxAttempts && !parsed; attempt++) {
       if (attempt > 1) document.getElementById('rs-'+secId).textContent = 'erneuter Versuch ('+attempt+')...';
@@ -1230,7 +1323,7 @@ async function regenSection(secId) {
         model: 'claude-sonnet-4-6',
         max_tokens: 4000,
         system: sysBlocks,
-        messages: [{role:'user', content:usr}]
+        messages: [{role:'user', content:userContent}]
       }, function(){ document.getElementById('rs-'+secId).textContent = 'Rate-Limit, warte...'; });
 
       var raw = d.content.map(function(b){return b.text||'';}).join('');
@@ -1603,7 +1696,7 @@ function goToStep(n) {
       hide('import-view'); show('import-edit');
     } else {
       hide('import-edit'); show('import-view');
-      document.getElementById('hf-preview-view').innerHTML = HF ? hfPreviewHTML() : '<span style="color:var(--text-tertiary);font-size:12px">Keine Daten vorhanden.</span>';
+      document.getElementById('hf-preview-view').innerHTML = (HF ? hfPreviewHTML() : '<span style="color:var(--text-tertiary);font-size:12px">Keine Daten vorhanden.</span>') + ctxPreviewHTML();
     }
     show('phase-import');
   } else if (n === 2) {
@@ -1651,6 +1744,9 @@ function restartAll() {
   document.getElementById('ft-err').innerHTML = '';
   document.getElementById('import-err').innerHTML = '';
   document.getElementById('json-inp').value = '';
+  document.getElementById('lp-ctx').value = '';
+  document.getElementById('lp-ctx-file').value = '';
+  ctxFiles = []; renderCtxChips();
   document.getElementById('import-banner').style.display = 'block';
   document.getElementById('hf-display').style.display = 'none';
   switchTab('json');
