@@ -593,7 +593,13 @@ async function addCtxFile(input) {
     ctxError('"' + ex(f.name) + '" hat ' + pages + ' Seiten (max. ' + CTX_MAX_PAGES + '). Lange PDFs treiben Token-Kosten und Ladezeit stark nach oben - bitte auf die relevanten Seiten kürzen.');
     return;
   }
-  ctxFiles.push(f); renderCtxChips();
+  // Einmal beim Upload encoden statt bei jedem Request: spart FileReader-
+  // Arbeit (3 parallele Chunks lasen die Datei sonst dreifach) und
+  // garantiert einen byte-identischen Cache-Prefix über alle Requests.
+  var b64;
+  try { b64 = await toBase64(f); }
+  catch(e) { ctxError('"' + ex(f.name) + '" konnte nicht gelesen werden.'); return; }
+  ctxFiles.push({name: f.name, b64: b64}); renderCtxChips();
 }
 function removeCtxFile(i) { ctxFiles.splice(i,1); renderCtxChips(); }
 function renderCtxChips() {
@@ -640,16 +646,24 @@ function ctxPreviewHTML() {
     '</div>';
 }
 
-async function buildUserContent(usr) {
+/* User-Content für callClaude: hochgeladene PDFs als document-Blöcke vor
+   dem Prompt-Text. Ohne Dateien bleibt es beim einfachen String.
+
+   Prompt Caching: Cache-Breakpoint auf dem LETZTEN Datei-Block. Die PDFs
+   stehen vor dem variablen Prompt-Text und der System-Prompt ist über
+   Content-Plan, alle Chunks und Regenerierungen identisch - der Breakpoint
+   cached also System-Prompt + alle PDFs gemeinsam. Der Content-Plan-Request
+   schreibt den Cache (wie heute schon für das Preset), alle Folge-Requests
+   lesen ihn für ~10% der Input-Kosten und verarbeiten schneller. TTL 1h aus
+   demselben Grund wie beim Preset: bleibt über Review-/Feedback-Runden warm.
+   (Regel der API: 1h-Breakpoints müssen vor kürzeren stehen - System-Preset
+   1h + Dateien 1h erfüllt das.) */
+function buildUserContent(usr) {
   if (!ctxFiles.length) return usr;
-  var content = [];
-  for (var i = 0; i < ctxFiles.length; i++) {
-    var f = ctxFiles[i];
-    try {
-      var b64 = await toBase64(f);
-      content.push({type:'document', source:{type:'base64', media_type:'application/pdf', data:b64}});
-    } catch(e) { console.warn('Kontext-Datei "' + f.name + '" konnte nicht gelesen werden:', e); }
-  }
+  var content = ctxFiles.map(function(f) {
+    return {type:'document', source:{type:'base64', media_type:'application/pdf', data:f.b64}};
+  });
+  content[content.length - 1].cache_control = {type:'ephemeral', ttl:'1h'};
   content.push({type:'text', text:usr});
   return content;
 }
@@ -817,7 +831,7 @@ async function suggestSectionsAI() {
     var d = await callClaude({
       model: 'claude-sonnet-4-6',
       max_tokens: 1000,
-      messages: [{ role: 'user', content: await buildUserContent(usr) }]
+      messages: [{ role: 'user', content: buildUserContent(usr) }]
     }, function(attempt){ loadEl.innerHTML = '<div class="spinner"></div> Rate-Limit erreicht, versuche erneut (' + attempt + ')...'; });
 
     var raw = d.content.map(function(b){return b.text||'';}).join('').trim();
@@ -1061,7 +1075,7 @@ async function generateContentPlan(active, sysBlocks) {
       // nur tatsächlich erzeugte Tokens.
       max_tokens: Math.min(4000, 400 + active.length * 120),
       system: sysBlocks,
-      messages: [{role:'user', content: await buildUserContent(usr)}]
+      messages: [{role:'user', content: buildUserContent(usr)}]
     });
     var plan = extractJSON(d.content.map(function(b){return b.text||'';}).join(''), {salvage:true});
     // Nur brauchbare String-Werte übernehmen; leerer/unbrauchbarer Plan wird verworfen
@@ -1171,7 +1185,7 @@ async function generateChunk(chunk, sysBlocks, ctx, attempt) {
     model: 'claude-sonnet-4-6',
     max_tokens: 12000,
     system: sysBlocks,
-    messages: [{role:'user', content: await buildUserContent(usr)}]
+    messages: [{role:'user', content: buildUserContent(usr)}]
   }, function(){ updateReviewLoadingMsg('Rate-Limit erreicht, warte kurz und versuche erneut...'); });
 
   var raw = d.content.map(function(b){return b.text||'';}).join('');
@@ -1369,7 +1383,7 @@ async function regenSection(secId) {
       'Wichtig: KEINE inhaltlichen Dopplungen mit den anderen Sections aus dem Gesamtkontext - Argumente, Beispiele und Formulierungen, die dort bereits vorkommen, nicht wiederholen (auch nicht umformuliert). Diese Section behält ihren eigenen Blickwinkel.\n\n' +
       'Gib NUR das JSON-Objekt für diese Section zurück - kein Wrapper, kein Markdown, kein Text drumherum.';
 
-    var userContent = await buildUserContent(usr);
+    var userContent = buildUserContent(usr);
     var maxAttempts = 3, parsed = null, lastErr = null;
     for (var attempt = 1; attempt <= maxAttempts && !parsed; attempt++) {
       if (attempt > 1) document.getElementById('rs-'+secId).textContent = 'erneuter Versuch ('+attempt+')...';

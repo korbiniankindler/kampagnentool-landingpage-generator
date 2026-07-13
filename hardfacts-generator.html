@@ -127,10 +127,11 @@ body{background:#fff;padding:0}
  <p class="field-hint">Je mehr Kontext, desto passgenauer der Output.</p>
  <div class="upload-zone" onclick="document.getElementById('f-file').click()">
  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
- <span>PDF oder Bild ablegen oder klicken (optional)</span>
+ <span>PDF ablegen oder klicken (optional, max. 2 Dateien, je 8&nbsp;MB / 20 Seiten)</span>
  </div>
- <input type="file" id="f-file" accept=".pdf,.png,.jpg,.jpeg" style="display:none" onchange="addFile(this)">
+ <input type="file" id="f-file" accept=".pdf,application/pdf" style="display:none" onchange="addFile(this)">
  <div id="file-chips"></div>
+ <div id="file-err"></div>
  </div>
 
  <div class="step-card">
@@ -259,9 +260,70 @@ window.addEventListener('DOMContentLoaded', function() {
  if (selectedCopyPreset) CopyPresets.load(selectedCopyPreset).catch(function(e){ console.warn(e); });
 });
 
-function addFile(input) {
- const f = input.files[0]; if (!f) return;
- uploadedFiles.push(f); renderChips(); input.value='';
+/* Upload bewusst begrenzt (wie in Modul 2): die Dateien hängen an JEDEM
+   Request (Titel, Bullets, jede Feedback-Runde) - jede PDF-Seite kostet
+   ~1.500-3.000 Input-Tokens. Die Seitenzahl ist das eigentliche Limit,
+   die MB-Grenze fängt Scans/Bild-PDFs ab, deren Seitenzahl clientseitig
+   nicht erkennbar ist. */
+const CTX_MAX_FILES = 2;
+const CTX_MAX_MB = 8;
+const CTX_MAX_PAGES = 20;
+
+function fileError(msg) {
+ document.getElementById('file-err').innerHTML = msg ? '<div class="error-box" style="margin-top:8px">'+msg+'</div>' : '';
+}
+
+/* Best-Effort-Seitenzähler ohne PDF-Library: zählt /Type /Page-Objekte
+   bzw. den /Count des Seitenbaums im Roh-Inhalt. Bei PDFs mit komprimierten
+   Object-Streams ist beides unsichtbar - dann null (=> nur MB-Limit). */
+function countPdfPages(file) {
+ return new Promise(resolve => {
+ const r = new FileReader();
+ r.onload = () => {
+ try {
+ const s = r.result;
+ let pages = (s.match(/\/Type\s*\/Page(?![a-zA-Z])/g) || []).length;
+ if (!pages) {
+ let m; const re = /\/Type\s*\/Pages[\s\S]{0,200}?\/Count\s+(\d+)|\/Count\s+(\d+)[\s\S]{0,200}?\/Type\s*\/Pages/g;
+ while ((m = re.exec(s))) pages = Math.max(pages, parseInt(m[1] || m[2], 10));
+ }
+ resolve(pages || null);
+ } catch(e) { resolve(null); }
+ };
+ r.onerror = () => resolve(null);
+ r.readAsBinaryString(file);
+ });
+}
+
+async function addFile(input) {
+ const f = input.files[0];
+ input.value = '';
+ if (!f) return;
+ fileError('');
+ if (f.type !== 'application/pdf' && !/\.pdf$/i.test(f.name)) {
+ fileError('Nur PDF-Dateien möglich. Bilder bitte als PDF exportieren oder den Inhalt als Text in die Beschreibung schreiben.');
+ return;
+ }
+ if (uploadedFiles.length >= CTX_MAX_FILES) {
+ fileError('Maximal '+CTX_MAX_FILES+' PDFs möglich - jede Datei wird bei jeder Generierung erneut mitgeschickt und kostet Tokens & Ladezeit.');
+ return;
+ }
+ if (f.size > CTX_MAX_MB * 1024 * 1024) {
+ fileError('"'+esc(f.name)+'" ist zu groß ('+(f.size/1024/1024).toFixed(1)+' MB, max. '+CTX_MAX_MB+' MB). Bitte das PDF verkleinern oder auf die relevanten Seiten kürzen.');
+ return;
+ }
+ const pages = await countPdfPages(f);
+ if (pages && pages > CTX_MAX_PAGES) {
+ fileError('"'+esc(f.name)+'" hat '+pages+' Seiten (max. '+CTX_MAX_PAGES+'). Lange PDFs treiben Token-Kosten und Ladezeit stark nach oben - bitte auf die relevanten Seiten kürzen.');
+ return;
+ }
+ // Einmal beim Upload encoden statt bei jedem Request: spart FileReader-
+ // Arbeit und garantiert einen byte-identischen Cache-Prefix über alle
+ // Requests (Titel, Bullets, Feedback-Runden).
+ let b64;
+ try { b64 = await toBase64(f); }
+ catch(e) { fileError('"'+esc(f.name)+'" konnte nicht gelesen werden.'); return; }
+ uploadedFiles.push({name: f.name, b64: b64}); renderChips();
 }
 function removeFile(i) { uploadedFiles.splice(i,1); renderChips(); }
 function renderChips() {
@@ -338,16 +400,15 @@ async function callClaude(body, attempt) {
 }
 
 async function callAPI(systemP, userP) {
- const userContent = [];
- for (const f of uploadedFiles) {
- try {
- const b64 = await toBase64(f);
- const mt = f.type === 'application/pdf' ? 'application/pdf' : f.type;
- userContent.push(mt === 'application/pdf'
- ? {type:'document', source:{type:'base64',media_type:'application/pdf',data:b64}}
- : {type:'image', source:{type:'base64',media_type:mt,data:b64}});
- } catch(e){}
- }
+ /* PDFs als document-Blöcke VOR dem variablen Prompt-Text, mit Cache-
+    Breakpoint auf dem letzten Datei-Block: System-Prompt + PDFs bilden so
+    einen gemeinsamen Cache-Prefix über Titel, Bullets und alle Feedback-
+    Runden - nur der erste Request zahlt voll, Folge-Requests lesen für
+    ~10% der Input-Kosten. TTL 1h wie beim Preset (bleibt über die ganze
+    Arbeitssession warm; 1h-Breakpoints müssen vor kürzeren stehen). */
+ const userContent = uploadedFiles.map(f =>
+ ({type:'document', source:{type:'base64',media_type:'application/pdf',data:f.b64}}));
+ if (userContent.length) userContent[userContent.length-1].cache_control = {type:'ephemeral', ttl:'1h'};
  userContent.push({type:'text', text:userP});
 
  const data = await callClaude({
