@@ -274,8 +274,12 @@ function hasUnsavedWork() {
  });
 }
 
+/* Gewollte Übergabe-Navigation (goToModul2 speichert vorher in die Session):
+   dort geht nichts verloren, also keine Warnung. */
+var suppressLeaveWarning = false;
+
 window.addEventListener('beforeunload', function(e) {
- if (!hasUnsavedWork()) return;
+ if (suppressLeaveWarning || !hasUnsavedWork()) return;
  e.preventDefault();
  e.returnValue = ''; // Chrome/ältere Browser brauchen returnValue, der Dialog-Text ist immer der des Browsers
 });
@@ -965,6 +969,7 @@ function exportJSON() {
 function goToModul2() {
  try { sessionStorage.setItem('wkt_hardfacts', JSON.stringify(window._hardfacts)); } catch(e) {}
  CopyPresets.setSelected(selectedCopyPreset);
+ suppressLeaveWarning = true; // Stand ist gerade gespeichert worden - Übergabe ohne Warn-Dialog
  window.location.href = 'landingpage-generator.html';
 }
 
