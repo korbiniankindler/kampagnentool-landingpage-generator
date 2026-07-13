@@ -50,7 +50,7 @@
 *Diese Zahlen sind auf live geschalteten Holistic-House-Seiten im Einsatz. Bei neuen Kampagnen im Zweifel Quelle intern gegenprüfen; keine weiteren Zahlen erfinden.*
 
 **Gesundheitssystem / Prävention (Kampagne 2026):**
-- Kabinettsbeschluss April 2026: eine der größten Sozialreformen seit Jahrzehnten; Zuzahlungen steigen um 50 %, Kassenbeiträge wachsen, Erstattungen werden gekürzt.
+- Kabinettsbeschluss April 2026: eine der größten Sozialreformen seit Jahrzehnten; Zuzahlungen steigen um 50 %, Kassenbeiträge wachsen, Erstattungen werden gekürzt. *(Sparsam einsetzen: war der Aufhänger der Kampagne 2026 - nicht als Standard-Einstieg jeder neuen LP wiederverwenden, nur wenn das Briefing einen Bezug dazu hat.)*
 - In zehn Jahren ist jeder dritte Deutsche über sechzig.
 - Das deutsche Gesundheitssystem gibt jährlich über 500 Milliarden Euro aus; weniger als 3 % fließen in echte Prävention. (Bild: „Prävention sitzt auf der Ersatzbank.")
 - Bis 2022 bewerteten über 83 % der Deutschen ihr Gesundheitssystem positiv, heute nur noch 62 %; die Zahl der Unzufriedenen hat sich verdoppelt.

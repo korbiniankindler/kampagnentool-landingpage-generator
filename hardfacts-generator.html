@@ -465,7 +465,7 @@ async function buildSystemPrompt() {
  // campaignCtx steuert die automatische Referenz-Wahl (Register-Heuristik)
  var presetText = await CopyPresets.load(selectedCopyPreset, campaignCtx);
  if (!presetText) return CopyPresets.systemBlocks('', base);
- var instr = base + '\n\nWICHTIG: Am Anfang dieses System-Prompts steht das Copywriter-Preset der Marke (Regelwerk, Wissensdatenbank, Referenz-Copys). Halte dich strikt an das Regelwerk für Tonalität, Sprache, Anrede und Stilregeln. Verwende nur Fakten, Zahlen und Zitate aus der Wissensdatenbank oder den Kampagnen-Angaben. Formuliere Titel und Bulletpoints so, wie die Referenz-Copys klingen (Satzrhythmus, Tonalität, Dramaturgie), aber übernimm deren im Kopf jeder Referenz gelistete Regelverstöße NICHT: bei Konflikt gilt immer das Regelwerk. Die Referenz-Copys sind reine Stil-Referenz, KEINE Textquelle: Übernimm daraus niemals Headlines, Pre-Headlines, Sublines oder ganze Sätze wörtlich oder nur leicht umformuliert - jede Formulierung wird neu und spezifisch für DIESE Kampagne geschrieben. Das Preset hat Vorrang vor den allgemeinen Stilvorgaben oben (z.B. bei der Anrede Du/Sie).';
+ var instr = base + '\n\nWICHTIG: Am Anfang dieses System-Prompts steht das Copywriter-Preset der Marke (Regelwerk, Wissensdatenbank, Referenz-Copys). Halte dich strikt an das Regelwerk für Tonalität, Sprache, Anrede und Stilregeln. Verwende nur Fakten, Zahlen und Zitate aus der Wissensdatenbank oder den Kampagnen-Angaben. Formuliere Titel und Bulletpoints so, wie die Referenz-Copys klingen (Satzrhythmus, Tonalität, Dramaturgie), aber übernimm deren im Kopf jeder Referenz gelistete Regelverstöße NICHT: bei Konflikt gilt immer das Regelwerk. Die Referenz-Copys sind reine Stil-Referenz, KEINE Textquelle: Übernimm daraus niemals Headlines, Pre-Headlines, Sublines oder ganze Sätze wörtlich oder nur leicht umformuliert - und auch nicht deren inhaltliche Aufhänger oder Zeitgeschehen-Bezüge als Standard (die Referenz zeigt, WIE erzählt wird, nicht WORÜBER). Jede Formulierung und jeder Aufhänger wird neu und spezifisch für DIESE Kampagne gewählt. Das Preset hat Vorrang vor den allgemeinen Stilvorgaben oben (z.B. bei der Anrede Du/Sie).';
  return CopyPresets.systemBlocks(presetText, instr);
 }
 
@@ -1588,7 +1588,7 @@ Die Sprache soll klingen, als würde ein erfahrener Markenmensch eine ehrliche, 
 Jede LP folgt derselben Grundlogik, unabhängig vom Angebot:
 
 1. **Above the Fold:** Eyebrow (Autoritätsanker) + Pre-Headline (konkreter Problembezug) + Headline + Subline (Nutzenversprechen) + Button + Microcopy.
-2. **Kontext-/Problem-Nugget:** eine gesellschaftlich oder biologisch verankerte Einordnung mit belegten Zahlen (z. B. GKV-Reform April 2026, Langlebigkeitsforschung). Weckt Problembewusstsein, ohne Angst zu schüren.
+2. **Kontext-/Problem-Nugget:** eine gesellschaftlich oder biologisch verankerte Einordnung mit belegten Zahlen aus der Wissensdatenbank (Zeitgeschehen, Demografie, Forschungslage, Marktentwicklung - was zum Kampagnen-Thema passt). Weckt Problembewusstsein, ohne Angst zu schüren. **Aufhänger pro Kampagne frisch wählen und variieren:** nicht standardmäßig denselben Einstieg (z. B. dieselbe Reform) wie in einer Referenz-Copy oder einer früheren Kampagne verwenden - die Referenzen zeigen beispielhaft, WIE so eine Einordnung erzählt wird, nicht WORÜBER die nächste LP einsteigen muss.
 3. **Lösung & Nutzen-Bullets:** was die Leserin erlebt, in Sie-Sätzen. Oft mit benanntem Element (Standort-Check, Körpertypentest, 3-Schritte-Plan).
 4. **Autorität (Über Uli):** Werdegang, 1980 als einer der ersten westlichen Ärzte in Indien, O-Ton als kursives Zitat. Autorität als Kontext, nie als Verkaufsargument.
 5. **Social Proof:** Presse-Leiste (WELT, BUNTE, Deutsche Gesellschaft für Ayurveda, ELLE), Abonnentenzahl, echte Testimonials.
@@ -1736,7 +1736,7 @@ Prüfe jeden Text vor der finalen Ausgabe:
 *Diese Zahlen sind auf live geschalteten Holistic-House-Seiten im Einsatz. Bei neuen Kampagnen im Zweifel Quelle intern gegenprüfen; keine weiteren Zahlen erfinden.*
 
 **Gesundheitssystem / Prävention (Kampagne 2026):**
-- Kabinettsbeschluss April 2026: eine der größten Sozialreformen seit Jahrzehnten; Zuzahlungen steigen um 50 %, Kassenbeiträge wachsen, Erstattungen werden gekürzt.
+- Kabinettsbeschluss April 2026: eine der größten Sozialreformen seit Jahrzehnten; Zuzahlungen steigen um 50 %, Kassenbeiträge wachsen, Erstattungen werden gekürzt. *(Sparsam einsetzen: war der Aufhänger der Kampagne 2026 - nicht als Standard-Einstieg jeder neuen LP wiederverwenden, nur wenn das Briefing einen Bezug dazu hat.)*
 - In zehn Jahren ist jeder dritte Deutsche über sechzig.
 - Das deutsche Gesundheitssystem gibt jährlich über 500 Milliarden Euro aus; weniger als 3 % fließen in echte Prävention. (Bild: „Prävention sitzt auf der Ersatzbank.")
 - Bis 2022 bewerteten über 83 % der Deutschen ihr Gesundheitssystem positiv, heute nur noch 62 %; die Zahl der Unzufriedenen hat sich verdoppelt.

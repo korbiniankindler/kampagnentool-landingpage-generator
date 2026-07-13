@@ -52,7 +52,7 @@ Die Sprache soll klingen, als würde ein erfahrener Markenmensch eine ehrliche, 
 Jede LP folgt derselben Grundlogik, unabhängig vom Angebot:
 
 1. **Above the Fold:** Eyebrow (Autoritätsanker) + Pre-Headline (konkreter Problembezug) + Headline + Subline (Nutzenversprechen) + Button + Microcopy.
-2. **Kontext-/Problem-Nugget:** eine gesellschaftlich oder biologisch verankerte Einordnung mit belegten Zahlen (z. B. GKV-Reform April 2026, Langlebigkeitsforschung). Weckt Problembewusstsein, ohne Angst zu schüren.
+2. **Kontext-/Problem-Nugget:** eine gesellschaftlich oder biologisch verankerte Einordnung mit belegten Zahlen aus der Wissensdatenbank (Zeitgeschehen, Demografie, Forschungslage, Marktentwicklung - was zum Kampagnen-Thema passt). Weckt Problembewusstsein, ohne Angst zu schüren. **Aufhänger pro Kampagne frisch wählen und variieren:** nicht standardmäßig denselben Einstieg (z. B. dieselbe Reform) wie in einer Referenz-Copy oder einer früheren Kampagne verwenden - die Referenzen zeigen beispielhaft, WIE so eine Einordnung erzählt wird, nicht WORÜBER die nächste LP einsteigen muss.
 3. **Lösung & Nutzen-Bullets:** was die Leserin erlebt, in Sie-Sätzen. Oft mit benanntem Element (Standort-Check, Körpertypentest, 3-Schritte-Plan).
 4. **Autorität (Über Uli):** Werdegang, 1980 als einer der ersten westlichen Ärzte in Indien, O-Ton als kursives Zitat. Autorität als Kontext, nie als Verkaufsargument.
 5. **Social Proof:** Presse-Leiste (WELT, BUNTE, Deutsche Gesellschaft für Ayurveda, ELLE), Abonnentenzahl, echte Testimonials.
