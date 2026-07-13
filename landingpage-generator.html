@@ -118,10 +118,11 @@
     <p class="field-hint">Je mehr Kontext, desto passgenauer der Output.</p>
     <div class="upload-zone" onclick="document.getElementById('lp-ctx-file').click()">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-      <span>PDF oder Bild ablegen oder klicken (optional)</span>
+      <span>PDF ablegen oder klicken (optional, max. 2 Dateien, je 8&nbsp;MB / 20 Seiten)</span>
     </div>
-    <input type="file" id="lp-ctx-file" accept=".pdf,.png,.jpg,.jpeg" style="display:none" onchange="addCtxFile(this)">
+    <input type="file" id="lp-ctx-file" accept=".pdf,application/pdf" style="display:none" onchange="addCtxFile(this)">
     <div id="lp-ctx-chips"></div>
+    <div id="lp-ctx-err"></div>
   </div>
   <div id="import-err"></div>
 
@@ -528,16 +529,71 @@ function switchTab(tab) {
   document.getElementById('tab-free').classList.toggle('active', tab === 'free');
 }
 
-/* ===== KAMPAGNEN-KONTEXT (Schritt 1): Freitext + PDF/Bild-Upload =====
+/* ===== KAMPAGNEN-KONTEXT (Schritt 1): Freitext + PDF-Upload =====
    Wie die Kampagnenbeschreibung in Modul 1: der Text fliesst als eigener
-   Block in jeden Prompt, hochgeladene Dateien gehen als document/image-
-   Blöcke in jeden Claude-Request (Section-Vorschlag, Content-Plan,
-   Generierung, Regenerierung). */
-var ctxFiles = [];
+   Block in jeden Prompt, hochgeladene PDFs gehen als document-Blöcke in
+   jeden Claude-Request (Section-Vorschlag, Content-Plan, Generierung,
+   Regenerierung).
 
-function addCtxFile(input) {
-  var f = input.files[0]; if (!f) return;
-  ctxFiles.push(f); renderCtxChips(); input.value = '';
+   Upload bewusst begrenzt: die Dateien hängen an JEDEM Request (4-5 pro
+   Generierung + je 1 pro Regenerierung) und laufen nicht über den
+   Prompt-Cache. Jede PDF-Seite kostet ~1.500-3.000 Input-Tokens - die
+   Seitenzahl ist deshalb das eigentliche Limit, die MB-Grenze fängt nur
+   Scans/Bild-PDFs ab, deren Seitenzahl clientseitig nicht erkennbar ist. */
+var ctxFiles = [];
+var CTX_MAX_FILES = 2;
+var CTX_MAX_MB = 8;
+var CTX_MAX_PAGES = 20;
+
+function ctxError(msg) {
+  document.getElementById('lp-ctx-err').innerHTML = msg ? '<div class="error-box" style="margin-top:8px">' + msg + '</div>' : '';
+}
+
+/* Best-Effort-Seitenzähler ohne PDF-Library: zählt /Type /Page-Objekte
+   bzw. den /Count des Seitenbaums im Roh-Inhalt. Bei PDFs mit komprimierten
+   Object-Streams ist beides unsichtbar - dann null (=> nur MB-Limit). */
+function countPdfPages(file) {
+  return new Promise(function(resolve) {
+    var r = new FileReader();
+    r.onload = function() {
+      try {
+        var s = r.result;
+        var pages = (s.match(/\/Type\s*\/Page(?![a-zA-Z])/g) || []).length;
+        if (!pages) {
+          var m, re = /\/Type\s*\/Pages[\s\S]{0,200}?\/Count\s+(\d+)|\/Count\s+(\d+)[\s\S]{0,200}?\/Type\s*\/Pages/g;
+          while ((m = re.exec(s))) pages = Math.max(pages, parseInt(m[1] || m[2], 10));
+        }
+        resolve(pages || null);
+      } catch (e) { resolve(null); }
+    };
+    r.onerror = function() { resolve(null); };
+    r.readAsBinaryString(file);
+  });
+}
+
+async function addCtxFile(input) {
+  var f = input.files[0];
+  input.value = '';
+  if (!f) return;
+  ctxError('');
+  if (f.type !== 'application/pdf' && !/\.pdf$/i.test(f.name)) {
+    ctxError('Nur PDF-Dateien möglich. Bilder bitte als PDF exportieren oder den Inhalt als Text ins Kontextfeld schreiben.');
+    return;
+  }
+  if (ctxFiles.length >= CTX_MAX_FILES) {
+    ctxError('Maximal ' + CTX_MAX_FILES + ' PDFs möglich - jede Datei wird bei jeder Generierung erneut mitgeschickt und kostet Tokens & Ladezeit.');
+    return;
+  }
+  if (f.size > CTX_MAX_MB * 1024 * 1024) {
+    ctxError('"' + ex(f.name) + '" ist zu groß (' + (f.size / 1024 / 1024).toFixed(1) + ' MB, max. ' + CTX_MAX_MB + ' MB). Bitte das PDF verkleinern oder auf die relevanten Seiten kürzen.');
+    return;
+  }
+  var pages = await countPdfPages(f);
+  if (pages && pages > CTX_MAX_PAGES) {
+    ctxError('"' + ex(f.name) + '" hat ' + pages + ' Seiten (max. ' + CTX_MAX_PAGES + '). Lange PDFs treiben Token-Kosten und Ladezeit stark nach oben - bitte auf die relevanten Seiten kürzen.');
+    return;
+  }
+  ctxFiles.push(f); renderCtxChips();
 }
 function removeCtxFile(i) { ctxFiles.splice(i,1); renderCtxChips(); }
 function renderCtxChips() {
@@ -567,7 +623,7 @@ function ctxPromptBlock() {
   var parts = [];
   var t = lpContext();
   if (t) parts.push('Zusätzlicher Kontext (Kampagne & gewünschte Landingpage):\n' + t);
-  if (ctxFiles.length) parts.push('Angehängte Datei(en) (PDF/Bild) sind zusätzliches Kampagnen-Briefing - nutze deren Inhalte als Fakten- und Kontextquelle.');
+  if (ctxFiles.length) parts.push('Angehängte PDF(s) sind zusätzliches Kampagnen-Briefing - nutze deren Inhalte als Fakten- und Kontextquelle.');
   return parts.length ? parts.join('\n') + '\n' : '';
 }
 
@@ -591,9 +647,7 @@ async function buildUserContent(usr) {
     var f = ctxFiles[i];
     try {
       var b64 = await toBase64(f);
-      content.push(f.type === 'application/pdf'
-        ? {type:'document', source:{type:'base64', media_type:'application/pdf', data:b64}}
-        : {type:'image', source:{type:'base64', media_type:f.type, data:b64}});
+      content.push({type:'document', source:{type:'base64', media_type:'application/pdf', data:b64}});
     } catch(e) { console.warn('Kontext-Datei "' + f.name + '" konnte nicht gelesen werden:', e); }
   }
   content.push({type:'text', text:usr});
@@ -1746,7 +1800,7 @@ function restartAll() {
   document.getElementById('json-inp').value = '';
   document.getElementById('lp-ctx').value = '';
   document.getElementById('lp-ctx-file').value = '';
-  ctxFiles = []; renderCtxChips();
+  ctxFiles = []; renderCtxChips(); ctxError('');
   document.getElementById('import-banner').style.display = 'block';
   document.getElementById('hf-display').style.display = 'none';
   switchTab('json');
