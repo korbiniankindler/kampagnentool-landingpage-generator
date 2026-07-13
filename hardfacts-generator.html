@@ -439,7 +439,8 @@ Nur gültiges JSON zurückgeben - kein Markdown, keine Backticks.`;
 async function buildSystemPrompt() {
  var base = baseSystemPrompt();
  if (!selectedCopyPreset) return CopyPresets.systemBlocks('', base);
- var presetText = await CopyPresets.load(selectedCopyPreset);
+ // campaignCtx steuert die automatische Referenz-Wahl (Register-Heuristik)
+ var presetText = await CopyPresets.load(selectedCopyPreset, campaignCtx);
  if (!presetText) return CopyPresets.systemBlocks('', base);
  var instr = base + '\n\nWICHTIG: Am Anfang dieses System-Prompts steht das Copywriter-Preset der Marke (Regelwerk, Wissensdatenbank, Referenz-Copys). Halte dich strikt an das Regelwerk für Tonalität, Sprache, Anrede und Stilregeln. Verwende nur Fakten, Zahlen und Zitate aus der Wissensdatenbank oder den Kampagnen-Angaben. Formuliere Titel und Bulletpoints so, wie die Referenz-Copys klingen (Satzrhythmus, Tonalität, Dramaturgie), aber übernimm deren im Kopf jeder Referenz gelistete Regelverstöße NICHT: bei Konflikt gilt immer das Regelwerk. Die Referenz-Copys sind reine Stil-Referenz, KEINE Textquelle: Übernimm daraus niemals Headlines, Pre-Headlines, Sublines oder ganze Sätze wörtlich oder nur leicht umformuliert - jede Formulierung wird neu und spezifisch für DIESE Kampagne geschrieben. Das Preset hat Vorrang vor den allgemeinen Stilvorgaben oben (z.B. bei der Anrede Du/Sie).';
  return CopyPresets.systemBlocks(presetText, instr);

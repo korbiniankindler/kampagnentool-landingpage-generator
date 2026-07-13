@@ -10,19 +10,24 @@ var CopyPresets = (function () {
 
   /* Presets mit `referenzen` laden Regelwerk + Wissensdatenbank immer und
      dazu GENAU EINE Referenz-Copy pro Auftrag (Vorgabe im Regelwerk,
-     Abschnitt 0: Referenz-Auswahl nach Register). Der erste Eintrag ist
-     der Default bei unklarem Auftrag. */
+     Abschnitt 0: Referenz-Auswahl nach Register). Die Auswahl trifft das
+     Tool automatisch anhand der `keywords` gegen das Kampagnen-Briefing
+     (siehe pickRef) - kein manueller Auswahlschritt, keine feste Obergrenze
+     an Referenzen. Der erste Eintrag ist der Default bei unklarem Auftrag
+     und braucht keine Keywords. */
   var CATALOG = [
-    {id: 'holistic-house', name: 'Holistic House', desc: 'Regelwerk der Brand', files: [
+    {id: 'holistic-house', name: 'Holistic House', desc: 'Regelwerk der Brand, Referenz-Copy automatisch nach Auftrag', files: [
       'presets/holistic-house/regeln.md',
       'presets/holistic-house/wissensdatenbank.md'
     ], referenzen: [
       {id: 'b2c', name: 'B2C-Webinar', desc: 'Gold-Standard „Gesundheit neu denken" (Default)',
         file: 'presets/holistic-house/referenzen/webinar-gesundheit-neu-denken-b2c.md'},
       {id: 'b2b', name: 'B2B / Fachpublikum', desc: '„Evolution der Medizin" für Ärzte, Heilpraktiker, Coaches',
-        file: 'presets/holistic-house/referenzen/webinar-evolution-der-medizin-b2b.md'},
+        file: 'presets/holistic-house/referenzen/webinar-evolution-der-medizin-b2b.md',
+        keywords: ['b2b', 'arzt', 'ärzt', 'heilpraktiker', 'therapeut', 'mediziner', 'fachpublikum', 'fachkreise', 'behandler']},
       {id: 'nem', name: 'Themen-Webinar NEM/DAYA', desc: '„Vom Chaos zum System" mit Produktnähe',
-        file: 'presets/holistic-house/referenzen/webinar-supplements-vom-chaos-zum-system.md'}
+        file: 'presets/holistic-house/referenzen/webinar-supplements-vom-chaos-zum-system.md',
+        keywords: ['nem', 'supplement', 'nahrungsergänzung', 'daya', 'präparat', 'vitalstoff', 'mikronährstoff']}
     ]},
     {id: 'hellinger', name: 'Hellinger', desc: 'Regelwerk der Brand', files: [
       'presets/hellinger/regeln.md'
@@ -30,7 +35,6 @@ var CopyPresets = (function () {
   ];
 
   var STORAGE_KEY = 'wkt_copy_preset';
-  var STORAGE_KEY_REF = 'wkt_copy_preset_ref'; // Register-/Referenz-Wahl je Preset (JSON-Map)
   var cache = {};
 
   function esc(s) {
@@ -48,27 +52,33 @@ var CopyPresets = (function () {
     } catch (e) {}
   }
 
-  /* Gewählte Referenz-Copy (Register) eines Presets. Fällt bei fehlender
-     oder unbekannter Wahl auf den ersten Eintrag zurück - laut Regelwerk
-     der Default bei unklarem Auftrag. Gibt null zurück, wenn das Preset
-     keine wählbaren Referenzen hat. */
-  function getSelectedRef(presetId) {
-    var preset = CATALOG.find(function (p) { return p.id === presetId; });
+  /* Automatische Referenz-Wahl: zählt Treffer der `keywords` jeder Referenz
+     im Kampagnen-Briefing (case-insensitiv, mit linker Wortgrenze, damit
+     z.B. "nem" nicht in "einem" matcht) und nimmt die Referenz mit den
+     meisten Treffern. Ohne Treffer gilt der erste Eintrag - laut Regelwerk
+     der Default bei unklarem Auftrag. Bewusst eine Heuristik statt eines
+     Klassifikator-Requests: kostet null Tokens und null Latenz; die
+     Register-Begriffe (Ärzte, NEM, ...) stehen in echten Briefings praktisch
+     immer wörtlich drin. Gibt null zurück, wenn das Preset keine Referenzen
+     hat. */
+  function pickRef(preset, briefing) {
     if (!preset || !preset.referenzen || !preset.referenzen.length) return null;
-    var refId = null;
-    try {
-      var map = JSON.parse(sessionStorage.getItem(STORAGE_KEY_REF) || '{}');
-      refId = map[presetId] || null;
-    } catch (e) {}
-    return preset.referenzen.find(function (r) { return r.id === refId; }) || preset.referenzen[0];
+    var t = String(briefing || '').toLowerCase();
+    var best = preset.referenzen[0], bestScore = 0;
+    preset.referenzen.forEach(function (r) {
+      var score = 0;
+      (r.keywords || []).forEach(function (kw) {
+        var m = t.match(new RegExp('(^|[^a-z0-9äöüß])' + kw, 'g'));
+        if (m) score += m.length;
+      });
+      if (score > bestScore) { best = r; bestScore = score; }
+    });
+    return best;
   }
 
-  function setSelectedRef(presetId, refId) {
-    try {
-      var map = JSON.parse(sessionStorage.getItem(STORAGE_KEY_REF) || '{}');
-      map[presetId] = refId;
-      sessionStorage.setItem(STORAGE_KEY_REF, JSON.stringify(map));
-    } catch (e) {}
+  /* Öffentliche Variante für Anzeige/Diagnose (z.B. Tests, Hinweistexte). */
+  function autoRef(presetId, briefing) {
+    return pickRef(CATALOG.find(function (p) { return p.id === presetId; }), briefing);
   }
 
   /* Lädt eine einzelne Preset-Datei. Reihenfolge:
@@ -98,17 +108,18 @@ var CopyPresets = (function () {
 
   /* Lädt die Dateien eines Presets als einen zusammengefügten Text:
      alle `files` (Regelwerk, Wissensdatenbank) plus - falls das Preset
-     Referenzen definiert - genau die eine gewählte Referenz-Copy.
-     Wirft bei Fehlern, statt still ohne Markenwissen weiterzumachen. */
-  async function load(id) {
+     Referenzen definiert - genau die eine per Briefing-Heuristik gewählte
+     Referenz-Copy (ohne Briefing: der Default). Wirft bei Fehlern, statt
+     still ohne Markenwissen weiterzumachen. */
+  async function load(id, briefing) {
     if (!id) return '';
-    var ref = getSelectedRef(id);
-    var cacheKey = ref ? id + '::' + ref.id : id;
-    if (cache[cacheKey] !== undefined) return cache[cacheKey];
     var preset = CATALOG.find(function (p) { return p.id === id; });
     // Unbekannte IDs sind ein Programmier-/Datenfehler: laut scheitern statt
     // still ohne Markenwissen zu generieren.
     if (!preset) throw new Error('Unbekanntes Copywriter-Preset: "' + id + '" (nicht im CATALOG in shared/copywriter-presets.js)');
+    var ref = pickRef(preset, briefing);
+    var cacheKey = ref ? id + '::' + ref.id : id;
+    if (cache[cacheKey] !== undefined) return cache[cacheKey];
     var files = ref ? preset.files.concat([ref.file]) : preset.files;
     var parts = await Promise.all(files.map(fetchFile));
     var text = parts.map(function (p) { return p.text; }).join('\n\n---\n\n');
@@ -121,9 +132,8 @@ var CopyPresets = (function () {
   /* Rendert den Preset-Picker (inkl. "Kein Preset") in einen Container.
      onSelect(id|null) wird bei Klick aufgerufen - die Seite kümmert sich
      selbst um State + Re-Render. Nutzt die .preset-card Styles der Module.
-     Hat das gewählte Preset wählbare Referenzen (Register), erscheint
-     darunter die Auswahl "welche Referenz-Copy für diesen Auftrag" -
-     es wird immer genau eine geladen. */
+     Die Referenz-Copy wird nicht mehr manuell gewählt, sondern beim Laden
+     automatisch per Briefing-Heuristik bestimmt (siehe pickRef). */
   function renderPicker(container, selectedId, onSelect) {
     var all = [{ id: null, name: 'Kein Preset', desc: 'Generisch anhand der Kampagnen-Angaben generieren' }].concat(CATALOG);
     var checkedSvg = '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>';
@@ -134,33 +144,10 @@ var CopyPresets = (function () {
         '<div class="preset-card-desc">' + esc(p.desc) + '</div>' +
         '</div>';
     }).join('');
-    var selectedPreset = CATALOG.find(function (p) { return p.id === selectedId; });
-    if (selectedPreset && selectedPreset.referenzen && selectedPreset.referenzen.length) {
-      var selRef = getSelectedRef(selectedId);
-      html += '<div style="grid-column:1/-1;margin-top:2px">' +
-        '<div style="font-size:11px;font-weight:600;letter-spacing:.02em;text-transform:uppercase;color:var(--text-tertiary,#888);margin-bottom:6px">Referenz-Copy für diesen Auftrag (genau eine wird geladen)</div>' +
-        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px">' +
-        selectedPreset.referenzen.map(function (r) {
-          var sel = selRef && selRef.id === r.id;
-          return '<div class="preset-card' + (sel ? ' selected' : '') + '" data-ref-id="' + esc(r.id) + '">' +
-            '<div class="preset-card-name"><div class="preset-check">' + (sel ? checkedSvg : '') + '</div>' + esc(r.name) + '</div>' +
-            '<div class="preset-card-desc">' + esc(r.desc) + '</div>' +
-            '</div>';
-        }).join('') +
-        '</div></div>';
-    }
     container.innerHTML = html;
     Array.prototype.forEach.call(container.querySelectorAll('.preset-card[data-preset-idx]'), function (card) {
       card.addEventListener('click', function () {
         onSelect(all[parseInt(card.getAttribute('data-preset-idx'), 10)].id);
-      });
-    });
-    Array.prototype.forEach.call(container.querySelectorAll('.preset-card[data-ref-id]'), function (card) {
-      card.addEventListener('click', function () {
-        setSelectedRef(selectedId, card.getAttribute('data-ref-id'));
-        // onSelect mit unveränderter Preset-ID: Seite re-rendert den Picker
-        // und lädt das Preset neu (jetzt mit der gewählten Referenz).
-        onSelect(selectedId);
       });
     });
   }
@@ -168,9 +155,7 @@ var CopyPresets = (function () {
   function getName(id) {
     if (!id) return null;
     var p = CATALOG.find(function (x) { return x.id === id; });
-    if (!p) return id;
-    var ref = getSelectedRef(id);
-    return ref ? p.name + ' · Referenz: ' + ref.name : p.name;
+    return p ? p.name : id;
   }
 
   /* Baut die system-Blöcke für Claude-Requests. Das Preset (~22k Tokens)
@@ -198,5 +183,5 @@ var CopyPresets = (function () {
     ];
   }
 
-  return { CATALOG: CATALOG, getSelected: getSelected, setSelected: setSelected, getSelectedRef: getSelectedRef, setSelectedRef: setSelectedRef, load: load, getName: getName, renderPicker: renderPicker, systemBlocks: systemBlocks };
+  return { CATALOG: CATALOG, getSelected: getSelected, setSelected: setSelected, autoRef: autoRef, load: load, getName: getName, renderPicker: renderPicker, systemBlocks: systemBlocks };
 })();

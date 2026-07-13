@@ -1,6 +1,6 @@
 # Copywriter-Presets
 
-Jedes Kundenprojekt bekommt einen eigenen Ordner. Der Preset-Katalog liegt zentral in `shared/copywriter-presets.js` (→ `CATALOG`) und wird von **beiden Modulen** genutzt: Modul 1 (`hardfacts-generator.html`, Titel + Bulletpoints) und Modul 2 (`landingpage-generator.html`, Landingpage-Copy). Die Tools laden beim Generieren alle unter `files` eingetragenen Dateien des gewählten Presets (Regelwerk, Wissensdatenbank) und hängen sie in dieser Reihenfolge in den System-Prompt. Definiert ein Preset zusätzlich `referenzen` (wählbare Referenz-Copys nach Register), wird davon **genau eine** pro Auftrag mitgeladen - die Auswahl erscheint im Preset-Picker, Default ist der erste Eintrag:
+Jedes Kundenprojekt bekommt einen eigenen Ordner. Der Preset-Katalog liegt zentral in `shared/copywriter-presets.js` (→ `CATALOG`) und wird von **beiden Modulen** genutzt: Modul 1 (`hardfacts-generator.html`, Titel + Bulletpoints) und Modul 2 (`landingpage-generator.html`, Landingpage-Copy). Die Tools laden beim Generieren alle unter `files` eingetragenen Dateien des gewählten Presets (Regelwerk, Wissensdatenbank) und hängen sie in dieser Reihenfolge in den System-Prompt. Definiert ein Preset zusätzlich `referenzen` (Referenz-Copys nach Register), wird davon **genau eine** pro Auftrag mitgeladen - die Auswahl trifft das Tool automatisch: die `keywords` jeder Referenz werden gegen das Kampagnen-Briefing gematcht (Beschreibung, Zielgruppe, Offer, zusätzlicher Kontext), die Referenz mit den meisten Treffern wird geladen. Ohne Treffer gilt der erste Eintrag als Default. Es gibt keinen manuellen Auswahlschritt und keine Obergrenze für die Anzahl der Referenzen:
 
 ```
 presets/
@@ -38,11 +38,12 @@ Danach folgt die Original-Copy **wortgetreu** (nichts umschreiben!), gegliedert 
   'presets/projekt/wissensdatenbank.md'
 ], referenzen:[
   {id:'b2c', name:'B2C-Webinar', desc:'Gold-Standard (Default)', file:'presets/projekt/referenzen/beispiel-b2c.md'},
-  {id:'b2b', name:'B2B / Fachpublikum', desc:'…', file:'presets/projekt/referenzen/beispiel-b2b.md'}
+  {id:'b2b', name:'B2B / Fachpublikum', desc:'…', file:'presets/projekt/referenzen/beispiel-b2b.md',
+    keywords:['b2b', 'arzt', 'ärzt', 'heilpraktiker', 'therapeut']}
 ]}
 ```
 
-Reihenfolge = Prompt-Reihenfolge: Regeln zuerst, dann Fakten, dann die eine gewählte Referenz. `referenzen` ist optional: Presets ohne Register-Varianten (z. B. Hellinger) tragen einfach alle Dateien in `files` ein. Der erste `referenzen`-Eintrag ist der Default bei unklarem Auftrag.
+Reihenfolge = Prompt-Reihenfolge: Regeln zuerst, dann Fakten, dann die eine automatisch gewählte Referenz. `referenzen` ist optional: Presets ohne Register-Varianten (z. B. Hellinger) tragen einfach alle Dateien in `files` ein. Der erste `referenzen`-Eintrag ist der Default bei unklarem Auftrag und braucht keine `keywords`; alle weiteren definieren `keywords` (Kleinschreibung, Wortanfänge reichen: `'ärzt'` matcht Ärzte/Ärztin), an denen ihr Register im Briefing erkannt wird. Welche Referenz geladen wurde, steht bei jeder Generierung in der Browser-Konsole.
 
 4. **Wichtig:** danach einmal `node sync-presets.js` im Repo-Root ausführen und die geänderten `landingpage-generator.html` **und** `hardfacts-generator.html` mitcommitten. Das Script bettet alle Preset-Dateien als Fallback-Snapshots in beide Modul-HTMLs ein — nur so laden die Presets auch, wenn die Datei per `file://` geöffnet oder ohne den `presets/`-Ordner deployt wird. Die Tools bevorzugen immer die Live-Dateien vom Server und nutzen die Snapshots nur als Fallback (sichtbar in der Browser-Konsole: „Quellen: live" vs. „eingebettet").
 

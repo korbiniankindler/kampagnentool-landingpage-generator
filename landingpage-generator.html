@@ -492,6 +492,15 @@ function selectCopyPreset(id) {
   }
 }
 
+/* Briefing-Text für die automatische Referenz-Wahl des Presets (Register-
+   Heuristik in CopyPresets): alle Kampagnen-Angaben + der zusätzliche
+   Kampagnen-Kontext aus Schritt 1. */
+function presetBriefing() {
+  var hf = HF || {};
+  return [hf.kampagnenname, hf.titel, hf.beschreibung, hf.zielgruppe, hf.strategie, hf.strategie_titel, hf.offer, lpContext()]
+    .filter(Boolean).join('\n');
+}
+
 /* Macht bei jeder Generierung sichtbar, ob Markenwissen im Prompt steckt -
    das war zuvor nur indirekt an input_tokens ~2k statt ~27k erkennbar. */
 function logPresetUsage(presetText) {
@@ -1092,7 +1101,8 @@ async function generateContentPlan(active, sysBlocks) {
 }
 
 async function generateAll(active) {
-  var presetText = await CopyPresets.load(selectedCopyPreset);
+  // presetBriefing() steuert die automatische Referenz-Wahl (Register-Heuristik)
+  var presetText = await CopyPresets.load(selectedCopyPreset, presetBriefing());
   logPresetUsage(presetText);
   var instr = [
     'Du bist ein Team aus Senior Online-Marketing-Stratege, Conversion-Copywriter und UI/UX-Designer.',
@@ -1358,7 +1368,7 @@ async function regenSection(secId) {
   isGenerating = true;
   document.getElementById('progress-bar').classList.add('nav-locked');
   try {
-    var presetText = await CopyPresets.load(selectedCopyPreset);
+    var presetText = await CopyPresets.load(selectedCopyPreset, presetBriefing());
     logPresetUsage(presetText);
     var instr = [
       'Du bist ein Team aus Online-Marketing-Stratege, Conversion-Copywriter und UI/UX-Designer.',
