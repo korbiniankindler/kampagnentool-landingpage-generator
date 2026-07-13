@@ -261,6 +261,25 @@ window.addEventListener('DOMContentLoaded', function() {
  if (selectedCopyPreset) CopyPresets.load(selectedCopyPreset).catch(function(e){ console.warn(e); });
 });
 
+/* ===== WARNUNG BEIM VERLASSEN =====
+   Der komplette Arbeitsstand (Eingaben, Uploads, generierte Titel/Inhalte)
+   lebt nur im Speicher dieser Seite. Menü-Links, Reload, Zurück-Button und
+   Tab-Schließen laden die Seite neu und verwerfen alles - der Browser fragt
+   deshalb nach, sobald ungesicherter Stand existiert. (Die Preset-Wahl
+   liegt in sessionStorage und ist nicht betroffen.) */
+function hasUnsavedWork() {
+ if (uploadedFiles.length || generatedTitles.length || generatedBullets.length) return true;
+ return ['f-name','f-desc','f-start','f-live','f-product','f-price'].some(function(id) {
+ return document.getElementById(id).value.trim() !== '';
+ });
+}
+
+window.addEventListener('beforeunload', function(e) {
+ if (!hasUnsavedWork()) return;
+ e.preventDefault();
+ e.returnValue = ''; // Chrome/ältere Browser brauchen returnValue, der Dialog-Text ist immer der des Browsers
+});
+
 /* Upload bewusst begrenzt (wie in Modul 2): die Dateien hängen an JEDEM
    Request (Titel, Bullets, jede Feedback-Runde) - jede PDF-Seite kostet
    ~1.500-3.000 Input-Tokens. Die Seitenzahl ist das eigentliche Limit,

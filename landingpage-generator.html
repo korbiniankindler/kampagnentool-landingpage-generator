@@ -532,6 +532,31 @@ window.addEventListener('DOMContentLoaded', function() {
   // No session data – show JSON tab (already visible by default)
 });
 
+/* ===== WARNUNG BEIM VERLASSEN =====
+   Der Arbeitsstand (Sections, generierte Copy, Kontext, Uploads) lebt nur
+   im Speicher dieser Seite. Menü-Links, Reload, Zurück-Button und
+   Tab-Schließen verwerfen alles - der Browser fragt deshalb nach, sobald
+   ungesicherter Stand existiert. NICHT als ungesichert zählen die
+   automatisch aus der Session geladenen Hardfacts aus Modul 1 (kommen beim
+   nächsten Aufruf von selbst wieder) und die Preset-Wahl (sessionStorage). */
+function hasUnsavedWork() {
+  if (maxStep > 1 || ctxFiles.length) return true;
+  if (lpContext()) return true;
+  var ftIds = ['ft-titel','ft-pre','ft-h1','ft-h2','ft-termin','ft-offer','ft-beschreibung','ft-zielgruppe','ft-strategie','ft-bullets'];
+  if (ftIds.some(function(id) { return document.getElementById(id).value.trim() !== ''; })) return true;
+  // Manuell hochgeladene hardfacts.json: steckt nicht in der Session und
+  // müsste nach einem Wechsel neu hochgeladen werden.
+  var sessionHF = null;
+  try { sessionHF = sessionStorage.getItem('wkt_hardfacts'); } catch(e) {}
+  return !!(HF && !sessionHF);
+}
+
+window.addEventListener('beforeunload', function(e) {
+  if (!hasUnsavedWork()) return;
+  e.preventDefault();
+  e.returnValue = ''; // Chrome/ältere Browser brauchen returnValue, der Dialog-Text ist immer der des Browsers
+});
+
 function switchTab(tab) {
   document.getElementById('tab-json-btn').classList.toggle('active', tab === 'json');
   document.getElementById('tab-free-btn').classList.toggle('active', tab === 'free');
