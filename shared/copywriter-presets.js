@@ -29,8 +29,9 @@ var CopyPresets = (function () {
         file: 'presets/holistic-house/referenzen/webinar-supplements-vom-chaos-zum-system.md',
         keywords: ['nem', 'supplement', 'nahrungsergänzung', 'daya', 'präparat', 'vitalstoff', 'mikronährstoff']}
     ]},
-    {id: 'hellinger', name: 'Hellinger', desc: 'Regelwerk der Brand', files: [
-      'presets/hellinger/regeln.md'
+    {id: 'hellinger', name: 'Hellinger', desc: 'Regelwerk + Wissensdatenbank der Brand', files: [
+      'presets/hellinger/regeln.md',
+      'presets/hellinger/wissensdatenbank.md'
     ]}
   ];
 
