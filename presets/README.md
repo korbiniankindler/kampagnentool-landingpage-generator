@@ -43,7 +43,7 @@ Danach folgt die Original-Copy **wortgetreu** (nichts umschreiben!), gegliedert 
 ]}
 ```
 
-Reihenfolge = Prompt-Reihenfolge: Regeln zuerst, dann Fakten, dann die eine automatisch gewählte Referenz. `referenzen` ist optional: Presets ohne Register-Varianten (z. B. Hellinger) tragen einfach alle Dateien in `files` ein. Der erste `referenzen`-Eintrag ist der Default bei unklarem Auftrag und braucht keine `keywords`; alle weiteren definieren `keywords` (Kleinschreibung, Wortanfänge reichen: `'ärzt'` matcht Ärzte/Ärztin), an denen ihr Register im Briefing erkannt wird. Welche Referenz geladen wurde, steht bei jeder Generierung in der Browser-Konsole.
+Reihenfolge = Prompt-Reihenfolge: Regeln zuerst, dann Fakten, dann die eine automatisch gewählte Referenz. `referenzen` ist optional: Presets ohne Register-Varianten tragen einfach alle Dateien in `files` ein. Der erste `referenzen`-Eintrag ist der Default bei unklarem Auftrag und braucht keine `keywords`; alle weiteren definieren `keywords` (Kleinschreibung, Wortanfänge reichen: `'ärzt'` matcht Ärzte/Ärztin), an denen ihr Register im Briefing erkannt wird. Welche Referenz geladen wurde, steht bei jeder Generierung in der Browser-Konsole.
 
 4. **Wichtig:** danach einmal `node sync-presets.js` im Repo-Root ausführen und die geänderten `landingpage-generator.html` **und** `hardfacts-generator.html` mitcommitten. Das Script bettet alle Preset-Dateien als Fallback-Snapshots in beide Modul-HTMLs ein — nur so laden die Presets auch, wenn die Datei per `file://` geöffnet oder ohne den `presets/`-Ordner deployt wird. Die Tools bevorzugen immer die Live-Dateien vom Server und nutzen die Snapshots nur als Fallback (sichtbar in der Browser-Konsole: „Quellen: live" vs. „eingebettet").
 
