@@ -29,9 +29,15 @@ var CopyPresets = (function () {
         file: 'presets/holistic-house/referenzen/webinar-supplements-vom-chaos-zum-system.md',
         keywords: ['nem', 'supplement', 'nahrungsergänzung', 'daya', 'präparat', 'vitalstoff', 'mikronährstoff']}
     ]},
-    {id: 'hellinger', name: 'Hellinger', desc: 'Regelwerk + Wissensdatenbank der Brand', files: [
+    {id: 'hellinger', name: 'Hellinger', desc: 'Regelwerk + Wissensdatenbank, Referenz-Copy automatisch nach Auftrag', files: [
       'presets/hellinger/regeln.md',
       'presets/hellinger/wissensdatenbank.md'
+    ], referenzen: [
+      {id: 'b2c', name: 'B2C-Webinar', desc: 'Gold-Standard „Alte Muster lösen" (Default)',
+        file: 'presets/hellinger/referenzen/webinar-alte-muster-loesen-b2c.md'},
+      {id: 'b2b', name: 'B2B / Fachpublikum', desc: '„Coaching löst Symptome, Ordnung löst Ursachen" für Coaches, Therapeuten, Führungskräfte',
+        file: 'presets/hellinger/referenzen/webinar-coaching-ordnung-b2b.md',
+        keywords: ['b2b', 'coach', 'therapeut', 'berater', 'beratung', 'führung', 'trainer', 'klient', 'fachpublikum', 'fachkreise', 'mediator', 'unternehmer', 'hr']}
     ]}
   ];
 
