@@ -751,25 +751,43 @@ function extractJSON(raw) {
   var cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim();
   var start = cleaned.indexOf('{');
   if (start === -1) throw new Error('Kein JSON-Objekt in der Antwort gefunden.');
-  var depth = 0, inStr = false, escape = false, end = -1;
+  // Ein " innerhalb eines Strings zaehlt nur dann als String-Ende, wenn direkt
+  // danach (Whitespace erlaubt) ein JSON-Strukturzeichen folgt. Sonst ist es
+  // vermutlich ein von der KI vergessenes Escaping (z.B. Zitat im Fliesstext)
+  // und wird als literales Zeichen behandelt - das repariert die haeufigste
+  // Ursache fuer "Expected ',' or '}'"-Fehler bei sonst vollstaendigem JSON.
+  var out = '', depth = 0, inStr = false, escape = false, end = -1;
   for (var i = start; i < cleaned.length; i++) {
     var ch = cleaned[i];
-    if (escape) { escape = false; continue; }
-    if (ch === '\\' && inStr) { escape = true; continue; }
-    if (ch === '"') { inStr = !inStr; continue; }
-    if (inStr) continue;
+    if (escape) { out += ch; escape = false; continue; }
+    if (ch === '\\' && inStr) { out += ch; escape = true; continue; }
+    if (ch === '"') {
+      if (!inStr) { inStr = true; out += ch; continue; }
+      var j = i + 1;
+      while (j < cleaned.length && /\s/.test(cleaned[j])) j++;
+      var next = cleaned[j];
+      var isRealEnd = next === undefined || next === ':' || next === ',' || next === '}' || next === ']';
+      if (isRealEnd && next === ',') {
+        var k = j + 1;
+        while (k < cleaned.length && /\s/.test(cleaned[k])) k++;
+        isRealEnd = k >= cleaned.length || cleaned[k] === '"' || cleaned[k] === '{' || cleaned[k] === '[' || cleaned[k] === '}' || cleaned[k] === ']';
+      }
+      if (isRealEnd) { inStr = false; out += ch; } else { out += '\\"'; }
+      continue;
+    }
+    if (inStr) {
+      if (ch === '\n') { out += '\\n'; continue; }
+      if (ch === '\r') { out += '\\r'; continue; }
+      if (ch === '\t') { out += '\\t'; continue; }
+      out += ch;
+      continue;
+    }
+    out += ch;
     if (ch === '{') depth++;
-    else if (ch === '}') { depth--; if (depth === 0) { end = i; break; } }
+    else if (ch === '}') { depth--; if (depth === 0) { end = out.length - 1; break; } }
   }
   if (end === -1) throw new Error('JSON-Objekt ist unvollständig (kein schließende Klammer).');
-  var candidate = cleaned.slice(start, end + 1);
-  candidate = candidate.replace(/,\s*([}\]])/g, '$1');
-  candidate = candidate.replace(/"((?:[^"\\]|\\.)*)"/g, function(match) {
-    return match
-      .replace(/\n/g, '\\n')
-      .replace(/\r/g, '\\r')
-      .replace(/\t/g, '\\t');
-  });
+  var candidate = out.slice(0, end + 1).replace(/,\s*([}\]])/g, '$1');
   try {
     return JSON.parse(candidate);
   } catch(e) {
@@ -841,6 +859,7 @@ async function generateAll(active) {
     'KEINE Erklärungen, KEINE Kommentare, KEINE Markdown-Backticks (``` oder ```json), KEIN Text vor oder nach dem JSON.',
     'Alle String-Werte müssen einzeilig sein - KEINE echten Zeilenumbrüche innerhalb von Strings.',
     'Verwende \\n für Zeilenumbrüche innerhalb von Strings wenn nötig.',
+    'Verwende in den Texten NIEMALS gerade doppelte Anführungszeichen (") für Zitate oder Betonung - nutze stattdessen typografische Anführungszeichen („..." bzw. ‘...’). Falls doch ein gerades Anführungszeichen im Text vorkommt, MUSST du es innerhalb des JSON-Strings als \\" escapen.',
     'KEINE trailing commas. Valides JSON nach RFC 8259.'
   ].join('\n');
 
@@ -1065,6 +1084,7 @@ async function regenSection(secId) {
       'KRITISCH: Antworte AUSSCHLIESSLICH mit einem einzigen gültigen JSON-Objekt.',
       'KEINE Erklärungen, KEINE Markdown-Backticks, KEIN Text vor oder nach dem JSON.',
       'Alle String-Werte EINZEILIG - KEINE echten Zeilenumbrüche in Strings.',
+      'Verwende in den Texten NIEMALS gerade doppelte Anführungszeichen (") für Zitate oder Betonung - nutze stattdessen typografische Anführungszeichen („..." bzw. ‘...’). Falls doch ein gerades Anführungszeichen im Text vorkommt, MUSST du es innerhalb des JSON-Strings als \\" escapen.',
       'KEINE trailing commas. Valides JSON nach RFC 8259.'
     ].join('\n');
 
