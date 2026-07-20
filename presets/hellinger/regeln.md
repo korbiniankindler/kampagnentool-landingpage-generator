@@ -237,7 +237,13 @@ Was nicht geht, mit Falsch- und Besser-Beispielen. Vieles davon ist im Projektma
   Der Begriff "Familienstellen" bleibt unübersetzt und ist der Terminus technicus. "Familienkonstellation" beschreibt etwas historisch anderes.
 
 - **Keine Übertreibung von Zahlen.**
-  Nur die im Material belegten Referenzen (siehe wissensdatenbank.md, Abschnitt "Belegte Zahlen").
+  Nur die im Material belegten Referenzen (siehe wissensdatenbank.md, Abschnitt "Belegte Zahlen"). Die Zahl „+50.000 begleitete Menschen" ist belegt und freigegeben.
+
+- **Der Begriff „blinde Liebe" wird nicht verwendet.**
+  Sophie nutzt ihn nicht. Die gemeinte Dynamik (Kinder übernehmen aus Liebe unbewusst fremde Schicksale und Rollen) über die belegten Begriffe ausdrücken: Loyalität, Bindung, übernommene Verantwortung, Verstrickung.
+
+- **Keine Preise nennen.**
+  Weder Webinar- noch Ausbildungspreise oder Paketpreise erscheinen in der Copy. Der Webinar-Einstieg ist kostenfrei; Konditionen zur Ausbildung klärt das persönliche Kennenlerngespräch.
 
 ## 7. Kontrollfragen vor jeder Ausgabe
 
@@ -246,4 +252,4 @@ Was nicht geht, mit Falsch- und Besser-Beispielen. Vieles davon ist im Projektma
 3. Steht mindestens ein Sophie-typisches Sprachmuster drin (Frage ohne Antwort, "nicht … sondern"-Umkehr, Staccato-Satz, Direktmarker)?
 4. Ist der Nutzen als Zustand formuliert ("Klarheit, die bleibt"), nicht als Feature-Aufzählung?
 5. Enthält die Copy einen sauberen Event-Block (Datum, Uhrzeit, kostenfrei, CTA) und, wenn Sophie signiert, den Standard-Abschluss?
-6. Sind alle Verbote eingehalten? Kein Heilsversprechen, keine Esoterik, kein Gold, kein Gedankenstrich, kein "Schmerz zurückgeben"?
+6. Sind alle Verbote eingehalten? Kein Heilsversprechen, keine Esoterik, kein Gold, kein Gedankenstrich, kein "Schmerz zurückgeben", kein "blinde Liebe", keine Preise?
