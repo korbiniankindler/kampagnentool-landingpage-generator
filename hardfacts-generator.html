@@ -555,6 +555,7 @@ Nur JSON.`;
 }
 
 function renderTitles() {
+ const prevFb = (document.getElementById('title-fb')||{}).value || '';
  const stratHtml = strategyTitles ? `
  <div class="strategy-box">
  <div class="strategy-header">${IC.bulb} Strategie-Begründung</div>
@@ -589,6 +590,7 @@ function renderTitles() {
  <button class="proceed-btn" id="btn-to-bullets" onclick="proceedToBullets()">
  Weiter zu Webinar-Inhalten ${IC.arrow}
  </button>`;
+ if (prevFb) document.getElementById('title-fb').value = prevFb;
 }
 
 function pickTitle(i) {
@@ -777,6 +779,7 @@ Genau 10 Bulletpoints. Jeder beginnt mit Fragewort oder Aktivverb. Keine Wiederh
 }
 
 function renderBullets() {
+ const prevFb = (document.getElementById('bull-fb')||{}).value || '';
  const stratHtml = strategyBullets ? `
  <div class="strategy-box">
  <div class="strategy-header">${IC.bulb} Strategie-Begründung</div>
@@ -810,6 +813,7 @@ function renderBullets() {
  <button class="confirm-btn" onclick="confirmHardfacts()">
  ${IC.circleCheck} Hardfacts bestätigen &amp; speichern
  </button>`;
+ if (prevFb) document.getElementById('bull-fb').value = prevFb;
 }
 
 function toggleBull(i) {

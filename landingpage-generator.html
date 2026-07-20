@@ -1252,6 +1252,11 @@ function updateReviewLoadingMsg(text) {
 /* ===== REVIEW RENDERING (Phase 3) ===== */
 function renderReview(active, opts) {
   var ro = !!(opts && opts.readOnly);
+  var prevFb = {};
+  active.forEach(function(s) {
+    var el = document.getElementById('fb-'+s.id);
+    if (el && el.value) prevFb[s.id] = el.value;
+  });
   var html = '';
   active.forEach(function(s, idx) {
     html += '<div class="review-card" id="rc-'+s.id+'">' +
@@ -1267,6 +1272,12 @@ function renderReview(active, opts) {
       '</div>';
   });
   document.getElementById('review-list').innerHTML = html;
+  if (!ro) {
+    active.forEach(function(s) {
+      var el = document.getElementById('fb-'+s.id);
+      if (el && prevFb[s.id]) el.value = prevFb[s.id];
+    });
+  }
   if (ro) {
     document.querySelectorAll('#review-list .field-editable').forEach(function(el) {
       el.removeAttribute('contenteditable');
