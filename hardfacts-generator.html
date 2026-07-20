@@ -1,0 +1,1845 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Webinar-Kampagnen Tool – Modul 1: Hardfacts</title>
+<style>
+:root{--bg-primary:#ffffff;--bg-secondary:#f7f7f5;--bg-tertiary:#f0efec;--bg-success:#eaf3de;--bg-danger:#fcebeb;--bg-info:#e8f0fb;--text-primary:#1a1a1a;--text-secondary:#6b6b67;--text-tertiary:#9b9b96;--text-success:#3b6d11;--text-danger:#a32d2d;--text-info:#1a4fa0;--border-light:rgba(0,0,0,0.10);--border-medium:rgba(0,0,0,0.18);--border-strong:rgba(0,0,0,0.28);--border-success:rgba(59,109,17,0.3);--border-danger:rgba(163,45,45,0.25);--radius-md:8px;--radius-lg:12px;--font:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;}*{box-sizing:border-box;margin:0;padding:0}body{font-family:var(--font);background:var(--bg-tertiary);min-height:100vh;padding:2rem 1rem 4rem;color:var(--text-primary)}.app{max-width:960px;margin:0 auto}.header{display:flex;align-items:center;gap:10px;margin-bottom:2rem}.logo{width:36px;height:36px;background:#111;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:500;flex-shrink:0}.header-name{font-size:14px;font-weight:500;color:var(--text-primary)}.header-sub{font-size:13px;color:var(--text-secondary)}.modul-nav{margin-left:auto;display:flex;gap:6px}.modul-nav a{font-size:12px;text-decoration:none;color:var(--text-secondary);padding:5px 11px;border-radius:20px;border:0.5px solid var(--border-light);transition:background .15s,color .15s;white-space:nowrap}.modul-nav a:hover{background:var(--bg-secondary)}.modul-nav a.active{background:#111;color:#fff;border-color:#111}.progress-bar{display:flex;align-items:center;gap:0;margin-bottom:2rem}.prog-step{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-tertiary);padding:6px 0}.prog-step.active{color:var(--text-primary);font-weight:500}.prog-step.done{color:var(--text-success)}.prog-num{width:22px;height:22px;border-radius:50%;border:0.5px solid var(--border-medium);display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0}.prog-step.active .prog-num{background:#111;color:#fff;border-color:#111}.prog-step.done .prog-num{background:var(--bg-success);border-color:var(--border-success);color:var(--text-success)}.prog-line{flex:1;height:0.5px;background:var(--border-light);margin:0 10px}.page-title{font-size:22px;font-weight:500;color:var(--text-primary);margin-bottom:.25rem}.page-desc{font-size:13px;color:var(--text-secondary);margin-bottom:1.75rem}.modul-badge{font-size:11px;padding:2px 8px;border-radius:20px;border:0.5px solid var(--border-light);color:var(--text-secondary);vertical-align:middle;margin-left:8px}.step-card{border:0.5px solid var(--border-light);border-radius:var(--radius-lg);padding:1.25rem 1.5rem;margin-bottom:.875rem;background:var(--bg-primary)}.step-header{display:flex;align-items:center;gap:10px;margin-bottom:1rem}.step-num{width:22px;height:22px;border-radius:50%;border:0.5px solid var(--border-medium);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--text-secondary);flex-shrink:0}.step-label{font-size:15px;font-weight:500;color:var(--text-primary)}.preset-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.preset-card{border:0.5px solid var(--border-light);border-radius:var(--radius-md);padding:12px 14px;cursor:pointer;background:var(--bg-primary);transition:border-color .15s,background .15s;position:relative}.preset-card:hover{border-color:var(--border-medium);background:var(--bg-secondary)}.preset-card.selected{border-color:#111;background:#f8f8f6}.preset-card-name{font-size:13px;font-weight:500;margin-bottom:3px;display:flex;align-items:center;gap:6px}.preset-card-desc{font-size:11px;color:var(--text-tertiary);line-height:1.4}.preset-check{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--border-medium);flex-shrink:0;display:flex;align-items:center;justify-content:center}.preset-card.selected .preset-check{background:#111;border-color:#111}@media(max-width:520px){.preset-grid{grid-template-columns:1fr}}.field-label{display:block;font-size:13px;color:var(--text-secondary);margin-bottom:6px}.field-hint{font-size:12px;color:var(--text-tertiary);margin-top:5px}.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}input[type=text],textarea{width:100%;font-size:14px;border:0.5px solid var(--border-light);border-radius:var(--radius-md);padding:8px 12px;background:var(--bg-secondary);color:var(--text-primary);font-family:var(--font);outline:none;transition:border-color .15s;-webkit-appearance:none}input[type=text]:focus,textarea:focus{border-color:var(--border-strong)}textarea{resize:vertical;min-height:88px;line-height:1.5}.upload-zone{border:0.5px dashed var(--border-medium);border-radius:var(--radius-md);padding:11px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:var(--text-secondary);background:var(--bg-secondary);transition:border-color .15s;margin-top:8px}.upload-zone:hover{border-color:var(--border-strong)}.file-chip{display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:3px 9px;border-radius:20px;background:var(--bg-secondary);border:0.5px solid var(--border-light);color:var(--text-secondary);margin:6px 4px 0 0}.primary-btn{width:100%;padding:11px;background:#111;color:#fff;border:none;border-radius:var(--radius-md);font-size:14px;font-weight:500;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:7px;transition:opacity .15s;margin-top:1.25rem}.primary-btn:hover{opacity:.85}.primary-btn:disabled{opacity:.4;cursor:not-allowed}.secondary-btn{padding:8px 14px;border:0.5px solid var(--border-medium);border-radius:var(--radius-md);background:transparent;font-size:13px;cursor:pointer;color:var(--text-primary);font-family:var(--font);display:flex;align-items:center;gap:6px;transition:background .15s}.secondary-btn:hover{background:var(--bg-secondary)}.secondary-btn:disabled{opacity:.4;cursor:not-allowed}.confirm-btn{width:100%;padding:12px;background:#111;color:#fff;border:none;border-radius:var(--radius-md);font-size:14px;font-weight:500;cursor:pointer;margin-top:1.5rem;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity .15s}.confirm-btn:hover{opacity:.85}@keyframes spin{to{transform:rotate(360deg)}}.spinner{width:18px;height:18px;border:2px solid rgba(0,0,0,.1);border-top-color:var(--text-secondary);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}.spinner-sm{width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}.loading-card{display:flex;align-items:center;gap:12px;padding:1.25rem;border-radius:var(--radius-md);background:var(--bg-secondary);font-size:14px;color:var(--text-secondary);margin-top:1.25rem}.strategy-box{border:0.5px solid #C0DD97;border-radius:var(--radius-lg);background:#EAF3DE;padding:1rem 1.25rem;margin-bottom:1.25rem}.strategy-header{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:500;color:#3b6d11;margin-bottom:.5rem}.strategy-text{font-size:13px;color:#27500A;line-height:1.65}.section-label{font-size:13px;font-weight:500;color:var(--text-secondary);margin:1.25rem 0 .625rem;display:flex;align-items:center;gap:8px}.section-count{font-size:11px;font-weight:400;color:var(--text-tertiary)}.output-divider{border:none;border-top:0.5px solid var(--border-light);margin:1.5rem 0}.output-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem}.output-title{font-size:16px;font-weight:500;color:var(--text-primary)}.output-hint{font-size:12px;color:var(--text-tertiary)}.title-option{border:0.5px solid var(--border-light);border-radius:var(--radius-md);padding:.875rem 1rem;margin-bottom:.5rem;cursor:pointer;transition:border-color .15s,background .15s;display:flex;align-items:flex-start;gap:12px;background:var(--bg-primary)}.title-option:hover{border-color:var(--border-medium);background:var(--bg-secondary)}.title-option.selected{border-color:#111;background:var(--bg-secondary)}.title-radio{width:18px;height:18px;flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center}.title-body{flex:1;min-width:0}.title-pre{font-size:11px;color:var(--text-secondary);margin-bottom:5px;letter-spacing:.06em;text-transform:uppercase;font-weight:500}.title-main{font-size:14px;font-weight:500;color:var(--text-primary);margin-bottom:4px;line-height:1.4}.title-sub{font-size:13px;color:var(--text-secondary);line-height:1.55}.bullet-item{display:flex;align-items:flex-start;gap:10px;padding:8px 10px;border-radius:var(--radius-md);margin-bottom:4px;border:0.5px solid transparent;transition:border-color .15s,background .15s}.bullet-item:hover{background:var(--bg-secondary);border-color:var(--border-light)}.bullet-item.checked{background:var(--bg-secondary);border-color:var(--border-light)}.bullet-cb{width:18px;height:18px;flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-top:1px}.bullet-text{font-size:13px;color:var(--text-primary);line-height:1.5;flex:1}.bullet-acts{display:flex;gap:3px;opacity:.45;transition:opacity .15s;flex-shrink:0}.bullet-item:hover .bullet-acts{opacity:1}.icon-btn{width:24px;height:24px;border-radius:5px;border:0.5px solid var(--border-medium);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-primary);transition:background .15s,border-color .15s;font-family:var(--font)}.icon-btn:hover{background:var(--bg-primary);border-color:var(--border-medium)}.edit-input{width:100%;font-size:13px;border:0.5px solid var(--border-strong);border-radius:5px;padding:4px 8px;background:var(--bg-primary);color:var(--text-primary);font-family:var(--font);outline:none}.edit-row{display:flex;gap:6px;margin-top:5px}.edit-save{padding:4px 11px;background:#111;color:#fff;border:none;border-radius:5px;font-size:12px;cursor:pointer;font-family:var(--font)}.edit-cancel{padding:4px 11px;border:0.5px solid var(--border-medium);background:transparent;border-radius:5px;font-size:12px;cursor:pointer;color:var(--text-secondary);font-family:var(--font)}.feedback-wrap{margin-top:1.25rem;padding:1.25rem;border:0.5px solid var(--border-light);border-radius:var(--radius-lg);background:var(--bg-primary)}.feedback-wrap textarea{min-height:60px;font-size:13px}.feedback-actions{display:flex;gap:8px;margin-top:8px}.selected-summary{border:0.5px solid #111;border-radius:var(--radius-lg);padding:1rem 1.25rem;background:var(--bg-primary);margin-bottom:1.25rem}.selected-summary-label{font-size:11px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.5rem}.selected-summary-pre{font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.06em;font-weight:500;margin-bottom:4px}.selected-summary-title{font-size:15px;font-weight:500;color:var(--text-primary);margin-bottom:3px;line-height:1.4}.selected-summary-sub{font-size:13px;color:var(--text-secondary);line-height:1.5}.proceed-btn{width:100%;padding:11px;background:#111;color:#fff;border:none;border-radius:var(--radius-md);font-size:14px;font-weight:500;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:7px;transition:opacity .15s;margin-top:1.25rem}.proceed-btn:hover{opacity:.85}.proceed-btn:disabled{opacity:.4;cursor:not-allowed}.success-banner{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:var(--radius-md);background:var(--bg-success);border:0.5px solid var(--border-success);font-size:13px;color:var(--text-success);margin-bottom:1rem}.error-box{padding:10px 13px;border-radius:var(--radius-md);background:var(--bg-danger);border:0.5px solid var(--border-danger);font-size:13px;color:var(--text-danger);margin-top:.75rem}.result-value-pre{font-size:11px;font-weight:600;color:var(--text-secondary);letter-spacing:.07em;text-transform:uppercase;line-height:1.3;margin-bottom:2px}.result-value-title{font-size:20px;font-weight:600;color:var(--text-primary);line-height:1.3;margin-bottom:4px}.result-value-sub{font-size:14px;font-weight:400;color:var(--text-secondary);line-height:1.55}.result-card{border:0.5px solid var(--border-light);border-radius:var(--radius-lg);padding:1.25rem 1.5rem;background:var(--bg-primary)}.result-field{margin-bottom:14px}.result-label{font-size:11px;color:var(--text-tertiary);letter-spacing:.04em;text-transform:uppercase;margin-bottom:3px}.result-value{font-size:14px;color:var(--text-primary);font-weight:500;line-height:1.4}.result-value.light{font-weight:400;color:var(--text-secondary)}.bullet-pill{font-size:13px;color:var(--text-secondary);padding:5px 0;border-bottom:0.5px solid var(--border-light);display:block;line-height:1.4}.bullet-pill:last-child{border-bottom:none}@media(max-width:520px){.field-row{grid-template-columns:1fr};body{padding:1rem .75rem 3rem}}.export-btns{display:flex;gap:8px;margin-top:10px}.export-btn{flex:1;padding:9px 12px;border:0.5px solid var(--border-medium);border-radius:var(--radius-md);background:var(--bg-primary);font-size:13px;font-weight:500;cursor:pointer;color:var(--text-primary);font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:7px;transition:background .15s}.export-btn:hover{background:var(--bg-secondary)}@media print{@page{margin:1.5cm;}html{-webkit-print-color-adjust:exact;}head title{display:none;}body{background:#fff;padding:0;}.header,.progress-bar,#phase-input,#phase-titles,#phase-bullets,.secondary-btn,.confirm-btn,.export-btns,.primary-btn,.success-banner{display:none !important;}.result-card{border:none;padding:0;box-shadow:none;}.result-label{color:#555;font-size:10px;}.result-value-title{font-size:18px;}.bullet-pill{border-bottom:0.5px solid #eee;page-break-inside:avoid;}.app{max-width:100%;padding:0;}.strategy-section{background:#f5f9ee !important;border:0.5px solid #c0dd97 !important;border-radius:6px;padding:10px 14px;margin-bottom:14px;}.strategy-section-label{font-size:10px;font-weight:600;color:#3b6d11;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;}.strategy-section-text{font-size:11px;color:#27500a;line-height:1.6;}}svg{display:inline-block;vertical-align:middle;flex-shrink:0}
+</style>
+</head>
+<body>
+<div class="app">
+
+ <div class="header">
+ <div class="logo">BL</div>
+ <div>
+ <div class="header-name">Webinar-Kampagnen Tool</div>
+ <div class="header-sub">Modul 1 - Hardfacts Generator</div>
+ </div>
+ <div class="modul-nav">
+ <a href="hardfacts-generator.html" id="nav-m1" class="active">1 · Hardfacts</a>
+ <a href="landingpage-generator.html" id="nav-m2">2 · Landingpage</a>
+ </div>
+ </div>
+
+ <!-- Progress -->
+ <div class="progress-bar" id="progress-bar">
+ <div class="prog-step active" id="prog-1">
+ <div class="prog-num">1</div> Input
+ </div>
+ <div class="prog-line"></div>
+ <div class="prog-step" id="prog-2">
+ <div class="prog-num">2</div> Webinar-Titel
+ </div>
+ <div class="prog-line"></div>
+ <div class="prog-step" id="prog-3">
+ <div class="prog-num">3</div> Webinar-Inhalte
+ </div>
+ <div class="prog-line"></div>
+ <div class="prog-step" id="prog-4">
+ <div class="prog-num">4</div> Bestätigen
+ </div>
+ </div>
+
+ <!-- ═══ PHASE 1: INPUT ═══ -->
+ <div id="phase-input">
+ <div class="page-title">Hardfacts erstellen <span class="modul-badge">Modul 1</span></div>
+ <p class="page-desc">KI generiert Titel und Inhalte in zwei Schritten.</p>
+
+ <div class="step-card">
+ <div class="step-header" style="margin-bottom:.5rem"><span class="step-label">Copywriter-Preset</span></div>
+ <p class="field-hint" style="margin:0 0 12px">Markenwissen für Titel und Inhalte. Die Auswahl wird an Modul 2 (Landingpage) übergeben.</p>
+ <div class="preset-grid" id="copy-preset-grid"></div>
+ </div>
+
+ <div class="step-card">
+ <div class="step-header"><div class="step-num">1</div><span class="step-label">Kampagnenname</span></div>
+ <input type="text" id="f-name" placeholder="z.B. Ayurveda-Ausbildung Sept. 2026">
+ </div>
+
+ <div class="step-card">
+ <div class="step-header"><div class="step-num">2</div><span class="step-label">Kampagnenbeschreibung</span></div>
+ <label class="field-label">Thema, Zielgruppe, Experte / Host, Besonderheiten</label>
+ <textarea id="f-desc" placeholder="Thema, Host, Zielgruppe, Besonderheiten…"></textarea>
+ <p class="field-hint">Je mehr Kontext, desto passgenauer der Output.</p>
+ <div class="upload-zone" onclick="document.getElementById('f-file').click()">
+ <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+ <span>PDF oder Bild ablegen oder klicken (optional)</span>
+ </div>
+ <input type="file" id="f-file" accept=".pdf,.png,.jpg,.jpeg" style="display:none" onchange="addFile(this)">
+ <div id="file-chips"></div>
+ </div>
+
+ <div class="step-card">
+ <div class="step-header"><div class="step-num">3</div><span class="step-label">Kampagnenzeitraum</span></div>
+ <div class="field-row">
+ <div>
+ <label class="field-label">Start Lead-Akquise</label>
+ <input type="text" id="f-start" placeholder="01.09.2026">
+ </div>
+ <div>
+ <label class="field-label">Live-Termin</label>
+ <input type="text" id="f-live" placeholder="20.09.2026, 11 Uhr">
+ </div>
+ </div>
+ </div>
+
+ <div class="step-card">
+ <div class="step-header"><div class="step-num">4</div><span class="step-label">Offer</span></div>
+ <div class="field-row">
+ <div>
+ <label class="field-label">Produkt</label>
+ <input type="text" id="f-product" placeholder="z.B. Ayurveda Coach Ausbildung">
+ </div>
+ <div>
+ <label class="field-label">Preis / Konditionen</label>
+ <input type="text" id="f-price" placeholder="z.B. 7.000 €">
+ </div>
+ </div>
+ </div>
+
+ <button class="primary-btn" id="btn-gen-titles" onclick="generateTitles()">
+ <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+ Webinar-Titel generieren
+ </button>
+ <div id="input-error"></div>
+ </div>
+
+ <!-- ═══ PHASE 2: TITEL ═══ -->
+ <div id="phase-titles" style="display:none">
+ <div class="page-title">Webinar-Titel <span class="modul-badge">Schritt 2 / 4</span></div>
+ <p class="page-desc">Titel auswählen oder Feedback für neue Variante geben.</p>
+ <div id="titles-loading" class="loading-card" style="display:none">
+ <div class="spinner"></div><span id="titles-loading-msg">Titel werden generiert...</span>
+ </div>
+ <div id="titles-content"></div>
+ </div>
+
+ <!-- ═══ PHASE 3: BULLETS ═══ -->
+ <div id="phase-bullets" style="display:none">
+ <div class="page-title">Webinar-Inhalte <span class="modul-badge">Schritt 3 / 4</span></div>
+ <p class="page-desc">Bulletpoints auswählen, bearbeiten und anpassen.</p>
+
+ <!-- Selected title summary -->
+ <div class="selected-summary" id="selected-title-summary"></div>
+
+ <div id="bullets-loading" class="loading-card" style="display:none">
+ <div class="spinner"></div><span id="bullets-loading-msg">Webinar-Inhalte werden generiert...</span>
+ </div>
+ <div id="bullets-content"></div>
+ </div>
+
+ <!-- ═══ PHASE 4: CONFIRMED ═══ -->
+ <div id="phase-confirmed" style="display:none">
+ <div class="success-banner">
+ <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>
+ Hardfacts gespeichert – bereit für Modul 2
+ </div>
+ <div class="result-card" id="confirmed-card"></div>
+ </div>
+
+</div>
+
+<script>
+/* ===== KONFIGURATION =====
+   Beide Module liegen als Geschwister-Dateien im selben Verzeichnis.
+   Bei Deployment mit eigenen Routen (z.B. brand-lift.de/tools/...) hier anpassen. */
+const PROXY_URL = 'https://claude.korbinian.workers.dev/';
+const MODUL2_URL = 'landingpage-generator.html';
+
+const IC = {
+ check: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 12 11 14 15 10"/></svg>',
+ circleCheck: '<svg width="16" height="16" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#111"/><polyline fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" points="7 12 10 15 17 9"/></svg>',
+ circle: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5"><circle cx="12" cy="12" r="10"/></svg>',
+ squareCheck: '<svg width="15" height="15" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3" fill="#111"/><polyline fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" points="7 12 10 15 17 9"/></svg>',
+ square: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/></svg>',
+ edit: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
+ trash: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>',
+ arrow: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>',
+ refresh: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>',
+ bulb: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 1 7 7c0 2.6-1.4 4.9-3.5 6.2L15 17H9l-.5-1.8A7 7 0 0 1 12 2z"/></svg>',
+};
+
+let uploadedFiles = [];
+let campaignCtx = '';
+let generatedTitles = [];
+let selectedTitleIdx = null;
+let strategyTitles = '';
+let generatedBullets = [];
+let strategyBullets = '';
+
+const TITLE_MSGS = ['Generiere Titel...','Formuliere Hooks...','Schärfe Varianten...'];
+const BULLET_MSGS = ['Generiere Inhalte...','Strukturiere Bullets...','Fast fertig...'];
+
+/* ===== COPYWRITER-PRESETS =====
+   Gleiche Struktur wie in Modul 2 (landingpage-generator.html):
+   Regeln -> Wissensdatenbank -> Referenz-Copys. Siehe presets/README.md.
+   Die Auswahl wird via sessionStorage ('wkt_copy_preset') an Modul 2 übergeben. */
+const COPYWRITER_PRESETS = [
+ {id:'holistic-house', name:'Holistic House', desc:'Regelwerk + Wissensdatenbank + 5 Referenz-Copys', files:[
+ 'presets/holistic-house/regeln.md',
+ 'presets/holistic-house/wissensdatenbank.md',
+ 'presets/holistic-house/referenzen/webinar-gesundheit-neu-denken-b2c.md',
+ 'presets/holistic-house/referenzen/webinar-stille-gesundheitskrise-b2c.md',
+ 'presets/holistic-house/referenzen/webinar-supplements-vom-chaos-zum-system.md',
+ 'presets/holistic-house/referenzen/webinar-supplements-wissenschaftlich-geprueft.md',
+ 'presets/holistic-house/referenzen/webinar-evolution-der-medizin-b2b.md'
+ ]},
+ {id:'hellinger', name:'Hellinger', desc:'Marken-Stilvorgabe', files:['presets/hellinger/regeln.md']}
+];
+let selectedCopyPreset = null;
+const copyPresetCache = {};
+
+function renderCopyPresetPicker() {
+ const all = [{id:null, name:'Kein Preset', desc:'Generisch anhand der Eingaben generieren'}].concat(COPYWRITER_PRESETS);
+ const checkedSvg = '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>';
+ document.getElementById('copy-preset-grid').innerHTML = all.map(p => {
+ const sel = selectedCopyPreset === p.id;
+ const arg = p.id === null ? 'null' : `'${p.id}'`;
+ return `<div class="preset-card${sel?' selected':''}" onclick="selectCopyPreset(${arg})">` +
+ `<div class="preset-card-name"><div class="preset-check">${sel?checkedSvg:''}</div>${esc(p.name)}</div>` +
+ `<div class="preset-card-desc">${esc(p.desc)}</div></div>`;
+ }).join('');
+}
+
+function selectCopyPreset(id) {
+ selectedCopyPreset = id;
+ try { sessionStorage.setItem('wkt_copy_preset', id || ''); } catch(e) {}
+ renderCopyPresetPicker();
+ // Preset sofort laden: Fehler fallen schon bei der Auswahl auf, nicht erst
+ // bei der Generierung.
+ if (id) {
+ loadCopyPresetContent(id).catch(e => {
+ alert(`Preset "${id}" konnte nicht geladen werden:\n\n${e.message}\n\nOhne behobenes Problem bricht die Generierung ab.`);
+ });
+ }
+}
+
+/* Lädt eine einzelne Preset-Datei: erst fetch vom Server (aktuellste Version,
+   wenn gehostet), sonst Fallback auf den eingebetteten Snapshot am Dateiende
+   (funktioniert auch bei file:// oder wenn presets/ nicht mit deployed wurde).
+   Snapshots werden von `node sync-presets.js` erzeugt. */
+async function fetchPresetFile(file) {
+ try {
+ const resp = await fetch(file);
+ if (resp.ok) {
+ const text = (await resp.text()).trim();
+ if (text) return { text: text, source: 'live' };
+ console.warn('Preset-Datei ist leer auf dem Server: ' + file);
+ } else {
+ console.warn('Preset-Datei nicht auf dem Server (HTTP ' + resp.status + '): ' + file + ' - nutze eingebetteten Snapshot.');
+ }
+ } catch (e) {
+ console.warn('Preset-Datei nicht per fetch ladbar (' + e.message + '): ' + file + ' - nutze eingebetteten Snapshot.');
+ }
+ const el = document.querySelector('script[type="text/plain"][data-preset-file="' + file + '"]');
+ const embedded = el ? el.textContent.trim() : '';
+ if (embedded) return { text: embedded, source: 'eingebettet' };
+ throw new Error('Preset-Datei weder vom Server ladbar noch eingebettet: ' + file + '. Nach Änderungen an presets/ muss "node sync-presets.js" ausgeführt werden.');
+}
+
+async function loadCopyPresetContent(id) {
+ if (!id) return '';
+ if (copyPresetCache[id] !== undefined) return copyPresetCache[id];
+ const preset = COPYWRITER_PRESETS.find(p => p.id === id);
+ if (!preset) return '';
+ const parts = await Promise.all(preset.files.map(fetchPresetFile));
+ const text = parts.map(p => p.text).join('\n\n---\n\n');
+ copyPresetCache[id] = text;
+ console.log(`Copywriter-Preset "${preset.name}" geladen: ${preset.files.length} Dateien, ${Math.round(text.length/1024)} KB (Quellen: ${parts.map(p=>p.source).join(', ')})`);
+ return text;
+}
+
+/* System-Prompt mit Prompt Caching (1h TTL): Titel- und Bullet-Generierung
+   teilen sich denselben Prefix, Folge-Requests zahlen ~10% der Input-Tokens. */
+function cachedSystem(sys) {
+ return [{type:'text', text:sys, cache_control:{type:'ephemeral', ttl:'1h'}}];
+}
+
+function addFile(input) {
+ const f = input.files[0]; if (!f) return;
+ uploadedFiles.push(f); renderChips(); input.value='';
+}
+function removeFile(i) { uploadedFiles.splice(i,1); renderChips(); }
+function renderChips() {
+ document.getElementById('file-chips').innerHTML = uploadedFiles.map((f,i)=>
+ `<span class="file-chip">
+ <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+ ${esc(f.name)}<span style="cursor:pointer;margin-left:5px" onclick="removeFile(${i})">x</span>
+ </span>`
+ ).join('');
+}
+function toBase64(file) {
+ return new Promise((ok,err)=>{const r=new FileReader();r.onload=()=>ok(r.result.split(',')[1]);r.onerror=()=>err();r.readAsDataURL(file);});
+}
+
+function setProgress(step) {
+ [1,2,3,4].forEach(n => {
+ const el = document.getElementById(`prog-${n}`);
+ el.classList.remove('active','done');
+ if (n < step) el.classList.add('done');
+ else if (n === step) el.classList.add('active');
+ const num = el.querySelector('.prog-num');
+ num.innerHTML = n < step ? IC.check : n;
+ });
+}
+
+/* API-Aufruf über den Cloudflare-Worker-Proxy (kein API-Key im Browser).
+   Einfacher Retry bei Rate-Limit, da Modul 1 und 2 sich das Org-Limit teilen. */
+async function callAPI(systemP, userP, attempt) {
+ attempt = attempt || 1;
+ const userContent = [];
+ for (const f of uploadedFiles) {
+ try {
+ const b64 = await toBase64(f);
+ const mt = f.type === 'application/pdf' ? 'application/pdf' : f.type;
+ userContent.push(mt === 'application/pdf'
+ ? {type:'document', source:{type:'base64',media_type:'application/pdf',data:b64}}
+ : {type:'image', source:{type:'base64',media_type:mt,data:b64}});
+ } catch(e){}
+ }
+ userContent.push({type:'text', text:userP});
+
+ const resp = await fetch(PROXY_URL, {
+ method: 'POST',
+ headers: { 'Content-Type': 'application/json' },
+ body: JSON.stringify({
+ model: 'claude-sonnet-4-6',
+ max_tokens: 4000,
+ system: cachedSystem(systemP),
+ messages: [{role:'user', content:userContent}]
+ })
+ });
+ const data = await resp.json();
+ if (data.error) {
+ const es = ((data.error.type||'') + ' ' + (data.error.message||'')).toLowerCase();
+ if ((es.includes('rate limit') || es.includes('rate_limit')) && attempt < 4) {
+ await new Promise(r => setTimeout(r, 15000));
+ return callAPI(systemP, userP, attempt + 1);
+ }
+ throw new Error(data.error.message);
+ }
+ if (data.usage) console.log('Claude usage:', JSON.stringify(data.usage));
+ const raw = data.content.map(b=>b.text||'').join('');
+ const match = raw.match(/\{[\s\S]*\}/);
+ if (!match) throw new Error('Kein JSON in der Antwort');
+ return JSON.parse(match[0]);
+}
+
+async function buildSystemPrompt() {
+ const base = `Du bist ein Senior Conversion-Copywriter für deutschsprachige Webinar-Kampagnen im Gesundheits-, Coaching- und Ausbildungsbereich. Du kennst BrandLift-Erfolgsformeln aus echten Kampagnen (Holistic House / Dr. Bauhofer, Doguniversity).
+
+TITEL-STRUKTUREN: "Vom Chaos zum System", Zeitgeschehen-Hijacking, Faktencheck-Angle, Frage-Formate, Pre-Headline / Haupttitel / Sub-Headline (3 Ebenen immer).
+BULLETPOINTS: beginnen mit Warum/Wie/Welche/Was, konkrete Zahlen, Neugier + Versprechen.
+TONALITÄT: direkt, klar, Experten-Kontext, Curiosity Gaps, bei Gesundheit formales "Sie".
+Nur gültiges JSON zurückgeben - kein Markdown, keine Backticks.`;
+
+ const presetText = await loadCopyPresetContent(selectedCopyPreset);
+ if (!presetText) return base;
+
+ return base + '\n\nWICHTIG: Es folgt das Copywriter-Preset der Marke (Regelwerk, Wissensdatenbank, Referenz-Copys). Halte dich bei Titeln, Sub-Headlines und Bulletpoints strikt an das Regelwerk für Tonalität, Sprache und Anrede. Verwende nur Fakten, Zahlen und Zitate aus der Wissensdatenbank oder den Kampagnen-Angaben. Orientiere dich am Klang der Referenz-Copys (Headline-Muster, Bullet-Bau), aber übernimm deren im Kopf jeder Referenz gelistete Regelverstöße NICHT - bei Konflikt gilt immer das Regelwerk. Das Preset hat Vorrang vor den allgemeinen Stilvorgaben oben:\n\n' + presetText;
+}
+
+async function generateTitles(feedback) {
+ const name = document.getElementById('f-name').value.trim();
+ const desc = document.getElementById('f-desc').value.trim();
+ const start = document.getElementById('f-start').value.trim();
+ const live = document.getElementById('f-live').value.trim();
+ const product = document.getElementById('f-product').value.trim();
+ const price = document.getElementById('f-price').value.trim();
+
+ if (!name) {
+ document.getElementById('input-error').innerHTML = '<div class="error-box">Bitte einen Kampagnennamen eingeben.</div>';
+ return;
+ }
+ document.getElementById('input-error').innerHTML = '';
+
+ campaignCtx = `Kampagnenname: ${name}\nBeschreibung: ${desc||'-'}\nStart Lead-Akquise: ${start||'-'}\nLive-Termin: ${live||'-'}\nProdukt: ${product||'-'}\nPreis: ${price||'-'}`;
+
+ document.getElementById('phase-input').style.display = 'none';
+ document.getElementById('phase-titles').style.display = 'block';
+ setProgress(2);
+
+ const btn = document.getElementById('btn-gen-titles');
+ if (btn) { btn.disabled=true; btn.innerHTML='<div class="spinner-sm"></div> Wird generiert...'; }
+
+ const loadEl = document.getElementById('titles-loading');
+ loadEl.style.display = 'flex';
+ document.getElementById('titles-content').innerHTML = '';
+
+ let mi=0;
+ const msgInt = setInterval(()=>{
+ const el=document.getElementById('titles-loading-msg');
+ if(el) el.textContent=TITLE_MSGS[Math.min(++mi,TITLE_MSGS.length-1)];
+ },1800);
+
+ const selectedInfo = (feedback && selectedTitleIdx !== null && generatedTitles[selectedTitleIdx])
+ ? `\nAktuell ausgewählter Titel (beibehalten und als positiven Anhaltspunkt verwenden):\nPre: ${generatedTitles[selectedTitleIdx].pre||''}\nTitel: ${generatedTitles[selectedTitleIdx].titel}\nSub: ${generatedTitles[selectedTitleIdx].sub}`
+ : '';
+
+ const userP = `Kampagne:\n${campaignCtx}${selectedInfo}
+${feedback ? `\nFeedback des Nutzers (unbedingt berücksichtigen):\n${feedback}` : ''}
+
+Generiere 5 Webinar-Titel-Varianten als JSON:
+{
+ "strategie": "3-4 Sätze: Warum diese Titelwinkel für diese Zielgruppe funktionieren, welche psychologischen Trigger eingesetzt werden, welche Zeitgeschehen-Bezüge relevant sind.",
+ "titel": [
+ {"pre":"...","titel":"...","sub":"..."},
+ {"pre":"...","titel":"...","sub":"..."},
+ {"pre":"...","titel":"...","sub":"..."},
+ {"pre":"...","titel":"...","sub":"..."},
+ {"pre":"...","titel":"...","sub":"..."}
+ ]
+}
+
+REGELN FÜR PRE-HEADLINES (kritisch wichtig):
+- Immer auf DEUTSCH - niemals Englisch
+- 3-6 Wörter, inhaltsstark und kontextgebend
+- Erzeugt Spannung oder Kontext, der den Haupttitel emotional auflädt
+- Bewährte Formate: "DAS VERSCHWEIGT DIE SCHULMEDIZIN", "WARUM IMMER MEHR FRAUEN AB 45 UMDENKEN", "STATT MEHR - DAS RICHTIGE", "WAEHREND DAS GESUNDHEITSSYSTEM UMBRICHT", "DIE FRAGE, DIE ALLES VERAENDERT", "DAS STECKT WIRKLICH DAHINTER", "WAS IHNEN NIEMAND ERKLAERT"
+- ABSOLUT VERBOTEN: Einwort-Labels wie "ZEITGESCHEHEN", "FAKTENCHECK", "VERSPRECHEN", "CURIOSITY GAP" - interne Kategorien, keine Pre-Headlines
+
+5 Varianten mit je eigenem Winkel: Curiosity Gap, Zeitgeschehen, Versprechen, Frage-Format, Faktencheck.
+Nur JSON.`;
+
+ try {
+ const sysP = await buildSystemPrompt();
+ const parsed = await callAPI(sysP, userP);
+ generatedTitles = parsed.titel || [];
+ strategyTitles = parsed.strategie || '';
+
+ if (!feedback) selectedTitleIdx = null;
+ clearInterval(msgInt);
+ loadEl.style.display = 'none';
+ renderTitles();
+ } catch(e) {
+ clearInterval(msgInt);
+ loadEl.style.display = 'none';
+ document.getElementById('titles-content').innerHTML = `<div class="error-box">Fehler: ${esc(e.message)}</div>`;
+ }
+}
+
+function renderTitles() {
+ const stratHtml = strategyTitles ? `
+ <div class="strategy-box">
+ <div class="strategy-header">${IC.bulb} Strategie-Begründung</div>
+ <div class="strategy-text">${esc(strategyTitles)}</div>
+ </div>` : '';
+
+ const titlesHtml = generatedTitles.map((t,i) => `
+ <div class="title-option${selectedTitleIdx===i?' selected':''}" id="topt-${i}" onclick="pickTitle(${i})">
+ <div class="title-radio" id="tradio-${i}">${selectedTitleIdx===i ? IC.circleCheck : IC.circle}</div>
+ <div class="title-body" id="tbody-${i}">
+ <div class="title-pre" id="tpre-${i}">${esc(t.pre||'')}</div>
+ <div class="title-main" id="tmain-${i}">${esc(t.titel)}</div>
+ <div class="title-sub" id="tsub-${i}">${esc(t.sub)}</div>
+ </div>
+ <button class="icon-btn" style="flex-shrink:0;margin-top:1px" onclick="event.stopPropagation();editTitle(${i})">${IC.edit}</button>
+ </div>`).join('');
+
+ document.getElementById('titles-content').innerHTML = `
+ <hr class="output-divider" style="margin-top:0">
+ ${stratHtml}
+ <div class="section-label">Titel-Varianten <span class="section-count">- einen auswählen</span></div>
+ ${titlesHtml}
+
+ <div class="feedback-wrap">
+ <div class="section-label" style="margin-top:0;margin-bottom:.625rem">Feedback für neue Varianten</div>
+ <textarea id="title-fb" placeholder="z.B. Provokanter formulieren, Zeitgeschehen stärker einbauen, mehr auf Einsteiger ausrichten..."></textarea>
+ <div class="feedback-actions">
+ <button class="secondary-btn" onclick="regenTitles()">${IC.refresh} Mit Feedback neu generieren</button>
+ </div>
+ </div>
+
+ <button class="proceed-btn" id="btn-to-bullets" onclick="proceedToBullets()">
+ Weiter zu Webinar-Inhalten ${IC.arrow}
+ </button>`;
+}
+
+function pickTitle(i) {
+
+ if (selectedTitleIdx === i) {
+ selectedTitleIdx = null;
+ document.querySelectorAll('.title-option').forEach((el,j) => {
+ el.classList.remove('selected');
+ const radio = document.getElementById(`tradio-${j}`);
+ if (radio) radio.innerHTML = IC.circle;
+ });
+ return;
+ }
+ selectedTitleIdx = i;
+ document.querySelectorAll('.title-option').forEach((el,j) => {
+ const radio = document.getElementById(`tradio-${j}`);
+ if (!radio) return;
+ if (j===i) { el.classList.add('selected'); radio.innerHTML=IC.circleCheck; }
+ else { el.classList.remove('selected'); radio.innerHTML=IC.circle; }
+ });
+}
+
+function editTitle(i) {
+ const t = generatedTitles[i];
+ const body = document.getElementById(`tbody-${i}`);
+ body.innerHTML =
+ `<div style="display:flex;flex-direction:column;gap:8px;flex:1">` +
+ `<div>
+ <label style="display:block;font-size:11px;font-weight:500;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Pre-Headline</label>
+ <input class="edit-input" id="tedit-pre-${i}" value="${escAttr(t.pre||'')}" placeholder="z.B. DAS VERSCHWEIGT DIE SCHULMEDIZIN">
+ </div>` +
+ `<div>
+ <label style="display:block;font-size:11px;font-weight:500;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Main Headline</label>
+ <input class="edit-input" id="tedit-main-${i}" value="${escAttr(t.titel)}" placeholder="Haupttitel" style="font-weight:500">
+ </div>` +
+ `<div>
+ <label style="display:block;font-size:11px;font-weight:500;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Sub-Headline</label>
+ <textarea class="edit-input" id="tedit-sub-${i}" rows="2" style="line-height:1.5;resize:vertical">${escAttr(t.sub)}</textarea>
+ </div>` +
+ `<div class="edit-row">` +
+ `<button class="edit-save" onclick="saveTitle(${i})">Speichern</button>` +
+ `<button class="edit-cancel" onclick="renderTitles()">Abbrechen</button>` +
+ `</div></div>`;
+ document.getElementById(`tedit-main-${i}`).focus();
+}
+
+function saveTitle(i) {
+ generatedTitles[i].pre = (document.getElementById(`tedit-pre-${i}`)?.value||'').trim();
+ generatedTitles[i].titel = (document.getElementById(`tedit-main-${i}`)?.value||'').trim() || generatedTitles[i].titel;
+ generatedTitles[i].sub = (document.getElementById(`tedit-sub-${i}`)?.value||'').trim() || generatedTitles[i].sub;
+ renderTitles();
+ if (selectedTitleIdx !== null) setTimeout(()=>pickTitle(selectedTitleIdx),10);
+}
+
+async function regenTitles() {
+ const fb = (document.getElementById('title-fb')||{}).value||'';
+ await generateTitles(fb.trim());
+}
+
+function proceedToBullets() {
+ if (selectedTitleIdx === null) {
+ if (!confirm('Kein Titel ausgewählt - trotzdem fortfahren und Inhalte generieren?')) return;
+ }
+ generateBullets();
+}
+
+function renderTitleSummary() {
+ const t = selectedTitleIdx !== null ? generatedTitles[selectedTitleIdx] : {pre:'',titel:'(kein Titel gewählt)',sub:''};
+ document.getElementById('selected-title-summary').innerHTML = `
+ <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+ <div style="flex:1;min-width:0">
+ <div class="selected-summary-label">Ausgewählter Titel</div>
+ ${t.pre ? `<div class="selected-summary-pre">${esc(t.pre)}</div>` : ''}
+ <div class="selected-summary-title" id="sts-title">${esc(t.titel)}</div>
+ <div class="selected-summary-sub" id="sts-sub">${esc(t.sub)}</div>
+ </div>
+ <button class="icon-btn" style="flex-shrink:0;margin-top:2px" onclick="editTitleSummary()">${IC.edit}</button>
+ </div>`;
+}
+
+function editTitleSummary() {
+ const t = selectedTitleIdx !== null ? generatedTitles[selectedTitleIdx] : {pre:'',titel:'',sub:''};
+ document.getElementById('selected-title-summary').innerHTML = `
+ <div class="selected-summary-label">Ausgewählter Titel bearbeiten</div>
+ <div style="display:flex;flex-direction:column;gap:8px;margin-top:.5rem">
+ <div>
+ <label style="display:block;font-size:11px;font-weight:500;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Pre-Headline</label>
+ <input class="edit-input" id="sts-edit-pre" value="${escAttr(t.pre||'')}" placeholder="z.B. DAS VERSCHWEIGT DIE SCHULMEDIZIN" style="width:100%">
+ </div>
+ <div>
+ <label style="display:block;font-size:11px;font-weight:500;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Main Headline</label>
+ <input class="edit-input" id="sts-edit-main" value="${escAttr(t.titel)}" placeholder="Haupttitel" style="width:100%;font-weight:500">
+ </div>
+ <div>
+ <label style="display:block;font-size:11px;font-weight:500;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Sub-Headline</label>
+ <textarea class="edit-input" id="sts-edit-sub" rows="2" style="width:100%;line-height:1.5;resize:vertical">${escAttr(t.sub)}</textarea>
+ </div>
+ <div class="edit-row">
+ <button class="edit-save" onclick="saveTitleSummary()">Speichern</button>
+ <button class="edit-cancel" onclick="renderTitleSummary()">Abbrechen</button>
+ </div>
+ </div>`;
+ document.getElementById('sts-edit-main').focus();
+}
+
+function saveTitleSummary() {
+ const pre = (document.getElementById('sts-edit-pre')?.value||'').trim();
+ const main = (document.getElementById('sts-edit-main')?.value||'').trim();
+ const sub = (document.getElementById('sts-edit-sub')?.value||'').trim();
+ if (selectedTitleIdx !== null) {
+ if (pre !== '') generatedTitles[selectedTitleIdx].pre = pre;
+ if (main !== '') generatedTitles[selectedTitleIdx].titel = main;
+ if (sub !== '') generatedTitles[selectedTitleIdx].sub = sub;
+ }
+ renderTitleSummary();
+}
+
+async function generateBullets(feedback) {
+ const t = selectedTitleIdx !== null ? generatedTitles[selectedTitleIdx] : {pre:'',titel:'(kein Titel gewählt)',sub:''};
+
+ document.getElementById('phase-titles').style.display = 'none';
+ document.getElementById('phase-bullets').style.display = 'block';
+ setProgress(3);
+
+ renderTitleSummary();
+
+ const loadEl = document.getElementById('bullets-loading');
+ loadEl.style.display = 'flex';
+ document.getElementById('bullets-content').innerHTML = '';
+
+ let mi=0;
+ const msgInt = setInterval(()=>{
+ const el=document.getElementById('bullets-loading-msg');
+ if(el) el.textContent=BULLET_MSGS[Math.min(++mi,BULLET_MSGS.length-1)];
+ },1800);
+
+ const checkedContext = (feedback && generatedBullets.length)
+ ? '\nBereits ausgewählte Bullets (beibehalten, als positive Vorlage verwenden):\n' +
+ generatedBullets.filter(b=>b.on).map(b=>`- ${b.text}`).join('\n')
+ : '';
+
+ const userP = `Kampagne:\n${campaignCtx}
+
+Gewählter Webinar-Titel:\nPre: ${t.pre||'-'}\nTitel: ${t.titel}\nSub: ${t.sub}
+${checkedContext}
+${feedback ? `\nFeedback des Nutzers:\n${feedback}` : ''}
+
+Generiere 10 Webinar-Inhalts-Bulletpoints als JSON:
+{
+ "strategie": "2-3 Sätze: Warum diese Inhalte für die Zielgruppe und den gewählten Titel passen.",
+ "bulletpoints": [
+ "Warum ...",
+ "Wie Sie ...",
+ "Welche ...",
+ "Was ...",
+ "Warum ...",
+ "Wie ...",
+ "Welche ...",
+ "Was ...",
+ "Warum ...",
+ "Wie ..."
+ ]
+}
+Genau 10 Bulletpoints. Jeder beginnt mit Fragewort oder Aktivverb. Keine Wiederholungen. Nur JSON.`;
+
+ try {
+ const sysP = await buildSystemPrompt();
+ const parsed = await callAPI(sysP, userP);
+ if (!feedback) {
+ generatedBullets = (parsed.bulletpoints||[]).map(b=>({text:b,on:false}));
+ } else {
+
+ const checkedTexts = generatedBullets.filter(b=>b.on).map(b=>b.text);
+ const newBullets = (parsed.bulletpoints||[]).filter(b=>!checkedTexts.includes(b)).map(b=>({text:b,on:false}));
+ generatedBullets = [...generatedBullets.filter(b=>b.on), ...newBullets];
+ }
+ strategyBullets = parsed.strategie || '';
+ clearInterval(msgInt);
+ loadEl.style.display = 'none';
+ renderBullets();
+ } catch(e) {
+ clearInterval(msgInt);
+ loadEl.style.display = 'none';
+ document.getElementById('bullets-content').innerHTML = `<div class="error-box">Fehler: ${esc(e.message)}</div>`;
+ }
+}
+
+function renderBullets() {
+ const stratHtml = strategyBullets ? `
+ <div class="strategy-box">
+ <div class="strategy-header">${IC.bulb} Strategie-Begründung</div>
+ <div class="strategy-text">${esc(strategyBullets)}</div>
+ </div>` : '';
+
+ const bullHtml = generatedBullets.map((b,i)=>`
+ <div class="bullet-item${b.on?' checked':''}" id="bull-${i}">
+ <div class="bullet-cb" onclick="toggleBull(${i})" id="bcb-${i}">${b.on?IC.squareCheck:IC.square}</div>
+ <span class="bullet-text" id="btext-${i}">${esc(b.text)}</span>
+ <div class="bullet-acts">
+ <button class="icon-btn" onclick="editBull(${i})">${IC.edit}</button>
+ <button class="icon-btn" onclick="removeBull(${i})">${IC.trash}</button>
+ </div>
+ </div>`).join('');
+
+ document.getElementById('bullets-content').innerHTML = `
+ <hr class="output-divider" style="margin-top:0">
+ ${stratHtml}
+ <div class="section-label">Webinar-Inhalte <span class="section-count">- auswählen, bearbeiten oder entfernen</span></div>
+ <div id="bull-list">${bullHtml}</div>
+
+ <div class="feedback-wrap">
+ <div class="section-label" style="margin-top:0;margin-bottom:.625rem">Feedback für neue Varianten</div>
+ <textarea id="bull-fb" placeholder="z.B. Mehr Fokus auf Einsteiger, Praxis-Beispiele einbauen, weniger wissenschaftlich..."></textarea>
+ <div class="feedback-actions">
+ <button class="secondary-btn" onclick="regenBullets()">${IC.refresh} Mit Feedback neu generieren</button>
+ </div>
+ </div>
+
+ <button class="confirm-btn" onclick="confirmHardfacts()">
+ ${IC.circleCheck} Hardfacts bestätigen &amp; speichern
+ </button>`;
+}
+
+function toggleBull(i) {
+ generatedBullets[i].on = !generatedBullets[i].on;
+ const item = document.getElementById(`bull-${i}`);
+ const cb = document.getElementById(`bcb-${i}`);
+ if (generatedBullets[i].on) { item.classList.add('checked'); cb.innerHTML=IC.squareCheck; }
+ else { item.classList.remove('checked'); cb.innerHTML=IC.square; }
+}
+
+function removeBull(i) {
+ generatedBullets.splice(i,1);
+ refreshBullets();
+}
+
+function editBull(i) {
+ const span = document.getElementById(`btext-${i}`);
+ span.innerHTML =
+ `<textarea class="edit-input" id="binp-${i}" rows="3" style="line-height:1.5;resize:vertical">${escAttr(generatedBullets[i].text)}</textarea>` +
+ `<div class="edit-row">` +
+ `<button class="edit-save" onclick="saveBull(${i})">Speichern</button>` +
+ `<button class="edit-cancel" onclick="refreshBullets()">Abbrechen</button>` +
+ `</div>`;
+ const ta = document.getElementById(`binp-${i}`);
+ ta.focus();
+ ta.setSelectionRange(ta.value.length, ta.value.length);
+}
+
+function saveBull(i) {
+ const v = (document.getElementById(`binp-${i}`)?.value||'').trim();
+ if (v) generatedBullets[i].text = v;
+ refreshBullets();
+}
+
+function refreshBullets() {
+ document.getElementById('bull-list').innerHTML = generatedBullets.map((b,i)=>`
+ <div class="bullet-item${b.on?' checked':''}" id="bull-${i}">
+ <div class="bullet-cb" onclick="toggleBull(${i})" id="bcb-${i}">${b.on?IC.squareCheck:IC.square}</div>
+ <span class="bullet-text" id="btext-${i}">${esc(b.text)}</span>
+ <div class="bullet-acts">
+ <button class="icon-btn" onclick="editBull(${i})">${IC.edit}</button>
+ <button class="icon-btn" onclick="removeBull(${i})">${IC.trash}</button>
+ </div>
+ </div>`).join('');
+}
+
+async function regenBullets() {
+ const fb = (document.getElementById('bull-fb')||{}).value||'';
+ await generateBullets(fb.trim());
+}
+
+function backToTitles() {
+ document.getElementById('phase-bullets').style.display = 'none';
+ document.getElementById('phase-titles').style.display = 'block';
+ setProgress(2);
+ renderTitles();
+ if (selectedTitleIdx !== null) setTimeout(()=>pickTitle(selectedTitleIdx),10);
+}
+
+function confirmHardfacts() {
+ const active = generatedBullets.filter(b=>b.on);
+ if (!active.length) { alert('Bitte behalte mindestens einen Inhaltspunkt.'); return; }
+
+ const t = selectedTitleIdx !== null ? generatedTitles[selectedTitleIdx] : {pre:'',titel:'(kein Titel gewählt)',sub:''};
+ window._hardfacts = {
+ kampagnenname: document.getElementById('f-name').value,
+ live_termin: document.getElementById('f-live').value,
+ offer: `${document.getElementById('f-product').value} · ${document.getElementById('f-price').value}`,
+ pre_headline: t.pre||'',
+ titel: t.titel,
+ sub_headline: t.sub,
+ bulletpoints: active.map(b=>b.text),
+ strategie_titel: strategyTitles,
+ strategie_bullets: strategyBullets,
+ zielgruppe: strategyTitles
+ };
+
+ // Write to sessionStorage for Modul 2
+ try {
+ sessionStorage.setItem('wkt_hardfacts', JSON.stringify(window._hardfacts));
+ } catch(e) {}
+
+ document.getElementById('phase-bullets').style.display = 'none';
+ document.getElementById('phase-confirmed').style.display = 'block';
+ setProgress(4);
+
+ document.getElementById('confirmed-card').innerHTML = `
+ <div class="result-field"><div class="result-label">Kampagne</div><div class="result-value">${esc(window._hardfacts.kampagnenname)}</div></div>
+ <div class="result-field"><div class="result-label">Live-Termin</div><div class="result-value">${esc(window._hardfacts.live_termin||'-')}</div></div>
+ <div class="result-field"><div class="result-label">Offer</div><div class="result-value">${esc(window._hardfacts.offer)}</div></div>
+ <div class="result-field" style="margin-bottom:16px">
+ <div class="result-label" style="margin-bottom:8px">Webinar-Titel</div>
+ ${t.pre ? '<div class="result-value-pre">' + esc(t.pre) + '</div>' : ''}
+ <div class="result-value-title">${esc(t.titel)}</div>
+ <div class="result-value-sub">${esc(t.sub)}</div>
+ </div>
+ <div class="result-field">
+ <div class="result-label">Zielgruppen-Analyse</div>
+ <div class="strategy-section" style="margin-top:6px">
+ <div class="strategy-section-label">Strategie & Zielgruppe</div>
+ <div class="strategy-section-text">${esc(strategyTitles)}</div>
+ </div>
+ </div>
+ <div class="result-field" style="margin-bottom:0">
+ <div class="result-label">Webinar-Inhalte (${active.length})</div>
+ ${active.map(b=>'<span class="bullet-pill">* ' + esc(b.text) + '</span>').join('')}
+ </div>
+ <div class="export-btns" style="margin-top:1.25rem">
+ <button class="export-btn" onclick="exportPDF()">
+ <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+ Als PDF
+ </button>
+ <button class="export-btn" onclick="exportDocx()">
+ <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
+ Google Docs
+ </button>
+ <button class="export-btn" onclick="exportJSON()">
+ <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+ JSON Export
+ </button>
+ </div>
+ <button class="primary-btn" onclick="goToModul2()" style="margin-top:10px">
+ <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+ Weiter zu Modul 2: Landingpage generieren
+ </button>
+ <button class="secondary-btn" style="margin-top:8px;width:100%;justify-content:center" onclick="editAgain()">
+ ${IC.edit} Hardfacts bearbeiten
+ </button>`;
+}
+
+function editAgain() {
+ document.getElementById('phase-confirmed').style.display = 'none';
+ document.getElementById('phase-bullets').style.display = 'block';
+ setProgress(3);
+ renderBullets();
+}
+
+function exportPDF() {
+ window.print();
+}
+
+function exportJSON() {
+ var h = window._hardfacts;
+ if (!h) return;
+ var blob = new Blob([JSON.stringify(h, null, 2)], {type: 'application/json'});
+ var url = URL.createObjectURL(blob);
+ var a = document.createElement('a');
+ a.href = url;
+ a.download = 'hardfacts_' + (h.kampagnenname || 'webinar').replace(/\s+/g, '-').toLowerCase() + '.json';
+ document.body.appendChild(a);
+ a.click();
+ setTimeout(function() { URL.revokeObjectURL(url); a.remove(); }, 1000);
+}
+
+function goToModul2() {
+ try { sessionStorage.setItem('wkt_hardfacts', JSON.stringify(window._hardfacts)); } catch(e) {}
+ window.location.href = MODUL2_URL;
+}
+
+function exportDocx() {
+ var h = window._hardfacts;
+ if (!h) return;
+
+ var T = function(t) { return '<' + t + '>'; };
+ var TC = function(t) { return '</' + t + '>'; };
+ var TA = function(t, a) { return '<' + t + ' ' + a + '>'; };
+
+ var bi = '';
+ for (var i = 0; i < h.bulletpoints.length; i++) {
+ bi += TA('li','style="margin-bottom:6pt;font-size:11pt;line-height:1.5"') + h_esc(h.bulletpoints[i]) + TC('li');
+ }
+
+ var preHtml = h.pre_headline
+ ? TA('p','style="font-size:10pt;font-weight:bold;color:#555;letter-spacing:1px;text-transform:uppercase;margin:0 0 4pt 0"') + h_esc(h.pre_headline) + TC('p')
+ : '';
+
+ var css = 'body{font-family:Arial,sans-serif;max-width:700px;margin:40px auto;color:#1a1a1a}'
+ + 'p{margin:0 0 4pt 0}hr{border:none;border-top:1px solid #eee;margin:16pt 0}'
+ + 'h1{font-size:20pt;font-weight:bold;margin:4pt 0;line-height:1.3;color:#1a1a1a}'
+ + 'ul{margin:0;padding-left:20pt}li{font-size:11pt;margin-bottom:6pt;line-height:1.5}';
+
+ var html = '<!DOCTYPE html>'
+ + T('html') + T('head') + TA('meta','charset="UTF-8"')
+ + T('style') + css + TC('style')
+ + TC('head') + T('body')
+ + TA('p','style="font-size:10pt;color:#666;margin-bottom:3pt"') + T('strong') + 'KAMPAGNE:' + TC('strong') + ' ' + h_esc(h.kampagnenname) + TC('p')
+ + TA('p','style="font-size:10pt;color:#666;margin-bottom:3pt"') + T('strong') + 'LIVE-TERMIN:' + TC('strong') + ' ' + h_esc(h.live_termin || '-') + TC('p')
+ + TA('p','style="font-size:10pt;color:#666;margin-bottom:3pt"') + T('strong') + 'OFFER:' + TC('strong') + ' ' + h_esc(h.offer) + TC('p')
+ + T('hr')
+ + TA('p','style="font-size:9pt;font-weight:bold;color:#3b6d11;letter-spacing:1px;text-transform:uppercase;margin:0 0 4pt 0"') + 'ZIELGRUPPEN-ANALYSE' + TC('p')
+ + TA('p','style="font-size:10pt;color:#27500a;line-height:1.65;margin-bottom:16pt;background:#f5f9ee;padding:8pt 10pt;border-left:3px solid #8bc34a"') + h_esc(h.zielgruppe||h.strategie_titel||'') + TC('p')
+ + T('hr')
+ + preHtml
+ + T('h1') + h_esc(h.titel) + TC('h1')
+ + TA('p','style="font-size:12pt;color:#555;margin:4pt 0 20pt 0"') + h_esc(h.sub_headline) + TC('p')
+ + T('hr')
+ + TA('p','style="font-size:9pt;font-weight:bold;color:#999;letter-spacing:1px;text-transform:uppercase;margin-bottom:8pt"') + 'WEBINAR-INHALTE (' + h.bulletpoints.length + ')' + TC('p')
+ + T('ul') + bi + TC('ul')
+ + TC('body') + TC('html');
+
+ var blob = new Blob([html], {type: 'application/vnd.ms-word;charset=utf-8'});
+ var url = URL.createObjectURL(blob);
+ var a = document.createElement('a');
+ a.href = url;
+ a.download = 'Hardfacts_' + (h.kampagnenname || 'Webinar').replace(/\s+/g, '-') + '.doc';
+ document.body.appendChild(a);
+ a.click();
+ setTimeout(function() { URL.revokeObjectURL(url); a.remove(); }, 1000);
+}
+
+function h_esc(s) {
+ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function escAttr(s) { return String(s||'').replace(/'/g,'&#39;').replace(/"/g,'&quot;'); }
+
+window.addEventListener('DOMContentLoaded', function() {
+ document.getElementById('nav-m2').href = MODUL2_URL;
+ // Preset-Auswahl aus vorheriger Session wiederherstellen (geteilt mit Modul 2)
+ try {
+ var stored = sessionStorage.getItem('wkt_copy_preset');
+ if (stored && COPYWRITER_PRESETS.some(function(p){ return p.id === stored; })) {
+ selectedCopyPreset = stored;
+ }
+ } catch(e) {}
+ renderCopyPresetPicker();
+});
+</script>
+<!-- PRESET-DATA:START (generiert von sync-presets.js - nicht von Hand editieren, Quelle sind die presets/*.md Dateien) -->
+<script type="text/plain" data-preset-file="presets/hellinger/regeln.md">
+---
+name: Hellinger
+description: Copywriter-Preset für Hellinger Kampagnen
+---
+
+# Hellinger - Copywriter Preset
+
+## 1 · Zielgruppe & Markenkontext
+Du schreibst Landingpages für die **Hellinger®schule** (Original Hellinger® Familienstellen; zentrale Absenderin: **Sophie Hellinger**). Die Leserschaft ist 35–58, überwiegend weiblich, aus der DACH-Region, entwicklungsorientiert und hochreflektiert — viele arbeiten selbst mit Menschen (Coaches, Therapeut:innen, Berater:innen, Führungskräfte). LP-Ziel ist fast immer die **Anmeldung zum kostenfreien Live-Webinar/-Seminar** als Einstieg in den Funnel zur Ausbildung. Sophie spricht persönlich zur einzelnen Leserin, nicht „die Marke" zur Masse.
+
+## 2 · Tonalität & Anrede
+**Anrede: durchgängig „Du", in LP-Copy großgeschrieben (Du / Dir / Dein / Dich).** Kein „Sie" — auch nicht im B2B. Grund: Sophie spricht von Mensch zu Mensch („und vielleicht bist genau Du diese Person"). Im B2B-Kontext bleibt die Anrede Du; differenziert wird **tonal** (sachlicher, Fokus auf Klienten/Teams/Wirksamkeit statt privater Emotion), nicht über einen Anredewechsel.
+> *Hinweis: Alle Referenzdateien nutzen Du. Falls für ein Executive-/B2B-Asset ausdrücklich „Sie" gewünscht ist, ist das eine bewusste Abweichung vom Hausstil — nicht der Default.*
+
+**Ton:** ruhig, klar, würdevoll. Warm, aber nie schwülstig oder überemotional. Kurze Sätze, bewusste Pausen, Fragen, die nicht sofort beantwortet werden. Ernst nehmen statt „abholen". Kein Druck, keine Reißerei.
+
+## 3 · Wiederkehrende Sprachmuster
+1. **Staccato / Ein-Wort- und Kurzsätze als eigenständige Aussagen.** „Gefangen. Gebunden. Geprägt." · „Schicksale. Lieben. Trennungen." · „Das ist kein Zufall."
+2. **Sophie-Direktmarker.** „Ich sag Dir etwas …" · „Doch, ich sag Dir …" · „Vielleicht kennst Du das: …" · „Tatsache ist …" · „Jetzt bist Du dran." · „… und vielleicht bist genau Du diese Person."
+3. **Fragen ohne sofortige Antwort** (erzeugen Sog). „Was will Dir das Leben damit sagen?" · „Was, wenn genau dieser Moment entscheidend ist?"
+4. **Tiefen-Kontrast (Oberfläche ↔ Wurzel).** „Nach außen passt alles. Und trotzdem …" · „Die Ursache liegt tiefer." · „Nur was gesehen wird, kann sich lösen."
+5. **Kernvokabular konsequent verwenden:** *blinde Liebe*, *Ordnung(en der Liebe)*, *Platz* („Deinen Platz einnehmen"), *Verstrickung*, *Bindung*, *System*. „blinde Liebe" gehört inhaltlich auf die LP.
+6. **Auflösungs-Bewegung als Sprachlogik:** Sehen → Lassen → eigenen Platz einnehmen → Liebe leben. Ruhe & Kraft „nicht durch Anstrengung, sondern weil Du Deinen Platz gefunden hast" — nicht *mehr Tun*, sondern *innere Ordnung*.
+7. **Entlastende „nicht … sondern"-Umkehr** (nie wertend). „… nicht, weil Du versagt hast, sondern weil unbewusste Bindungen Dich festhalten."
+8. **Event-Framing & CTA-Ritual.** „Zwei Tage. Live online. Und Du bist mein Gast." + Kaskade: „Klick auf den Button. Trag Dich ein. Trag Dir den Termin in Deinen Kalender ein." Live-Elemente & Termin immer prominent.
+
+## 4 · Dos & Don'ts
+**Dos**
+- Sophie als persönliche Absenderin spürbar machen; mit einer kurzen persönlichen Einladung schließen.
+- Würde & Verantwortung wahren: „sie lässt den Eltern, was zu den Eltern gehört; sie nimmt nur, was zu ihr selbst gehört."
+- Bildsprache von Sehen / Ordnung / Platz / dem Fäden-System unter der Oberfläche.
+- Helle, warme Bilder bevorzugen; kurze Absätze; Termin/„kostenfrei & unverbindlich" sichtbar am Button.
+
+**Don'ts — verbotene Wörter & Stilfallen**
+- **Keine Heilsversprechen / therapeutischen Zusagen** („heilt", „befreit Dich von", Garantien, Diagnosesprache).
+- **„den Schmerz zurückgeben" ist nicht Hellinger-konform.** Korrekt: „sie lässt den Eltern, was zu den Eltern gehört."
+- **Keine Esoterik-Symbolik / Szene-Sprache** (Aura, Chakren, „Energiearbeit", „Schwingung" als Heilsbegriff). **Kein Gold / keine goldenen Akzente** (esoterische Konnotation).
+- Keine Manipulation, kein künstlicher Druck, kein Konkurrenz-Bashing.
+- Keine Marketing-Floskeln: „abholen", „mitnehmen", „einzigartige Chance", „revolutionär", „Geheimnis", Ausrufezeichen-Ketten, leere Superlative.
+- Nicht überemotionalisieren; Warmherzigkeit ja, Pathos nein.
+- Keine Gedankenstriche verwenden
+
+## 5 · Beispiel-Snippets (aus den Referenzdateien)
+**Headlines**
+- „Leben leben: Wie Du löst, was sich in Dir immer wiederholt."
+- „Du funktionierst. Aber bist nicht wirklich erfüllt."
+- „Gefangen. Gebunden. Geprägt."
+- (B2B) „Erfolg zeigt Dir den Weg. Herkunftsmuster bestimmen die Richtung."
+
+**Sublines / Body**
+- „Nur was gesehen wird, kann sich lösen — doch wie findet man einfach und zielgenau die Wurzel?"
+- „… nicht, weil Du versagt hast, sondern weil unbewusste Bindungen Dich festhalten."
+
+**Bullet-Stil** (Nutzen als Zustand, nicht als Feature)
+- „Klarheit, die bleibt." · „Veränderung, die Du fühlst."
+
+**CTA-Buttons**
+- „Jetzt Deinen Platz reservieren" (Zusatz: „100 % kostenfrei & unverbindlich")
+- „Finde Deinen Platz" · „Jetzt kostenfrei anmelden" · (B2B) „Bring Klarheit in komplexe Fälle"
+
+**Sophie-Absender-Close**
+- „Mein Name ist Sophie Hellinger, und seit über 40 Jahren begleite ich Menschen dabei, Ordnung in ihre Beziehungen, Familien und ihren Beruf zu bringen. Wenn Du tiefer schauen willst, lade ich Dich herzlich ein."
+</script>
+<script type="text/plain" data-preset-file="presets/holistic-house/referenzen/webinar-evolution-der-medizin-b2b.md">
+# Referenz-Copy: Online-Workshop „Die Evolution der Medizin" (Fachpublikum)
+
+| | |
+|---|---|
+| **LP-Typ** | Webinar-Anmeldeseite (kostenfreier Online-Workshop, B2B/Fachpublikum) |
+| **Zielgruppe** | Ärzte, Heilpraktiker, Coaches, Trainer, Therapeuten, Gründer/Quereinsteiger (Backend: Ausbildung) |
+| **Kampagne** | Fachpublikums-Webinar der Ausbildungs-Funnel-Linie |
+| **Status** | Referenz mit Abweichungen (Altbestand). Einzige Referenz für die B2B-Ansprache: fachlich dichter, wirtschaftliche Argumente (Positionierung, Wettbewerbsvorteil, Honorar-Perspektive) sind hier erlaubt und erwünscht. |
+
+**Bekannte Abweichungen vom Regelwerk (nicht übernehmen):** Gedankenstriche mehrfach, „nicht nur Krankheiten heilen, sondern …", „In einer Welt, in der …"-Satzanfang, „tiefgreifend/ganzheitlich" als leere Attribute, Patientensprache und Krankheitsbegriffe (im Fachpublikums-Kontext teilweise vertretbar, für B2C tabu). Testimonials sind hier umgangssprachlicher („quick fixes", „wow", „MEHR Umsatz") als der heutige Standard.
+
+---
+
+## Sticky-Bar
+Online-Workshop mit Dr. med. Ulrich Bauhofer · Button: Sichern Sie sich jetzt Ihren kostenfreien Platz
+
+## Above the Fold
+**Eyebrow:** Kostenfreier Online-Workshop mit Dr. med. Ulrich Bauhofer
+
+**Pre-Headline:** Für Ärzte, Heilpraktiker, Coaches und Trainer, die tiefes Wirken und wirtschaftlichen Erfolg vereinen wollen
+
+**Headline (H1):** Die Evolution der Medizin: Ganzheitliche Gesundheit als Schlüsselkompetenz der Zukunft
+
+**Subline:** Während unser aktuelles System primär auf die Behandlung akuter Symptome ausgerichtet ist, bietet „Ayurveda" – das älteste ganzheitliche Heilsystem der Welt – einen anderen Blick: die Entstehung von Ungleichgewichten frühzeitig erkennen und gezielt gegensteuern.
+
+**Button:** Jetzt Ihren Platz reservieren
+**Microcopy:** 100% kostenfrei und unverbindlich
+
+## Inhalts-Bullets
+**Headline (H2):** Das erwartet Sie: Klarheit, Sinn & neue Chancen
+**Intro:** In ca. 60 Minuten erfahren Sie:
+
+- **Gesundheitssystem am Limit:** Ein Richtungswechsel ist in vollem Gange und die Leitlinie heißt Prävention. Erfahren Sie, warum dieser Wandel auf einem der größten Wachstumsmärkte unserer Zeit (Gesundheitsmarkt) Ihren Wettbewerbsvorteil hervorbringt und wie Sie jetzt Teil davon werden können.
+- **Tieferes Wirken, höherer Sinn, mehr Erfolg:** Dr. Bauhofer zeigt aus über 40-jähriger ärztlicher Erfahrung, wie sich persönliche Erfüllung und berufliches Wachstum verbinden lassen, während Sie Ihren Patienten oder Klienten tiefgreifender helfen als je zuvor.
+- **Ihr Wettbewerbsvorteil – Ayurveda:** Entdecken Sie, wie die Integration moderner Wissenschaft und jahrtausendealter Heilweisheit ein unverwechselbares berufliches Profil schafft, das Ihr Angebotsspektrum erweitert, Sie klar vom Markt abhebt und den wachsenden Bedarf für Ganzheitsmedizin bedient.
+- **Wenn Jahrtausende auf Studien treffen:** Immer mehr wissenschaftliche Erkenntnisse bestätigen, was Ayurveda seit Jahrtausenden weiß. Dr. Bauhofer zeigt konkrete Beispiele und wie Sie dieses Wissen sofort in Ihrer täglichen Praxis anwenden können.
+
+**Button:** Jetzt Ihren Platz reservieren
+**Microcopy:** 100% kostenfrei und unverbindlich
+
+## Kontext-Section (Systemkrise als Chance)
+**Badge:** Ganzheitliche Gesundheit wird zur Schlüsselkompetenz
+**Headline (H2):** Die Systemkrise als Ihre persönliche Chance
+
+Wenn die Medizin von heute an ihre Grenzen stößt, braucht es eine neue Form der Expertise.
+
+Wir stecken in einem Paradoxon: Während die Kosten für unser Gesundheitssystem explodieren, nimmt die chronische Erschöpfung in der Gesellschaft massiv zu. Der Grund ist simpel: Wir betreiben ein Krankheitssystem, das primär Defizite verwaltet. Doch eine Medizin der Zukunft sollte nicht nur Krankheiten heilen, sondern ihren Schwerpunkt auf Prävention und Erhaltung der Gesundheit legen.
+
+Gesundheit stärken, vor der Diagnose: Patienten mit Erschöpfung oder Stressfolgen suchen meistens zu spät im Krankheitsverlauf professionelle Hilfe. Pathologische Prozesse entwickeln sich häufig über Jahre im Verborgenen, bevor sie klinisch fassbar sind. Subtile Frühzeichen wie z. B. Schlaf- und Verdauungsstörungen oder vegetative Unruhe werden im derzeitigen System häufig unterschätzt, bis daraus schließlich behandlungsbedürftige Erkrankungen entstehen.
+
+Genau darin liegt ein wesentlicher Handlungsspielraum: Wer frühe Zusammenhänge erkennt, kann aktiv Gesundheit mitgestalten – noch lange bevor Behandlung nötig wird.
+
+Der Ayurveda arbeitet mit fein abgestuften diagnostischen Methoden, die frühe funktionelle Dysbalancen im Organismus sichtbar machen. Er liefert uns hierfür genau den therapeutischen Werkzeugkasten, den wir für die präzise Arbeit an der Achse zwischen Körper, Geist und Bewusstsein heute brauchen.
+
+Ganzheitliche Gesundheitskompetenz entsteht dort, wo moderne Wissenschaft und die jahrtausendealte ayurvedische Expertise fundiert zusammenwirken – zur Prävention, Regulation und individuell messbaren Ergebnissen. So kann man echte Eigenverantwortung in der Gesellschaft verankern.
+
+## Markt-Section (Raus aus der Vergleichbarkeit)
+**Badge:** Ein Wachstumsmarkt mit Sinn
+**Headline (H2):** Raus aus der Vergleichbarkeit
+
+Der Gesundheitsmarkt steht an einem Wendepunkt: Immer mehr Menschen verstehen, dass Gesundheit im Alltag geformt wird und sich bestimmte Alltagsgewohnheiten zu Wohlbefinden oder Befindlichkeitsstörungen summieren können.
+
+Immer mehr Menschen suchen nach bewährten, aber einfachen Konzepten, die trotz Stress im Alltag funktionieren. Sie begreifen, dass mentale und körperliche Stärke zusammengehören und wie wichtig ein gesunder Lebensstil ist.
+
+Für Sie als Mediziner, Heilpraktiker, Therapeut, Coach oder beim Aufbau Ihrer neuen beruflichen Existenz bedeutet das: Starre, oft frustrierende Strukturen können damit aufgebrochen werden.
+
+Branchenübergreifend eröffnen sich neue Türen für Ihre Expertise:
+
+- **Sorgfältige Prävention:** Hochwertige Gesundheitsberatung wird zunehmend als exklusive Privatleistung nachgefragt – weg von der Fließbandmedizin, hin zur wertgeschätzten Expertise.
+- **Erweiterte Reichweite:** Differenzieren Sie Ihr Angebotsspektrum durch eine tiefgreifende ganzheitliche Ausrichtung und heben Sie sich klar von der Masse austauschbarer Dienstleistungen ab.
+- **Corporate Health:** Die wichtigste Ressource sind gesunde, engagierte Mitarbeiter. Deshalb suchen Unternehmen vermehrt externe Experten, die Resilienz, Eigenverantwortung und Leistungsfähigkeit ihrer Teams stärken.
+
+Wer die Sprache der modernen Wissenschaft spricht und gleichzeitig die ayurvedische Regulationsmedizin beherrscht, bietet dem Gesundheitsmarkt einen großen Mehrwert.
+
+Und: In einer Welt, in der Mediziner im Schnitt 8 Minuten Zeit für den Patienten haben, eröffnet sich für Gesundheitsberater wieder die Möglichkeit, inhaltliche Tiefe und berufliche Erfüllung zu finden und zugleich tragfähige, unabhängige Tätigkeitsfelder zu entwickeln, die wirtschaftliche Stabilität ermöglichen.
+
+*Abb.: Markt für komplementäre und alternative Medizin in den USA. Quelle: grandviewresearch.com*
+
+## Für-wen-Section
+**Headline (H2):** Für wen ist dieses Online-Webinar ideal?
+
+Das Webinar richtet sich an alle, die über eine rein symptom- oder prozessorientierte Versorgung hinausgehen und Gesundheit in ihren lebensstilbedingten Einflussfaktoren verstehen und gezielt verbessern möchten.
+
+- **Fachkräfte und Führungskräfte** aus Gesundheitsberufen, Wellnessberufen oder Coachingberufen, die ihre Expertise um ganzheitliche, methodische Ansätze erweitern und damit messbar effektiver arbeiten möchten.
+- **Selbstständige, Trainer und Therapeuten,** die ihre fachliche Positionierung stärken und neue Kundengruppen erreichen wollen.
+- **Ärzte, Heilpraktiker und Präventionsexperten,** die seriöses und fundiertes Ayurveda-Wissen in ihre tägliche Arbeit integrieren möchten, für tiefere und nachhaltigere Ergebnisse.
+- **Gründer und Quereinsteiger,** die den Schritt in eine neue berufliche Existenz im Gesundheitsbereich planen und dafür ein methodisch belastbares Fundament suchen.
+
+Angesprochen sind alle, die moderne Wissenschaft mit der Erfahrung jahrtausendealter Heilkunde verbinden möchten, um eine berufliche Tätigkeit zu gestalten, die fachlich überzeugt, persönlich erfüllt und eine sichere Zukunft bietet.
+
+**Button:** Jetzt Ihren Platz reservieren
+**Microcopy:** 100% kostenfrei und unverbindlich
+
+## Autorität (Über Uli)
+**Headline (H2):** Über Dr. Ulrich Bauhofer und den Workshop
+
+Dr. med. Ulrich Bauhofer zählt zu den bekanntesten Experten für ganzheitliche Gesundheit und Ayurveda im deutschsprachigen Raum, er ist Spiegel-Bestsellerautor, Speaker und Meditationslehrer. Über 500.000 Menschen folgen seinem YouTube-Kanal, um fundiertes Wissen und Inspiration für mehr Energie, Gesundheit und Lebensqualität zu erhalten.
+
+Seine Reise begann mit dem Ziel, Gesundheitsexperte zu werden. Doch nach mehr als sechs Jahren Medizinstudium stellte er fest: Er wusste viel über die Behandlung von Krankheiten, aber erstaunlich wenig darüber, wie man Gesundheit erhält. Diese Erkenntnis führte ihn nach Indien, wo er als einer der ersten westlichen Ärzte direkt von den bedeutendsten Vaidyas die jahrtausendealte ayurvedische Heilkunst erlernte.
+
+Das war der Wendepunkt: Er erkannte, dass echter Fortschritt im Gesundheitswesen entsteht, wenn man die präzise Diagnostik und Forschung der westlichen Medizin mit der ganzheitlichen Sichtweise des Ayurveda verbindet.
+
+Immer häufiger belegen wissenschaftliche Studien die Wirksamkeit von Prinzipien, die im Ayurveda seit Jahrtausenden bekannt sind: von individualisierten Ernährungsansätzen bis hin zu Stressregulations-Methoden.
+
+Seit über vier Jahrzehnten baut Dr. Bauhofer Brücken zwischen alter Heilkunst und moderner Forschung, leitet eigene Projekte, berät Fachkräfte und inspiriert Menschen weltweit, Gesundheit ganzheitlich zu verstehen.
+
+Im Webinar gibt er Einblicke in die neuesten wissenschaftlichen Erkenntnisse und zeigt, wie Sie diese, kombiniert mit bewährten ayurvedischen Methoden, praxisnah in Ihre Arbeit integrieren, um nachhaltigere Ergebnisse zu erzielen und sich so als unverzichtbare Anlaufstelle im Gesundheitswesen von morgen zu etablieren.
+
+**Stat-Badge:** +500.000 YouTube
+
+## Testimonials
+**Headline (H2):** Das sagen Teilnehmer
+
+> „Ich dachte ja immer, Ayurveda sei ‚zu sanft' für meine Praxis und meine Patienten wollten schnelle Ergebnisse und quick fixes. Aber genau das Gegenteil ist der Key gewesen. Mit den neuen Lebensroutinen und Empfehlungen haben sie nicht nur schneller Fortschritte gemacht, sondern ihre Beschwerden sind langfristig verschwunden. Daher kommen Sie jetzt regelmäßig wieder. Mehr Stammkunden, mehr Spaß an der Arbeit und ja, auch MEHR Umsatz."
+> — Sabine R., Heilpraktikerin
+
+> „Ich habe mich nach 20 Jahren im Marketing komplett umorientiert und meine Leidenschaft für Gesundheit zum Beruf gemacht. Dank des praxisorientierten Ansatzes konnte ich direkt mit meinem Coaching-Angebot starten. Heute begleite ich Menschen zu mehr Energie und Lebensfreude im Alltag und verdiene damit endlich meinen Lebensunterhalt mit etwas, das mir wirklich am Herzen liegt."
+> — Markus W., Gesundheitscoach
+
+> „Seit ich Ayurveda in meine Yogakurse eingebaut habe… wow. Die Leute fragen von sich aus nach Einzelterminen, wollen Rezepte, Tipps für den Alltag. Ich muss gar nicht mehr ‚verkaufen' – es läuft einfach. Und das Schönste: Die Teilnehmer schreiben mir Wochen später, wie sehr sich ihr Leben verändert hat."
+> — Anja L., Yogalehrerin & Ayurveda-Beraterin
+
+**Button:** Jetzt Ihren Platz reservieren
+**Microcopy:** 100% kostenfrei und unverbindlich
+
+## Benefits
+**Headline (H2):** Was diesen Workshop besonders macht:
+
+**40 Jahre Erfahrung, auf den Punkt** — Dr. med. Ulrich Bauhofer ist seit über 40 Jahren Arzt und Lehrer und teilt in diesem Workshop das Wissen, das nur durch jahrzehntelange Arbeit mit Menschen entsteht.
+
+**Kein Vorwissen nötig, nur Interesse** — Ob erfahrene Fachkraft oder Quereinsteiger: Die Inhalte sind so aufbereitet, dass Sie ohne spezifische Vorkenntnisse direkt mitnehmen können, was zu Ihrer Arbeit passt.
+
+**60-70 Minuten. Konkreter Nutzen. Sofort umsetzbar.** — Sie verlassen den Workshop mit einem klaren Bild, wie ganzheitliche Gesundheitskompetenz Ihre tägliche Arbeit stärkt und wie Sie damit sowohl tiefer wirken als auch wirtschaftlich wachsen können.
+
+**Button:** Jetzt Ihren Platz reservieren
+**Microcopy:** 100% kostenfrei und unverbindlich
+</script>
+<script type="text/plain" data-preset-file="presets/holistic-house/referenzen/webinar-gesundheit-neu-denken-b2c.md">
+# Referenz-Copy: Live-Seminar „Warum wir Gesundheit neu denken müssen"
+
+| | |
+|---|---|
+| **LP-Typ** | Webinar-Anmeldeseite (kostenfreies Live-Seminar) |
+| **Zielgruppe** | B2C-Kern (Frauen 40+) mit Brücke zur beruflichen Perspektive (Backend: Ausbildung) |
+| **Kampagne** | Live-Seminar 19.07.2026, Tagline „Vorbeugen statt Reparieren" |
+| **Status** | ⭐ **Gold-Standard.** Aktuellste Kampagne, primäre Stil-Referenz für neue Webinar-LPs. |
+
+**Bekannte Abweichungen vom Regelwerk (nicht übernehmen):** vereinzelte Gedankenstriche als Einschub („Sie entsteht – oder geht verloren – jeden Tag"), einmal „nicht durch Einzelmaßnahmen, sondern durch Verständnis", mehrfach „ganzheitlich" als Attribut. Tonalität, Aufbau und Argumentation sind maßgeblich; diese Einzelmuster nach aktuellem Regelwerk ersetzen.
+
+---
+
+## Sticky-Bar
+Live-Seminar mit Dr. Ulrich Bauhofer · Button: Jetzt Ihren Platz reservieren
+
+## Above the Fold
+**Eyebrow:** Das große Live-Seminar mit Dr. Ulrich Bauhofer am Sonntag, 19. Juli um 11 Uhr
+
+**Pre-Headline:** Vorbeugen statt Reparieren
+
+**Headline (H1):** Höhere Beiträge, weniger Leistungen, lange Wartezeiten: Warum wir Gesundheit neu denken müssen
+
+**Subline:** Entdecken Sie, wie ein jahrtausendealtes System die größte Herausforderung unserer Zeit beantwortet und was dieses Wissen für Ihr Leben, Ihre Vitalität und Ihre berufliche Zukunft verändern kann.
+
+**Button:** Jetzt Ihren Platz reservieren
+
+**Die Inhalte des Live-Termins:**
+- **Gesundheit beginnt früher, als wir denken:** Warum das Gesundheitssystem oft erst reagiert, wenn sich bereits Symptome zeigen und wie Sie mit Ayurveda lernen, vorauszudenken, statt nur zu reagieren.
+- **Ihr Standort-Check:** Nehmen Sie sich in einer praktischen Selbstreflexion mit und erfahren, wo Sie in Zeiten dieser Gesundheitswende bereits gut aufgestellt sind und wo typgerechte Anpassungen einen Unterschied machen.
+- **Verborgene Energieblocker erkennen und gegensteuern:** Entdecken Sie, welche alltäglichen Gewohnheiten still Ihre Kraft kosten und welche simplen, personalisierten Routinen das ändern.
+- **Ganzheitliche Gesundheit als persönliche und berufliche Zukunftskompetenz:** Ein System, das früh ansetzt und Ihnen zeigt, wie Gesundheit im Alltag geformt wird – für sich, für andere und für eine sinnvolle berufliche Ausrichtung in einem der wachstumsstärksten Märkte unserer Zeit.
+
+**Button:** Jetzt Ihren Platz reservieren
+**Microcopy:** 📆 Digital & 100 % kostenfrei: Am 19. Juli, um 11 Uhr
+
+## Zitat-Nugget
+> „In zehn Jahren wird jeder dritte Deutsche über sechzig sein. Unser Gesundheitssystem ist auf diesen Wandel nicht vorbereitet."
+> — Dr. Ulrich Bauhofer
+
+Das Entscheidende daran: Das System gerät schon heute an seine Grenzen, lange bevor dieser Wandel seinen Höhepunkt erreicht. Die ersten Reformen kommen bereits jetzt, mit höheren Beiträgen und weniger Leistungen. Das betrifft die Generation, die heute älter wird. Und es betrifft alle, die in zwanzig oder dreißig Jahren auf ein System angewiesen sind, das diese Last dann tragen soll.
+
+Wer früh versteht, wie der eigene Körper funktioniert, ist auf diese Entwicklung vorbereitet. Genau dafür ist dieses Live-Seminar gedacht.
+
+## Kontext-Section (Problem-Nugget)
+**Badge:** Gesundheit beginnt früher als Sie denken
+**Headline (H2):** Der Wandel im Gesundheitssystem und was er wirklich mit uns zu tun hat
+
+Unser Gesundheitssystem ist gut. Es wurde dafür gebaut einzugreifen, wenn Symptome auftreten und darin ist es hervorragend.
+
+Doch die Rahmenbedingungen haben sich verschoben. Das Kabinett hat im April 2026 eine der größten Sozialreformen seit Jahrzehnten beschlossen: Zuzahlungen steigen um 50 Prozent, Kassenbeiträge wachsen weiter, Erstattungen werden gekürzt. Und das ist erst der Anfang einer tiefgreifenden Entwicklung, die sich seit Jahren abzeichnet.
+
+Warum? Unsere Gesellschaft wird älter. In zehn Jahren wird jeder dritte Deutsche über sechzig sein. Wir leben länger, aber zu oft nicht gesünder. Ein System, das jahrzehntelang reaktiv gedacht hat, trägt jetzt die Kosten dieser Haltung.
+
+Bis 2022 haben über 83 Prozent der Deutschen ihr Gesundheitssystem positiv bewertet. Heute sind es nur noch 62 Prozent. Die Zahl der Unzufriedenen hat sich verdoppelt.
+
+Was dabei kaum diskutiert wird: Das System gibt in Deutschland jährlich über 500 Milliarden Euro aus. Eine unfassbare Zahl. Doch weniger als drei Prozent davon fließen in echte Prävention. Um es mit einem Fußball-Bild zu sagen: Prävention sitzt bei uns auf der Ersatzbank. Sie hat keinen Platz in der Stammelf, obwohl sie der effektivste Spieler wäre.
+
+Genau hier beginnt die Verschiebung. Gesundheit entscheidet sich nicht im Sprechzimmer. Sie entsteht – oder geht verloren – jeden Tag: in unseren Routinen, in unserem Umgang mit Ernährung, Stress, Bio-Rhythmus und dem, was wir unserem Körper täglich aussetzen.
+
+Viele Menschen spüren das bereits. Sie achten auf sich, versuchen bewusst zu leben und fühlen sich trotzdem nicht wirklich in ihrer Kraft. Nicht klar. Nicht leicht. Nicht voller Energie. Wer dieses Gefühl kennt, hat nichts falsch gemacht. Unser bisheriges Verständnis von Gesundheit hat schlicht nicht alle Antworten parat.
+
+Der Wandel im Gesundheitssystem macht eines unmissverständlich deutlich: Gesundheit darf nicht länger ausschließlich repariert werden. Wie wir langfristig gesund bleiben, muss grundlegend verstanden, kultiviert und im Alltag stabilisiert werden.
+
+Im Live-Webinar ordnet Dr. med. Ulrich Bauhofer die Veränderungen im Gesundheitssystem ein und zeigt, wie sich daraus ein neuer, alltagstauglicher Umgang mit Gesundheit ergibt.
+
+## Zukunfts-Section (Chance)
+**Badge:** Gesundheit wird zur Schlüsselkompetenz
+**Headline (H2):** Was dieser Wandel für Ihre Zukunft ermöglicht
+
+Parallel zu dieser Entwicklung verschiebt sich etwas Grundlegendes: Prävention, Longevity und individuelle Gesundheitskompetenz rücken weltweit in den Fokus. Und das mit zweistelligen Wachstumsraten in vielen Segmenten. Der Markt wächst, weil der Bedarf real ist. Immer mehr Menschen verstehen, dass sie nicht auf das System warten können.
+
+Frauen treffen rund 70 bis 80 Prozent der Gesundheitsentscheidungen im Haushalt. Für sich selbst, für ihre Kinder, für ihre Partner, oft auch für ihre Eltern. Frauen über vierzig sind heute die am schnellsten wachsende Gruppe von Neugründerinnen im Gesundheits- und Begleitungsbereich in Deutschland. Und der Markt für Frauengesundheit wächst so stark, dass Frauen ihn bereits prägen und in vielen Bereichen anführen.
+
+Das ist kein Zufall. Es ist die Antwort auf eine gesellschaftliche Entwicklung, die Menschen mit echtem Gesundheitswissen braucht.
+
+Genau hier setzt ein System an, das diesen Ansatz seit Jahrtausenden verfolgt. Der Ayurveda versteht Gesundheit als dynamisches Gleichgewicht, das im Alltag gepflegt wird. Seine Prinzipien sind nicht neu. Sie gewinnen heute jedoch massiv an Bedeutung, weil die moderne Wissenschaft sie immer präziser bestätigt.
+
+Gesundheitswissen dieser Art gehört zu den Kompetenzen, die in den kommenden Jahrzehnten persönlich wie beruflich an Bedeutung gewinnen. Als persönliche Stärke im eigenen Leben, als sinnvolle Erweiterung eines bestehenden Angebotsspektrums, als neue Rolle im Gesundheitsumfeld oder als bewusste Neuausrichtung in einem Bereich, der in den kommenden Jahrzehnten weiter an Bedeutung gewinnen wird.
+
+Dabei steht ein Zugewinn an Lebensqualität im Vordergrund. Denn Gesundheit darf leicht gehen. Sie darf Energie geben. Und sie darf Spaß machen.
+
+Am 19. Juli zeigt Dr. Bauhofer, wie dieses Wissen das eigene Leben verändert. Und wie Menschen, die es früh für sich nutzen, heute in einem boomenden Markt eine Rolle einnehmen, die vor zehn Jahren noch gar nicht existiert hat.
+
+*Abb.: Ausgaben der gesetzlichen Krankenversicherungen (GKV) für betriebliche Gesundheitsförderung in Deutschland in den Jahren 2014 bis 2022 (in Millionen Euro)*
+
+## Für-wen-Section
+**Headline (H2):** Dieses Live-Seminar ist genau richtig für Sie, wenn Sie …
+- sich selbst und Ihre Liebsten bewusster stärken möchten, ohne Druck und ohne noch einen Ratgeber zu lesen.
+- merken, dass bisherige Ansätze nicht mehr ausreichen. Und verstehen möchten, warum, und welche tieferen Zusammenhänge wirklich zählen.
+- spüren, dass der aktuelle Wandel im Gesundheitssystem etwas mit Ihrem Leben zu tun hat. Und wissen möchten, was Sie jetzt vorausschauend tun können.
+- sich fragen, ob das Wissen um ganzheitliche Gesundheit auch beruflich für Sie relevant sein könnte: als Erweiterung dessen, was Sie tun, oder als Neuausrichtung in einem Bereich mit echtem Zukunftspotenzial.
+
+**Button:** Jetzt Ihren Platz reservieren
+**Microcopy:** 📆 Digital & 100 % kostenfrei: Am 19. Juli, um 11 Uhr
+
+## Autorität (Über Uli)
+**Headline (H2):** Über Dr. Ulrich Bauhofer und das Live-Seminar
+
+Dr. med. Ulrich Bauhofer gilt als einer der führenden Experten für ganzheitliche Gesundheit und Ayurveda in Deutschland. Mit über 40 Jahren Erfahrung als Arzt verbindet er die präzisen Erkenntnisse der westlichen Schulmedizin mit den Prinzipien der ältesten Gesundheitslehre der Welt: dem Ayurveda. Sein Ansatz rückt präventives Denken, Selbstregulation und alltagstaugliche Gesundheitskompetenz in den Mittelpunkt.
+
+1980 hatte er das Privileg, als einer der ersten westlichen Ärzte von den führenden Vaidyas in Indien zu lernen. Seitdem ist es seine Mission, dieses Jahrtausende alte Wissen in den westlichen Lebensstil zu integrieren: medizinisch fundiert, alltagstauglich, zukunftsweisend.
+
+*„Unser Körper spricht ständig mit uns. Die Frage ist, ob wir gelernt haben, zuzuhören."*
+
+Ziel des Live-Seminars ist es, den aktuellen Wandel im Gesundheitssystem einzuordnen und aufzuzeigen, welche neuen Wege sich daraus eröffnen: für den bewussten Umgang mit der eigenen Gesundheit im Alltag und für sinnstiftende berufliche Perspektiven in einem Bereich, der weiter an Bedeutung gewinnt.
+
+**Stat-Badge:** +500.000 YouTube
+
+## Testimonials
+**Headline (H2):** Was Menschen aus Dr. Bauhofers Arbeit mitnehmen
+
+> „Ich habe schon so viel über Gesundheit gelesen und gehört und trotzdem oft das Gefühl gehabt, es nicht richtig einordnen zu können. Zu viele Meinungen, zu viele neue Social Media Regeln. Bei Dr. Bauhofer hatte ich zum ersten Mal das Gefühl: Ok, das ergibt Sinn. Nicht so kompliziert, wie sonst, sondern einfach mal verständlich und auch machbar im echten Leben."
+> — Tina P.
+
+> „Was mich doch etwas überrascht hat… es sind keine großen Umstellungen. Ich habe angefangen, morgens anders zu frühstücken und abends früher zu essen. Klingt banal. Aber nach ein paar Wochen hat meine Tochter gefragt, ob ich irgendetwas verändert habe. Sie hat es gemerkt bevor ich es ihr gesagt habe."
+> — Sabine K.
+
+> „Meine Frau hat mir eines der Youtube Videos von Herrn Bauhofer am TV gezeigt. Ich war nicht abgeneigt, aber auch nicht überzeugt, dass das für mich spannend ist. Zwei Dinge haben mich dann doch beschäftigt: wie viel Energie ich eigentlich täglich liegen lasse und warum ich das eigentlich mache. Seitdem achte ich auf andere Dinge. Im Job genauso wie zuhause."
+> — Thomas B.
+
+> „Ich wusste, dass ich beruflich etwas verändern muss, aber nicht was. Erst durch Dr. Bauhofers Perspektiven auf Gesundheit und Lebensführung habe ich erkannt, worum es mir wirklich geht. Heute arbeite ich selbst im Gesundheitsbereich, begleite Menschen und spüre zum ersten Mal, dass meine Arbeit wirklich Sinn macht."
+> — Katharina S.
+
+**Button:** Jetzt Ihren Platz reservieren
+**Microcopy:** 📆 Digital & 100 % kostenfrei: Am 19. Juli, um 11 Uhr
+
+## Benefits
+**Badge:** 19. Juli · 11:00 Uhr · live & online
+**Headline (H2):** Was diesen Workshop besonders macht:
+
+**Ganzheitlicher Ansatz** — Statt isolierter Tipps erhalten Sie einen ganzheitlichen Blick auf Gesundheit. Sie lernen, warum Körper, Geist und Lebensweise untrennbar zusammenwirken und weshalb nachhaltige Gesundheit nicht durch Einzelmaßnahmen, sondern durch Verständnis entsteht.
+
+**Direkt anwendbar, ab dem ersten Tag** — Die Inhalte sind alltagstauglich. Keine radikalen Konzepte, kein extremes Programm. Konkrete Routinen und ein Standort-Check, der Ihnen zeigt, wo bei Ihnen persönlich der größte Hebel liegt.
+
+**Relevant für heute und für Ihre Zukunft** — In 90 Minuten gewinnen Sie fundierte Einblicke in das älteste präventive Medizinsystem der Welt. Und Sie eröffnen sich Perspektiven: für Ihre eigene Gesundheit, für Ihre Liebsten und für alle, die dieses Wissen auch beruflich einsetzen möchten.
+
+**Closing:** Melden Sie sich an und erfahren Sie, wie ein tiefes Verständnis für die Bedürfnisse von Körper und Geist, Ihr Leben und das Ihrer Liebsten zu mehr Lebensfreude, Klarheit und einer sinnhaften Berufung beitragen kann.
+
+**Button:** Jetzt Ihren Platz reservieren
+**Microcopy:** 📆 Digital & 100 % kostenfrei: Am 19. Juli, um 11 Uhr
+
+## FAQ
+**Headline (H2):** Häufige Fragen
+
+**Ist Ayurveda nicht esoterisch?**
+Nein. Dr. Bauhofer ist ausgebildeter Schulmediziner und verbindet beide Welten konsequent. Der Ayurveda ist das älteste dokumentierte Medizinsystem der Welt. Seine Prinzipien werden heute durch Forschungsfelder wie Epigenetik, Chronobiologie und Zellbiologie wissenschaftlich bestätigt. Das Live-Seminar vermittelt fundiertes Wissen.
+
+**Für wen ist dieses Seminar geeignet?**
+Das Seminar richtet sich an alle, die ihre Gesundheit besser verstehen und bewusster gestalten möchten, unabhängig von Vorwissen. Ob Sie privat neugierig sind, sich beruflich neu ausrichten möchten oder bereits im Gesundheitsbereich tätig sind: das Seminar bietet auf allen Ebenen relevante Inhalte.
+
+**Was lerne ich konkret?**
+Sie machen einen persönlichen Standort-Check, erfahren warum ganzheitliche Gesundheit deutlich früher ansetzt als das Gesundheitssystem, lernen verborgene Energieblocker in Ihrem Alltag zu erkennen und verstehen, warum typgerechte Routinen langfristiger greifen als punktuelle Maßnahmen. Außerdem erhalten Sie eine Perspektive auf ganzheitliche Gesundheit als berufliche Zukunftskompetenz.
+
+**Wie lange dauert das Seminar?**
+Rund 60 - 90 Minuten. Am Ende nimmt sich Dr. Bauhofer Zeit für Ihre Fragen.
+
+**Kostet die Teilnahme wirklich nichts?**
+Ja, die Teilnahme ist vollständig kostenfrei und unverbindlich.
+
+**Was passiert nach der Anmeldung?**
+Sie erhalten eine Bestätigungsmail mit dem Zugangslink. Kurz vor dem Seminar bekommen Sie eine Erinnerung. Das Seminar findet live statt. Sie können von überall teilnehmen.
+
+**Button:** Jetzt Ihren Platz reservieren
+**Microcopy:** 📆 Digital & 100 % kostenfrei: Am 19. Juli, um 11 Uhr
+</script>
+<script type="text/plain" data-preset-file="presets/holistic-house/referenzen/webinar-stille-gesundheitskrise-b2c.md">
+# Referenz-Copy: Online-Seminar „Eine stille Gesundheitskrise? Zeit, Gesundheit neu zu denken"
+
+| | |
+|---|---|
+| **LP-Typ** | Webinar-Anmeldeseite (kostenfreies Online-Seminar) |
+| **Zielgruppe** | B2C-Kern (Frauen 40+) mit beruflicher Perspektive als zweitem Strang |
+| **Kampagne** | Vorgänger-Kampagne der „Gesundheit neu denken"-Linie |
+| **Status** | Referenz mit Abweichungen (Altbestand). Gut für Struktur, Bullet-Bau und Für-wen-Section. |
+
+**Bekannte Abweichungen vom Regelwerk (nicht übernehmen):** Gedankenstriche als Stilmittel (mehrfach), „nachhaltig" als Floskel („nachhaltige Gesundheit", „nachhaltig wirkt"), „ganzheitlich" als leeres Attribut, „in einer Welt, in der …"-Satzanfang, Krankheits-/Symptomsprache stärker als heutiger Standard erlaubt („Volkskrankheiten", Symptomlisten als Verkaufsargument). Der aktuelle Standard (siehe Gold-Standard-Referenz) argumentiert über System und Alltag statt über Krankheitsbilder.
+
+---
+
+## Sticky-Bar
+Online-Seminar mit Dr. med. Ulrich Bauhofer · Button: Sichern Sie sich jetzt Ihren kostenfreien Platz
+
+## Above the Fold
+**Eyebrow:** Das große Online-Seminar mit Ayurveda-Mediziner Dr. med. Ulrich Bauhofer 🌿
+
+**Pre-Headline:** Mehr Beschwerden, höhere Beiträge, lange Wartezeiten.
+
+**Headline (H1):** Eine stille Gesundheitskrise? Zeit, Gesundheit neu zu denken
+
+**Subline:** Entdecken Sie ein System, das die wachsende Gesundheitskrise an der Wurzel packt und lernen Sie, wie Sie dieses Wissen nutzen können: für nachhaltige Gesundheit, mehr Lebensqualität und eine berufliche Aufgabe mit Zukunft.
+
+**Button:** Jetzt Ihren Platz reservieren
+
+**Die Inhalte des Seminars:**
+- **Die 6 Stufen der Krankheitsentwicklung:** Verstehen Sie, wann Krankheiten wirklich entstehen und wie Sie frühzeitig gegensteuern können – inkl. persönlichem Selbstcheck.
+- **Identifizieren Sie Gesundheitsräuber:** Wie Sie ungesunde Gewohnheiten in positive Gesundheitsstrategien umwandeln – für sich und andere.
+- **Die Bedeutung ganzheitlicher Gesundheit:** Was die 5 großen Volkskrankheiten gemeinsam haben und warum ein integrativer Ansatz unsere Zukunft prägt.
+- **Positionieren Sie sich in einem der wachstumsstärksten Märkte unserer Zeit:** Lernen Sie ein System kennen, das weit vor dem Kranksein ansetzt, nachhaltig wirkt und Ihnen neue berufliche Perspektiven eröffnet.
+
+**Button:** Jetzt Ihren Platz reservieren
+**Microcopy:** 100% kostenfrei und unverbindlich
+
+## Kontext-Section (Problem-Nugget)
+**Badge:** Gesundheit beginnt früher als Sie denken
+**Headline (H2):** So schützen Sie sich frühzeitig vor den häufigsten Volkskrankheiten
+
+Die meisten chronischen Erkrankungen wie Erschöpfung, Herz-Kreislauf-Beschwerden, Diabetes oder stille Entzündungen entstehen nicht plötzlich. Sie entwickeln sich oft über Jahre, leise und schleichend.
+
+Die ersten Warnzeichen? Schlafprobleme. Verdauungsstörungen. Innere Unruhe. Konzentrationsschwäche. Symptome, die viele übersehen oder als „normal" abtun.
+
+Doch genau in dieser frühen Phase liegt der entscheidende Wendepunkt. Wer die sechs Stufen der Krankheitsentwicklung kennt, kann rechtzeitig gegensteuern – mit fundiertem Wissen, alltagstauglichen Strategien und einem neuen Verständnis für die wahren Ursachen.
+
+Im Online-Seminar erfahren Sie, wie Sie Ihre Gesundheit gezielt stärken, erste Anzeichen richtig deuten und dieses Wissen auch im privaten und beruflichen Kontext sinnvoll weitergeben können.
+
+## Zukunfts-Section (Chance)
+**Badge:** Ein Milliardenmarkt mit Sinn
+**Headline (H2):** Warum jetzt der richtige Moment ist, umzudenken
+
+Der globale Gesundheitsmarkt erlebt eine Revolution. Prävention und individuelle Gesundheitslösungen rücken weltweit in den Fokus, oft mit zweistelligen Wachstumsraten in vielen Segmenten. Gesundheitscoaching, Stressbewältigung und Ernährungskompetenz zählen dabei zu den gefragtesten Zukunftskompetenzen.
+
+Auch die großen Institutionen reagieren: Gesetzliche Krankenkassen fördern zunehmend Programme zur betrieblichen Gesundheitsvorsorge und zeigen damit, wohin die Entwicklung geht.
+
+Gefragt sind Menschen, die Gesundheit wirklich verstehen und bereit sind, Verantwortung zu übernehmen. Ob für sich selbst, für Familie und Freunde oder im beruflichen Kontext: Ganzheitliche Gesundheitsfürsorge wird zur neuen Schlüsselkompetenz in einer Welt, in der Komplexität und Belastung zunehmen und der Wunsch nach echter Lebensqualität stetig wächst.
+
+Ob als Coach, in der betrieblichen Gesundheitsförderung oder als sinnvolle Erweiterung eines bestehenden Berufs: Eröffnen Sie sich neue berufliche Perspektiven und positionieren sich in einem zukunftsträchtigen Wachstumsmarkt.
+
+*Abb.: Ausgaben der gesetzlichen Krankenversicherungen (GKV) für betriebliche Gesundheitsförderung in Deutschland in den Jahren 2014 bis 2022 (in Millionen Euro)*
+
+## Für-wen-Section
+**Headline (H2):** Dieses Online-Seminar ist genau richtig für Sie, wenn Sie …
+- sich selbst und Ihre Liebsten nachhaltig stärken möchten.
+- ein sinnerfülltes berufliches Ziel in der Gesundheitswelt suchen.
+- verstehen wollen, wie echte Prävention wirklich funktioniert.
+- Gesundheit neu denken – und praktisch umsetzen möchten.
+
+**Button:** Jetzt Ihren Platz reservieren
+**Microcopy:** 100% kostenfrei und unverbindlich
+
+## Autorität (Über Uli)
+**Headline (H2):** Über Dr. Ulrich Bauhofer und den Online-Workshop
+
+Dr. med. Ulrich Bauhofer gilt als einer der führenden Experten für ganzheitliche Gesundheit und Ayurveda. Mit über 40 Jahren Erfahrung vereint er das Beste aus zwei Welten: die präzisen Erkenntnisse der westlichen Schulmedizin und die ganzheitlichen Prinzipien der ältesten Heilkunde der Welt – Ayurveda. Sein Ansatz hebt sich deutlich von der reinen Medizin ab, indem er den Fokus auf präventives Gesundheitsmanagement legt, für mehr Energie, Leichtigkeit und Lebensfreude.
+
+*„Der Körper flüstert, bevor er schreit."*
+
+Ein Satz, der Dr. Ulrich Bauhofer seit Jahrzehnten begleitet und seine Arbeit prägt wie kaum ein anderer.
+
+Ziel des Online-Workshops ist es, Ihnen eine neue Perspektive auf Ihre Gesundheit und die Ihrer Mitmenschen zu eröffnen – mit umsetzbaren Lösungsansätzen, die auf individuelle Bedürfnisse abgestimmt sind.
+
+**Stat-Badge:** +500.000 YouTube
+
+## Testimonials
+**Headline (H2):** Das sagen Teilnehmer
+
+> „Seine Bücher und Vorträge haben mir geholfen, Gesundheit nicht länger als etwas rein Körperliches zu betrachten. Was ich aus seiner Arbeit mitgenommen habe, begleitet mich inzwischen im Alltag auf so vielen Ebenen, privat und im Job."
+> — Johanna L.
+
+> „Ich hatte selten das Gefühl, dass jemand so fundiert und undogmatisch über Gesundheit spricht. Dr. Bauhofer bringt Dinge auf den Punkt, die ich innerlich längst gespürt habe – aber nie einordnen konnte."
+> — Martin H.
+
+> „Ich wusste, dass ich beruflich etwas verändern muss – aber nicht was. Erst durch Dr. Bauhofers Perspektiven auf Gesundheit und Lebensführung habe ich erkannt, worum es mir wirklich geht. Heute arbeite ich selbst im Gesundheitsbereich, begleite Menschen und spüre zum ersten Mal, dass meine Arbeit wirklich Sinn macht."
+> — Katharina S.
+
+**Button:** Jetzt Ihren Platz reservieren
+**Microcopy:** 100% kostenfrei und unverbindlich
+
+## Benefits
+**Headline (H2):** Was diesen Workshop besonders macht:
+
+**Ganzheitlicher Ansatz** — Statt isolierter Maßnahmen: Entdecken Sie, wie das gezeigte System Körper, Geist und Seele in Balance bringt – für nachhaltige Gesundheit.
+
+**Praxistauglich** — Die Inhalte sind direkt anwendbar, ob für Ihre persönliche Entwicklung oder als Grundlage für eine berufliche Neuorientierung.
+
+**Wertvolle Investition** — In nur 90 Minuten gewinnen Sie fundiertes Wissen über die älteste Heilkunst der Welt – und eröffnen sich neue Perspektiven für Gesundheit und Karriere.
+
+**Closing:** Melden Sie sich an und erfahren Sie, wie ein tiefes Verständnis für die Bedürfnisse von Körper und Geist, Ihr Leben und das Ihrer Liebsten zu mehr Gesundheit, Lebensfreude und einer sinnhaften Berufung führen kann.
+
+**Button:** Jetzt Ihren Platz reservieren
+**Microcopy:** 100% kostenfrei und unverbindlich
+</script>
+<script type="text/plain" data-preset-file="presets/holistic-house/referenzen/webinar-supplements-vom-chaos-zum-system.md">
+# Referenz-Copy: Online-Seminar „Vom Chaos zum System" (Nahrungsergänzungsmittel)
+
+| | |
+|---|---|
+| **LP-Typ** | Webinar-Anmeldeseite (kostenfreies Online-Seminar, Themen-Webinar Supplements) |
+| **Zielgruppe** | B2C: gesundheitsbewusste Käufer von Nahrungsergänzungsmitteln (Brücke zu DAYA HEALTH) |
+| **Kampagne** | NEM-Webinar 16.07.2026, 19 Uhr |
+| **Status** | Aktuelle Referenz für Themen-Webinare mit Produktbezug. Zeigt den compliance-bewussten Umgang mit Supplement-Sprache (keine Wirkversprechen, „Bewertung"/„Struktur"/„Qualität" statt „Wirkung"). |
+
+**Bekannte Abweichungen vom Regelwerk (nicht übernehmen):** Geviertstriche in Pre-Headline und Fließtext („Statt mehr — das Richtige"), ein „Anstatt lediglich … zu liefern"-Kontrast, „einmalige Gelegenheit" als Dringlichkeitsfloskel, Fortschrittsbalken „Bereits reserviert 87%" (Verknappungs-Element nur verwenden, wenn technisch echt). Die Problem-Checklist-Struktur und der sachliche Berater-Ton sind maßgeblich.
+
+---
+
+## Sticky-Bar
+Online-Seminar mit Dr. Ulrich Bauhofer · Button: Jetzt Ihren Platz reservieren
+
+## Above the Fold
+**Eyebrow:** Kostenfreies Online-Seminar mit Dr. Ulrich Bauhofer am 16.07.26
+
+**Pre-Headline:** Statt mehr — das Richtige
+
+**Headline (H1):** Zehn Dosen, wenig Wirkung? Verpufft die Hälfte Ihrer Supplements?
+
+**Subline (H2):** Und wie Sie aus Ihrem Schrank ein abgestimmtes System machen.
+
+**Intro-Text:** Nehmen die meisten Menschen heute zu viele Mikronährstoffe oder sogar die Falschen? Lernen Sie, was wirklich sinnvoll ist, woran Sie echte Qualität erkennen und wann Sie was einnehmen sollten — Ihr einfacher Fahrplan für eine strukturierte Nährstoffversorgung.
+
+**Button:** Jetzt Ihren Platz reservieren
+**Microcopy:** 100% kostenfrei am 16.07.26 um 19 Uhr
+
+## Inhalts-Kacheln (Das erwartet Sie)
+**Eyebrow:** Kostenfreies Online-Seminar am Donnerstag, den 16.07.26 um 19 Uhr
+
+**Warum mehr nicht besser ist** — Welche 3 Denkfehler gesundheitsbewusste Menschen am häufigsten machen, obwohl sie bereits viel investieren. Und warum eine höhere Anzahl an Produkten nicht automatisch mehr Nutzen bedeutet.
+
+**Die 10 Qualitätskriterien** — Warum viele Nahrungsergänzungsmittel im Alltag weniger effektiv sind als gedacht und woran Sie in wenigen Sekunden erkennen, ob ein Präparat überhaupt sinnvoll verwertbar ist.
+
+**Das Orchester-Prinzip** — Welche Präparate sich gegenseitig verstärken, welche sich blockieren und welche Kombinationen im Alltag schlicht überflüssig oder doppelt sind.
+
+**Vom Chaos zum persönlichen System** — Ein konkreter Fahrplan, wie Sie Ihre aktuelle Herangehensweise kritisch überprüfen und Ihre Nährstoffversorgung sehr einfach an Ihre Lebensphase, Ihren Alltag und Ihren individuellen Bedarf anpassen.
+
+**Button:** Jetzt Ihren Platz reservieren
+**Microcopy:** 100% kostenfrei am 16.07.26 um 19 Uhr
+
+## Problem-Checklist (Bestandsaufnahme)
+**Badge:** Machen Sie die Bestandsaufnahme
+**Headline (H3):** Investieren Sie viel Geld in Ihre Nährstoffversorgung, wünschen sich aber mehr Orientierung bei der Auswahl und Struktur Ihrer Präparate?
+
+Die meisten Menschen investieren in teure Nahrungsergänzungsmittel, weil ihre Gesundheit oberste Priorität hat – und übersehen dann den entscheidenden Punkt: Ohne die richtige Qualität, Kombination und methodische Anwendung bleibt oft unklar, ob die gewählte Routine den eigenen Anforderungen tatsächlich entspricht.
+
+**Immer neue Supplements, aber immer weniger Überblick** — Fällt es Ihnen schwer, bei der Fülle an Trends und Produktneuheiten den Überblick zu behalten, welche Ergänzungen für Ihre persönliche Situation überhaupt relevant sind?
+
+**Fragen zur täglichen Organisation** — Kennen Sie das? Eine Handvoll Kapseln am Morgen, aber keine Klarheit, ob sie inhaltlich zusammenpassen oder zeitlich besser verteilt werden sollten?
+
+**Hürden bei der Entscheidung** — Zögern Sie noch mit der gezielten Ergänzung Ihrer Ernährung, weil die Informationsflut am Markt es schwierig macht, eine fundierte und für Sie passende Wahl zu treffen?
+
+**Das Etikettenrätsel** — Stehen Sie manchmal ratlos vor den Deklarationen auf Ihren Produkten und wünschen sich eine Anleitung, wie Sie die aufgeführten Verbindungen sachlich bewerten können?
+
+**Closing:** Wenn Sie sich in diesen Überlegungen wiederfinden, bietet Ihnen unser Live-Seminar die notwendige Struktur. Dr. Ulrich Bauhofer unterstützt Sie dabei, Ihre aktuelle Herangehensweise fachlich zu prüfen und Ihr bisheriges Konzept durch ein klares, einfaches System zu ersetzen.
+
+**Button:** Jetzt Ihren Platz reservieren
+**Microcopy:** 100% kostenfrei am 16.07.26 um 19 Uhr
+
+## Lösungs-Section (Der Qualitätskompass)
+**Badge:** Der Qualitätskompass
+**Headline (H3):** Warum die Qualität bei der Auswahl entscheidend für eine stimmige Routine ist.
+
+Viele Menschen investieren mit großer Sorgfalt in ihre tägliche Versorgung. Doch die Vielfalt am Markt macht es oft schwierig, die tatsächliche Wertigkeit einzelner Produkte zu beurteilen. Studien zeigen, dass sich Präparate in ihrer Zusammensetzung und der Herkunft ihrer Rohstoffe maßgeblich unterscheiden können. Oft genügen Standardformulierungen auf Etiketten nicht, um die Eignung eines Produkts für das eigene Versorgungskonzept sicher einzuschätzen.
+
+Ein wesentlicher Aspekt liegt in der Komplexität der Inhaltsstoffe. Idealerweise orientiert sich eine Ergänzung an natürlichen Vorbildern. Fehlen einem Produkt jedoch wichtige Begleitstoffe oder eine durchdachte Zusammensetzung, entspricht dies oft nicht den hohen Anforderungen an eine moderne Nährstoffversorgung.
+
+Im Live-Seminar gibt Ihnen Dr. Ulrich Bauhofer einen einfachen klaren Qualitätskompass:
+
+Er erläutert die Kriterien für eine naturnahe Zusammensetzung von Inhaltsstoffen. Sie erfahren, warum das Zusammenspiel verschiedener Nährstoffe eine wichtige Rolle spielt und wie Sie durch eine geschickte Kombination und eine zeitlich strukturierte Planung für eine harmonische Abstimmung Ihrer Routine sorgen können.
+
+Sie erfahren außerdem, wie Sie Ihre aktuelle Auswahl an Nahrungsergänzungsmitteln kritisch und sinnvoll überprüfen und Ihre Nährstoffversorgung nach Lebensphase und individuellem Bedarf strukturieren.
+
+## Testimonials
+**Badge:** Erfahrungsberichte
+**Headline (H3):** Stimmen aus der Community
+
+> „Ich folge Dr. Bauhofer seit vielen Jahren auf YouTube und bin immer wieder beeindruckt, wie sicher er zwischen moderner Schulmedizin und dem Wissen des Ayurveda vermittelt. In einer Zeit, in der man von Gesundheitstrends förmlich überrollt wird, ist seine sachliche und fundierte Art eine absolute Wohltat. Er gibt mir das Gefühl, nicht einfach nur blind Trends zu folgen, sondern die Zusammenhänge in meinem eigenen Körper wirklich zu verstehen."
+> — Martina K., YouTube-Abonnentin
+
+> „Als ich Dr. Bauhofers Buch „aktiv Verjüngen" gelesen habe, wurde mir zum ersten Mal klar, wie viel ich im Alltag selbst für meine Gesundheit tun kann. Was ich an seiner Arbeit so schätze, ist die Unabhängigkeit. Er verkauft einem keine Wunderpillen, sondern liefert medizinisches Fachwissen, mit dem man selbst entscheiden kann, was sinnvoll ist. Ich vertraue seinem Urteil absolut, weil er die Dinge beim Namen nennt und dabei immer wissenschaftlich bleibt."
+> — Christian W., Buchleser
+
+> „Ich habe schon viele Webinare und Vorträge zum Thema Gesundheit besucht, aber Dr. Bauhofer schafft es wie kein Zweiter, einem die Unsicherheit zu nehmen. Er erklärt selbst komplizierte medizinische Zusammenhänge so einfach, dass ich sie direkt für mich umsetzen kann. Durch seine Tipps habe ich endlich aufgehört, mich von jedem neuen Trend beeinflussen zu lassen. Ich weiß jetzt viel genauer, worauf es wirklich ankommt, und fühle mich bei meinen täglichen Entscheidungen für meine Gesundheit endlich wieder sicher."
+> — Gabriele H., Webinar-Teilnehmerin
+
+## Autorität (Ihr Dozent)
+**Badge:** Ihr Dozent
+**Headline (H3):** Über Dr. Ulrich Bauhofer und das Live-Seminar
+
+**Stat-Badges:** +40 Jahre Erfahrung · +500.000 Youtube-Abonnenten · +5.000 Webinar-Teilnehmer
+
+Dr. Ulrich Bauhofer ist einer der führenden Experten für integrative Medizin und ein Pionier in der Verbindung von moderner Wissenschaft mit dem jahrtausendealten Wissen des Ayurveda. Mit über 40 Jahren Erfahrung in der Schulmedizin und Präventivmedizin widmet er sein Wirken der Frage, wie wir unsere persönliche Balance und unser Wohlbefinden bis ins hohe Alter erhalten können. Seine Expertise findet sich in zahlreichen Fachpublikationen und Bestsellern wieder, in denen er komplexe Zusammenhänge verständlich und greifbar macht.
+
+Im Live-Seminar übernimmt Dr. Ulrich Bauhofer die Rolle des neutralen Aufklärers in einem oft unübersichtlichen Markt. Er betrachtet das Thema Nahrungsergänzungsmittel als Teil eines ganzheitlichen Konzepts und führt die Erkenntnisse der westlichen Forschung mit der Erfahrung des Ayurveda zusammen. Anstatt lediglich mehr Informationen zu liefern, bietet er Ihnen Orientierung und hilft Ihnen dabei, Ihre tägliche Routine zu vereinfachen und methodisch zu ordnen.
+
+Gemeinsam werfen Sie einen sachlichen Blick auf Qualitätskriterien, um hochwertige Angebote sicher erkennen zu können. Das Ziel: Sie lernen, Überflüssiges wegzulassen und Ihre Nährstoffversorgung strategisch nach Tagesrhythmus und Lebensphase auszurichten.
+
+Nutzen Sie die Gelegenheit, um zu lernen, wie Sie Ihre persönliche Versorgung selbstbestimmt und mit einem klaren System gestalten können.
+
+**Button:** Jetzt Ihren Platz reservieren
+**Microcopy:** 100% kostenfrei am 16.07.26 um 19 Uhr
+
+## Benefits (Ihre Vorteile)
+**Badge:** Ihre Vorteile
+**Headline (H3):** Warum Sie das Live-Seminar nicht verpassen sollten
+
+**01 · Fokus auf das Wesentliche statt teurer Fehlkäufe** — Sie lernen Überflüssiges zu streichen und Ihre Ausgaben für Nahrungsergänzungsmittel zu optimieren, indem Sie nur noch in das investieren, was Ihren persönlichen Qualitätsansprüchen und Ihrem tatsächlichen Bedarf entspricht.
+
+**02 · Orientierung für jede Ausgangslage** — Egal, ob Sie bereits eine feste Routine verfolgen oder sich gerade erst mit dem Thema Nahrungsergänzung vertraut machen: Sie erhalten eine strukturierte Anleitung, die Ihnen hilft, fundierte Entscheidungen für Ihre tägliche Versorgung zu treffen.
+
+**03 · Einmalige Teilnahme für lebenslanges Wissen** — Sie investieren einmalig Ihre Zeit und gewinnen an Souveränität bei Ihren täglichen Entscheidungen.
+
+**Button:** Jetzt Ihren Platz reservieren
+**Microcopy:** 100% kostenfrei am 16.07.26 um 19 Uhr
+
+## Final-CTA mit authentischer Verknappung
+**Badge:** Online am Donnerstag 16.07.26
+**Headline (H3):** Nutzen Sie diese einmalige Gelegenheit und schaffen Sie endlich Klarheit in Ihrer täglichen Routine.
+
+Wichtig: Da wir den Live-Austausch so persönlich wie möglich gestalten möchten und Sie auch Fragen stellen können, sind die Plätze im virtuellen Seminarraum begrenzt.
+
+Reservieren Sie sich gerne Ihren kostenfreien Platz, wenn Sie dabei sein möchten. Wir freuen uns auf Sie!
+
+**Button:** Jetzt Ihren Platz reservieren
+**Microcopy:** 100% kostenfrei am 16.07.26 um 19 Uhr
+</script>
+<script type="text/plain" data-preset-file="presets/holistic-house/referenzen/webinar-supplements-wissenschaftlich-geprueft.md">
+# Referenz-Copy: Online-Workshop „Nahrungsergänzungsmittel wissenschaftlich geprüft"
+
+| | |
+|---|---|
+| **LP-Typ** | Webinar-Anmeldeseite (kostenfreier Online-Workshop, Themen-Webinar Supplements) |
+| **Zielgruppe** | B2C: gesundheitsbewusste Menschen mit Interesse an Nahrungsergänzung |
+| **Kampagne** | Ältere NEM-Kampagne (Vorgänger von „Vom Chaos zum System") |
+| **Status** | Referenz mit Abweichungen (Altbestand). Gut für Zahlen-gestützte Kontext-Sections und neugierweckende Faktenbullets („Tomaten mit 72 % weniger Vitamin C?"). |
+
+**Bekannte Abweichungen vom Regelwerk (nicht übernehmen):** Gedankenstriche durchgehend, „Selbstheilungskräfte aktivieren" und „Wirksamkeit … steigern" (Wirk-Sprache, heute in Claim-Kontexten verboten), Krankheitsaufzählung als Verkaufsargument („Herz-Kreislauf-Probleme, Diabetes, Krebs und Alzheimer"), „wirksame Strategien und Produkte". Der heutige Standard formuliert über Qualität, Struktur und Orientierung statt über Wirkung, siehe „Vom Chaos zum System".
+
+---
+
+## Sticky-Bar
+Online-Webinar mit Dr. Ulrich Bauhofer · Button: Sichern Sie sich jetzt Ihren kostenfreien Platz
+
+## Above the Fold
+**Eyebrow:** Online-Workshop mit Dr. med Ulrich Bauhofer
+
+**Pre-Headline:** Nahrungsergänzungsmittel wissenschaftlich geprüft
+
+**Headline:** 48,3 Millionen Deutsche nehmen Nahrungsergänzungsmittel – aber brauchen wir sie wirklich?
+
+**Subline:** Erfahren Sie, was Sie wirklich dabei unterstützt, länger und gesünder zu leben – wissenschaftlich fundiert und praxisnah erklärt für unsere moderne Zeit.
+
+**Das erfahren Sie im Workshop:**
+- **Qualitätscheck:** Tomaten mit 72% weniger Vitamin C? Wie stark hat sich der Nährstoffgehalt unserer Lebensmittel in den letzten 40 Jahren verändert?
+- **Versorgungslücke:** Warum erreicht die Mehrheit der Deutschen die empfohlene Nährstoffzufuhr nicht – trotz oftmals gesunder Ernährung?
+- **6 Qualitätskriterien:** Welche Präparate sollten Sie besser im Regal stehen lassen – und warum?
+- **Die optimale Einnahmezeit:** Wie Sie die Wirksamkeit Ihrer Präparate durch richtiges Timing um ein Vielfaches steigern können
+- **Selbstheilungskräfte aktivieren:** Wie traditionelle Heilkräuter als Beimischung Ihr Immunsystem stärken, die Verdauung fördern, Stress abbauen und für erholsamen Schlaf sorgen können
+
+**Button:** Jetzt Ihren Platz reservieren
+**Microcopy:** 100% kostenfrei und unverbindlich
+
+## Kontext-Section (Wissenschaftliche Standortbestimmung)
+**Badge:** Die Nährstoffversorgung in Deutschland
+**Headline (H2):** Eine wissenschaftliche Standortbestimmung
+
+Was der Alternative Healthy Eating Index (AHEI) aufdeckt, ist bemerkenswert: Deutschland erreicht bei der Nahrungsqualität nur 40 von 100 möglichen Punkten. Eine Erkenntnis, die zum Nachdenken anregt.
+
+Die Ursachen sind gut dokumentiert: Moderne Anbaumethoden und Lebensmittelverarbeitung haben messbare Auswirkungen auf die Nährstoffdichte. Ein heute geernteter Apfel enthält oft bis zu 60 % weniger Vitamin C als noch vor einer Generation.
+
+Ernährungsmediziner sprechen von „Nährstoffhunger": Trotz kalorischer Sättigung erreicht der Körper oft nicht die optimale Nährstoffversorgung.
+
+Besonders kritisch sind Mikronährstoffe wie Magnesium, Vitamin D, Omega-3, Folsäure und B-Vitamine – mit Folgen für Zellschutz, Energiehaushalt und mentale Leistungsfähigkeit. Gleichzeitig warnen Ärztinnen und Ärzte zunehmend vor Überdosierung und Kombinationsfehlern – gerade bei beliebten Multis.
+
+Studien gehen davon aus, dass ca. 85 % aller Krankheiten durch Fehlernährung entstehen, darunter Herz-Kreislauf-Probleme, erhöhte Blutfette, Diabetes, Krebs und Alzheimer.
+
+Der Markt für Nahrungsergänzungsmittel reagiert auf diese Entwicklung mit einem Umsatz von 1,8 Milliarden Euro allein in Deutschland (2022). Diese Dimension erfordert eine differenzierte wissenschaftliche Betrachtung und vor allem: klare Qualitätskriterien.
+
+Denn wo viel Geld im Spiel ist, besteht immer die Gefahr, dass wirtschaftliche Interessen über das Wohl der Verbraucher gestellt werden.
+
+Welche Präparate sind wirklich sinnvoll? Worauf sollte man bei der Auswahl achten?
+
+Im Webinar erfahren Sie evidenzbasierte Antworten auf diese wichtigen Fragen. Dr. Bauhofers oberstes Ziel als Mediziner: Ihnen wirksame Strategien und Produkte an die Hand zu geben, die Sie täglich bedenkenlos einnehmen können – für mehr Gesundheit, Wohlbefinden und Lebensqualität.
+
+**Highlight-Zitatkasten:** Studien gehen davon aus, dass ca. 85 % aller Krankheiten durch Fehlernährung entstehen, darunter Herz-Kreislauf-Probleme, erhöhte Blutfette, Diabetes, Krebs und Alzheimer.
+
+## Testimonials
+**Headline (H2):** Das sagen Teilnehmer
+
+> „Ich war immer skeptisch bei Supplements! Soll ich sie einnehmen oder ist alles nur Quatsch? Aber Dr. Bauhofer hat die Zusammenhänge so klar und verständlich erklärt, dass ich jetzt endlich weiß, was Sinn macht… und was nicht."
+> — Katrin S.
+
+> „Ich hatte keine Ahnung, wie viele Nährstoffe uns im Alltag fehlen und wie ich das ausgleichen kann. Dr. Bauhofer erklärt es so verständlich, dass man sofort ins Handeln kommen will."
+> — Thomas L.
+
+> „Ich dachte, ich wüsste schon alles über Nahrungsergänzungsmittel, aber Dr. Bauhofer hat Dinge angesprochen, über die ich so noch nie nachgedacht habe. Seine Tipps sind umgesetzt und ich spüre direkt Verbesserung. DANKE"
+> — Johanna K.
+
+**Button:** Jetzt Ihren Platz reservieren
+**Microcopy:** 100% kostenfrei und unverbindlich
+
+## Autorität (Über Uli)
+**Headline (H2):** Über Dr. Ulrich Bauhofer und den Workshop
+
+Dr. med. Ulrich Bauhofer ist ein Pionier der modernen Integrativmedizin und ein führender Experte in der Verbindung von traditionellem Wissen und moderner Wissenschaft. Mit über 40 Jahren Erfahrung in Schulmedizin, Ayurveda und Präventivmedizin gestaltet er die Gesundheitsförderung neu.
+
+Seine Arbeit umfasst Forschungsprojekte, Fachpublikationen und Vorträge, die weltweit Anerkennung finden. Besonders geschätzt wird seine Fähigkeit, komplexe Gesundheitsthemen verständlich und praxisnah zu vermitteln. Gerade legte er mit „aktiv Verjüngen" einen Spiegel-Bestseller über Langlebigkeitsforschung vor.
+
+Im 90-minütigen Workshop widmet sich Dr. Bauhofer einem Thema, das aktueller kaum sein könnte: der intelligenten Nutzung von Nahrungsergänzungsmitteln. Dabei bietet er einen kritischen Blick auf die Industrie, zeigt Chancen und Risiken auf und vermittelt Ihnen fundiertes Wissen, um die richtige Auswahl für Ihre Bedürfnisse zu treffen. Ziel ist es, Ihnen Werkzeuge an die Hand zu geben, die Sie in eine selbstbestimmte und gesunde Lebensweise integrieren können.
+
+Sichern Sie sich jetzt Ihren Platz und gewinnen Sie wertvolle Impulse für ein gesünderes Leben.
+
+**Stat-Badge:** +500.000 YouTube
+
+## Benefits
+**Headline (H2):** Was diesen Online-Workshop besonders macht:
+
+**Klarheit statt Verwirrung** — Ob Anfänger oder Profi – dieser Workshop beantwortet die häufigsten Fragen und gibt Ihnen das nötige Wissen, um sicher Ihre Nährstoffversorgung zu verbessern.
+
+**Wissenschaftlich fundiert, ganzheitlich gedacht** — Ayurveda trifft Wissenschaft: Dr. Bauhofer vereint evidenzbasierte Medizin mit natürlichem Heilwissen – in nur 60-90 Minuten für den Rest Ihres Lebens davon profitieren.
+
+**Sofort umsetzbar & mit praktischem Extra** — Dr. Bauhofers Empfehlungen und Tipps sind wissenschaftlich fundiert und einfach zu integrieren. Am Ende des Workshops erhalten Sie ein Geschenk, das Sie im Alltag optimal begleitet.
+
+**Closing:** Melden Sie sich an und entdecken Sie, was Sie wirklich unterstützen kann – für ein längeres und gesünderes Leben.
+
+**Button:** Jetzt Ihren Platz reservieren
+**Microcopy:** 100% kostenfrei und unverbindlich
+</script>
+<script type="text/plain" data-preset-file="presets/holistic-house/regeln.md">
+---
+name: Holistic House
+description: Copywriter-Regelwerk für Holistic House Kampagnen
+---
+
+# Holistic House - Copywriter-Regelwerk
+
+*System-Prompt für Copy-Tools. Gilt für alle Landingpage-Typen im Projekt: Webinar-Anmeldeseiten, Ausbildungs-/Beratungsgespräch-Seiten, Salespages (Kurse, Gesundheitsplan, Supplements) und Freebie-/Lead-Magnet-Seiten (Dosha-Test, Ratgeber).*
+
+## 0. Arbeitsweise mit diesem Preset
+
+Dieses Preset besteht aus drei Ebenen, die zusammen geladen werden:
+
+1. **Regelwerk** (diese Datei): verbindliche Regeln für Tonalität, Sprache, Compliance. Hat immer Vorrang.
+2. **Wissensdatenbank** (`wissensdatenbank.md`): belegte Fakten zu Marke, Person, Produkten und Zahlen. Nur diese Fakten verwenden, nichts erfinden.
+3. **Referenz-Copys** (`referenzen/*.md`): vollständige, real veröffentlichte Landingpage-Texte. Sie zeigen die Ziel-Tonalität, den Satzrhythmus, die Argumentationsführung und die Section-Dramaturgie. **Schreibe neue Copy so, wie diese Referenzen klingen.**
+
+**Vorrangregel:** Die Referenzen enthalten teilweise Altbestand, der gegen einzelne Regeln verstößt (Gedankenstriche, „nicht X, sondern Y", „ganzheitlich" als Floskel). Jede Referenz-Datei listet ihre bekannten Abweichungen im Kopf. Übernimm Tonalität, Struktur und Argumentation der Referenzen, aber wende immer das aktuelle Regelwerk an. Bei Konflikt gilt: Regelwerk schlägt Referenz.
+
+## 1. Zielgruppe & Markenkontext
+
+Holistic House verbindet Schulmedizin mit Ayurveda, verkörpert durch Dr. med. Ulrich Bauhofer (über 40 Jahre Arzt, 500.000+ YouTube-Abonnenten). Die Leserschaft ist gesundheitsbewusst, überwiegend weiblich, ab 40, mit hohem Anspruch an Qualität, Fundiertheit und Natürlichkeit. Sie kauft kein Produkt, sondern Verständnis für die eigene Gesundheit, Prävention im Alltag und, im Backend, eine sinnstiftende berufliche Perspektive.
+
+## 2. Tonalität & Anrede
+
+**Immer Sie-Form.** Landingpages sind kundenzugewandt, und die Zielgruppe erwartet Respekt und ärztliche Würde. Du-Form gilt ausschließlich intern (Recruiting). Ton: sachlich, empathisch, würdevoll. Inspirierend erlaubt, reißerisch nie. Es schreibt ein integrativ arbeitendes Ärzteteam, kein Coach und kein Werbetexter. Kein „billiges" Marketing: jeder Text hat Tiefgang und echten Mehrwert.
+
+Die Sprache soll klingen, als würde ein erfahrener Markenmensch eine ehrliche, hochwertige Botschaft formulieren. Kurze bis mittellange Sätze. Konkret erklären, was passiert, was die Leserin erlebt und warum es relevant ist. Emotional ist erlaubt, aber geerdet. Keine künstliche Zuspitzung, keine Coaching-Floskeln, keine typischen KI-Kontraste.
+
+## 3. Namens- und Kanalkonventionen (verbindlich)
+
+- Landingpages und E-Mail-Betreffzeilen: **„Dr. med. Ulrich Bauhofer"**
+- Meta-Ads und Ad-Fließtext: „Dr. Ulrich Bauhofer" (ohne „med.")
+- Signatur immer ohne Titel: **„Herzlich, Ihr Ulrich Bauhofer"**
+- Ärztliche Autorität (Titel, Werdegang) auf Landingpages nur als neutrale Einordnung, nie als Verkaufsargument (Zirngibl-Linie).
+
+## 4. Landingpage-Architektur
+
+Jede LP folgt derselben Grundlogik, unabhängig vom Angebot:
+
+1. **Above the Fold:** Eyebrow (Autoritätsanker) + Pre-Headline (konkreter Problembezug) + Headline + Subline (Nutzenversprechen) + Button + Microcopy.
+2. **Kontext-/Problem-Nugget:** eine gesellschaftlich oder biologisch verankerte Einordnung mit belegten Zahlen (z. B. GKV-Reform April 2026, Langlebigkeitsforschung). Weckt Problembewusstsein, ohne Angst zu schüren.
+3. **Lösung & Nutzen-Bullets:** was die Leserin erlebt, in Sie-Sätzen. Oft mit benanntem Element (Standort-Check, Körpertypentest, 3-Schritte-Plan).
+4. **Autorität (Über Uli):** Werdegang, 1980 als einer der ersten westlichen Ärzte in Indien, O-Ton als kursives Zitat. Autorität als Kontext, nie als Verkaufsargument.
+5. **Social Proof:** Presse-Leiste (WELT, BUNTE, Deutsche Gesellschaft für Ayurveda, ELLE), Abonnentenzahl, echte Testimonials.
+6. **Angebot & Verknappung:** je nach LP-Typ, authentisch begründet („Teilnehmerzahl technisch begrenzt", echtes Einführungsangebot).
+7. **CTA-Wiederholung + FAQ** zum Abbau der letzten Einwände.
+
+**Angebot und CTA variieren je LP-Typ:**
+
+| LP-Typ | Angebot | Primär-CTA | Microcopy |
+|---|---|---|---|
+| Webinar | kostenfreies Live-Seminar | Jetzt Ihren Platz reservieren | 📆 Digital & 100 % kostenfrei: Am [Datum], um 11 Uhr |
+| Ausbildung / Fach-Coach | Beratungsgespräch (kein Direktkauf) | Jetzt kostenloses Beratungsgespräch vereinbaren | Unverbindlich · Persönlich · Wir klären gemeinsam, welcher Weg zu Ihnen passt |
+| Salespage (Kurs/Plan) | Direktkauf, oft mit Einführungsangebot | Jetzt starten / Ihren Gesundheitsplan sichern | ruhiger Preishinweis, kein Versal-Druck |
+| Freebie (Dosha-Test, Ratgeber) | kostenloser Download / Test | Dosha-Test starten / Ratgeber kostenlos sichern | In wenigen Minuten · Sofort per E-Mail |
+
+*Hinweis: Für Freebie-Seiten liegt in den Referenzdateien keine eigene LP-Copy vor. Die Freebie-Zeile ist abgeleitet, nicht wörtlich belegt.*
+
+## 5. Wiederkehrende Sprachmuster
+
+1. **Roter-Punkt-Eyebrow** (Webinar): `🔴 Das große Live-Seminar mit Dr. med. Ulrich Bauhofer`. Salespage-Pendant: eine Top-Bar mit Einordnung, z. B. „Ihr Gesundheitsprogramm von Deutschlands bekanntestem Ganzheitsmediziner".
+2. **Problem-Dreiklang aus konkreten Fakten** als Pre-Headline: „Höhere Beiträge, weniger Leistungen, lange Wartezeiten." (Konkrete Faktentriade erlaubt, abstrakte Tugendtriade verboten.)
+3. **„Gesundheit neu denken"-Reframe** oder eine geerdete Kontrastfrage: „Zu welcher Gruppe wollen Sie gehören?"
+4. **Subline nach Muster „Entdecken Sie, wie …" / „Erhalten Sie …"**: benennt das System und übersetzt es in konkreten Nutzen (Gesundheit, Liebste, berufliche Zukunft).
+5. **Nutzen-Bullets** mit `✅` oder `✔️` + Doppelpunkt + konkretem Sie-Satz, oft mit benanntem Werkzeug (Körpertypentest, Standort-Check).
+6. **Autoritäts-Anker ohne Heilversprechen:** „über 40 Jahre Erfahrung", „1980 als einer der ersten westlichen Ärzte", Bauhofer-O-Ton kursiv.
+7. **Authentische Verknappung:** „Die Teilnehmerzahl ist technisch begrenzt." / echtes Einführungsangebot. Nie erfundene Dringlichkeit.
+8. **Signatur ohne Titel:** „Herzlich, Ihr Ulrich Bauhofer".
+
+## 6. Sprachliches Ausschlussregelwerk (verbindlich)
+
+Schreibe menschlich, klar, warm und markennah. Vermeide jede Sprache, die nach generischer KI, Coaching-Floskel oder austauschbarer Marketing-Copy klingt. Alle Beispiele unten sind Muster-Illustrationen; für Holistic House gilt immer die Sie-Form.
+
+### 6.1 Keine Gedankenstriche als Stilmittel
+Keine Halbgeviertstriche oder Gedankenstriche zur Dramatisierung, Erklärung oder Zuspitzung.
+- Verboten: „Sie erkennen Ihre Muster – und finden zurück in Ihre Kraft."
+- Besser: „Sie erkennen Ihre Muster und finden einen neuen Umgang mit ihnen."
+
+### 6.2 Keine „nicht X, sondern Y"-Konstruktionen
+Vermeide Sätze nach dem Muster „Es geht nicht um X, sondern um Y." / „Das ist kein X, sondern Y." Diese Konstruktionen wirken künstlich, überformuliert und nach KI.
+- Verboten: „Es geht nicht darum, sich zu optimieren, sondern sich selbst besser zu verstehen."
+- Besser: „Sie beginnen, sich selbst besser zu verstehen. Ohne sich ständig optimieren zu müssen."
+
+### 6.3 Kein „nicht nur X, sondern auch Y"
+- Verboten: „Sie bekommen nicht nur Wissen, sondern auch praktische Werkzeuge."
+- Besser: „Sie bekommen Wissen, das Sie direkt anwenden können."
+
+### 6.4 Kein „mehr als nur …"
+Keine künstliche Aufwertung („Mehr als nur ein Webinar"). Besser konkret erklären, was passiert: „Im Seminar bekommen Sie einen ersten Einblick in die Methode und sehen anhand echter Beispiele, wie sie im Alltag greift."
+
+### 6.5 Keine generischen Transformationsfloskeln
+Verboten: *Transformation, Potenzial entfalten, in die eigene Kraft kommen, aufs nächste Level, Gamechanger, magischer Moment, lebensverändernd, authentisch leben, nachhaltig wachsen.*
+Stattdessen konkrete, beobachtbare Sprache: „Sie erkennen Muster." / „Sie verstehen Zusammenhänge." / „Sie bekommen mehr Klarheit." / „Sie können besser einordnen, warum bestimmte Beschwerden immer wieder auftauchen."
+
+### 6.6 Keine überglatten Dreierformeln
+Verboten: „Mehr Klarheit. Mehr Vertrauen. Mehr Verbindung." / „Erkennen. Verstehen. Verändern." Solche Formeln sind austauschbar. Besser: „Viele Teilnehmer erleben, dass sie bestimmte Themen nach dem Seminar klarer einordnen können." (Konkrete Faktentriaden wie „Höhere Beiträge, weniger Leistungen, lange Wartezeiten" bleiben erlaubt, siehe Abschnitt 5.)
+
+### 6.7 Keine künstliche Emotionalisierung
+Verboten: „Dieser eine Moment kann alles verändern." / „Ihr neues Leben beginnt hier." Besser: „Manchmal reicht ein neuer Blick auf ein Thema, damit sich innerlich etwas sortiert."
+
+### 6.8 Keine leeren Adjektive ohne Beweis
+Vermeide *tiefgehend, fundiert, einzigartig, ganzheitlich, wirkungsvoll, hochwertig, besonders*, wenn sie nicht konkret belegt werden. Besser benennen, was drin ist: „Die Ausbildung verbindet Theorie, Praxisübungen und ärztliche Begleitung."
+
+### 6.9 Keine KI-typischen Satzanfänge
+Verboten: „In einer Welt, in der …", „Gerade in der heutigen Zeit …", „Viele Menschen fragen sich …", „Vielleicht kennen Sie das …", „Stellen Sie sich vor …", „Was wäre, wenn …". Besser direkt einsteigen: „Manche Beschwerden tauchen im Alltag immer wieder auf." / „Gesundheit entscheidet sich nicht im Sprechzimmer."
+
+### 6.10 Weitere Verbote
+- Keine abstrakten Tugend-Dreiklänge („Klarheit. Vertrauen. Verbindung.").
+- Keine aggressiven Versal-CTAs („Starten Sie JETZT!"). Ruhige Handlungsaufforderung statt Ausrufezeichen-Druck.
+- Keine Heilversprechen, keine Symptom- oder Krankheitssprache als Verkaufsargument.
+- „Wirkung / wirkt / wirksam" nicht in Health-Claim-Kontexten (Produkte, Supplements) verwenden.
+- „Vorsorge" nicht im Kontext medizinischer Früherkennung/Screenings verwenden; das Markenthema heißt Prävention.
+- Keine erfundenen Statistiken, keine Markt-Superlative ohne Quelle. Zahlen nur aus der Wissensdatenbank oder mit expliziter Quellenangabe im Briefing.
+- Keine erfundenen Bauhofer-Zitate; nur belegte O-Töne aus der Wissensdatenbank.
+- Bei Supplements nur EU-zugelassene Health Claims (VO EU 432/2012). „Stimmung" ist kein zugelassener Vitamin-D-Claim.
+
+## 7. Dos
+
+Kurze bis mittellange Sätze, geerdet. Nutzen aus Leserinnen-Sicht. Zahlen mit Quelle. Zurückhaltende Wirkungssprache („kann", „oft", „viele erleben"). Konkret erklären, was im Angebot passiert. Belegte Bauhofer-Zitate kursiv einsetzen. Jede Aussage muss auf Quellendokumente zurückführbar sein; Abgeleitetes als abgeleitet kennzeichnen.
+
+## 8. Kontrollfragen vor jeder Ausgabe
+
+Prüfe jeden Text vor der finalen Ausgabe:
+
+1. Gibt es Gedankenstriche?
+2. Gibt es „nicht X, sondern Y" / „nicht nur X, sondern auch Y" / „mehr als nur"?
+3. Gibt es generische Wörter wie Transformation, Potenzial, Gamechanger, Level, ganzheitlich, nachhaltig?
+4. Klingt der Satz nach Coaching-Werbung oder nach KI?
+5. Könnte derselbe Satz auch für Yoga, Business-Coaching, Dating oder Finanzberatung stehen? Dann umschreiben, bis er spezifisch zu Bauhofer, zum Angebot und zur Zielgruppe passt.
+6. Ist jede Zahl und jedes Zitat durch die Wissensdatenbank oder das Briefing gedeckt?
+
+> **Altbestand-Hinweis:** Ältere veröffentlichte Seiten (und Teile der Referenz-Copys) nutzen noch Gedankenstriche, „ganzheitlich", „nicht X, sondern Y" und Versal-CTAs. Das ist überholt. Der aktuelle Standard entfernt diese Muster. Beispiel:
+> Original (Altbestand): „Das Ergebnis: tiefgreifende und spürbare Veränderungen, Beschwerden klingen ab, Sie fühlen sich leichter, frischer und energievoller – und das mit minimalem Zeitaufwand."
+> Aktueller Standard: „Das Ergebnis: Sie fühlen sich leichter, frischer und energievoller, und das mit wenig Zeitaufwand. Viele bemerken, dass Beschwerden nachlassen."
+</script>
+<script type="text/plain" data-preset-file="presets/holistic-house/wissensdatenbank.md">
+# Holistic House - Wissensdatenbank
+
+*Belegte Fakten für Landingpage-Copy. Nur diese Fakten verwenden. Alles, was hier nicht steht, muss aus dem Kampagnen-Briefing kommen oder als abgeleitet gekennzeichnet werden.*
+
+## Person: Dr. med. Ulrich Bauhofer
+
+- Über 40 Jahre Erfahrung als Arzt (Schulmedizin, Ayurveda, Präventivmedizin).
+- 1980 als einer der ersten westlichen Ärzte direkt von den führenden Vaidyas in Indien ausgebildet.
+- Gilt als einer der führenden Experten für integrative Medizin und Ayurveda im deutschsprachigen Raum.
+- Spiegel-Bestsellerautor; aktuelles Buch: „aktiv Verjüngen" (Langlebigkeitsforschung). Speaker und Meditationslehrer.
+- Über 500.000 YouTube-Abonnenten. Über 5.000 Webinar-Teilnehmer.
+- Werdegangs-Erzählung (belegt): Nach über sechs Jahren Medizinstudium stellte er fest, dass er viel über die Behandlung von Krankheiten wusste, aber wenig darüber, wie man Gesundheit erhält. Diese Erkenntnis führte ihn nach Indien.
+- Presse-/Trust-Anker: WELT, BUNTE, ELLE, Deutsche Gesellschaft für Ayurveda.
+
+### Belegte O-Töne (kursiv einsetzbar, nichts hinzuerfinden)
+
+- „Unser Körper spricht ständig mit uns. Die Frage ist, ob wir gelernt haben, zuzuhören."
+- „Der Körper flüstert, bevor er schreit."
+- „In zehn Jahren wird jeder dritte Deutsche über sechzig sein. Unser Gesundheitssystem ist auf diesen Wandel nicht vorbereitet."
+
+## Marke & Philosophie
+
+- Holistic House verbindet evidenzbasierte Schulmedizin mit dem Heilwissen des Ayurveda.
+- Kernbotschaft: Gesundheit entsteht im Alltag (Routinen, Ernährung, Stress, Bio-Rhythmus), nicht erst im Sprechzimmer. Prävention statt Reparatur.
+- Aktuelle Kampagnen-Tagline (2026): „Vorbeugen statt Reparieren".
+- Positionierung für kalte Zielgruppen: mit Gesundheit/Langlebigkeit führen, Ayurveda als Methode benennen. Nie Ayurveda-first.
+- Absender ist ein integrativ arbeitendes Ärzteteam um Dr. Bauhofer.
+
+## Produkte & Funnel
+
+| Produkt | Rolle im Funnel | Kaufweg |
+|---|---|---|
+| Live-/Evergreen-Webinare | Primäre Leadgenerierung | kostenfreie Anmeldung |
+| Ayurveda Fach-Coach Ausbildung | Kern-Backend (12 Monate, zertifiziert, hybrid) | über Beratungsgespräch, kein Direktkauf |
+| Dr. Bauhofer Gesundheitsplan / Kurse | Direktkauf-Salespages | Direktkauf, oft Einführungsangebot |
+| DAYA HEALTH Supplements | Tochtermarke | Direktkauf, strenge Health-Claim-Compliance |
+| Lead-Magnets: Dosha-Test, Rezeptbuch, PDF-Ratgeber | Kalte Leads / Nurturing | kostenfrei |
+
+- Webinare: ca. 60-90 Minuten, live und kostenfrei, am Ende beantwortet Dr. Bauhofer Fragen. Nach Anmeldung: Bestätigungsmail mit Zugangslink, Erinnerung kurz vor dem Termin.
+- Verknappungs-Begründung (belegt): Plätze im virtuellen Seminarraum begrenzt, damit Live-Austausch persönlich bleibt und Fragen möglich sind.
+
+## Zielgruppen
+
+1. **B2C-Kern:** gesundheitsbewusste Frauen ab 40, hoher Anspruch an Qualität, Natürlichkeit, Fundiertheit. Treffen 70-80 % der Gesundheitsentscheidungen im Haushalt (für sich, Kinder, Partner, oft Eltern).
+2. **Berufliche Neuorientierung (Backend-Brücke):** Menschen, die Gesundheitswissen als sinnstiftende berufliche Perspektive prüfen (Erweiterung, neue Rolle oder Neuausrichtung).
+3. **B2B/Fachpublikum:** Ärzte, Heilpraktiker, Therapeuten, Coaches, Trainer, Yogalehrer, die ihr Angebot methodisch erweitern wollen.
+
+## Belegte Zahlen & Fakten (auf veröffentlichten LPs verwendet)
+
+*Diese Zahlen sind auf live geschalteten Holistic-House-Seiten im Einsatz. Bei neuen Kampagnen im Zweifel Quelle intern gegenprüfen; keine weiteren Zahlen erfinden.*
+
+**Gesundheitssystem / Prävention (Kampagne 2026):**
+- Kabinettsbeschluss April 2026: eine der größten Sozialreformen seit Jahrzehnten; Zuzahlungen steigen um 50 %, Kassenbeiträge wachsen, Erstattungen werden gekürzt.
+- In zehn Jahren ist jeder dritte Deutsche über sechzig.
+- Das deutsche Gesundheitssystem gibt jährlich über 500 Milliarden Euro aus; weniger als 3 % fließen in echte Prävention. (Bild: „Prävention sitzt auf der Ersatzbank.")
+- Bis 2022 bewerteten über 83 % der Deutschen ihr Gesundheitssystem positiv, heute nur noch 62 %; die Zahl der Unzufriedenen hat sich verdoppelt.
+- Frauen über 40 sind die am schnellsten wachsende Gruppe von Neugründerinnen im Gesundheits- und Begleitungsbereich in Deutschland.
+- Mediziner haben im Schnitt 8 Minuten Zeit pro Patient.
+- GKV-Ausgaben für betriebliche Gesundheitsförderung steigen seit 2014 (Statistik-Grafik vorhanden, 2014-2022).
+
+**Supplements / Ernährung (NEM-Webinare):**
+- 48,3 Millionen Deutsche nehmen Nahrungsergänzungsmittel.
+- Deutschland erreicht beim Alternative Healthy Eating Index (AHEI) nur 40 von 100 Punkten.
+- Ein heute geernteter Apfel enthält oft bis zu 60 % weniger Vitamin C als vor einer Generation; Tomaten bis zu 72 % weniger.
+- Markt für Nahrungsergänzungsmittel in Deutschland: 1,8 Milliarden Euro Umsatz (2022).
+- Studien gehen davon aus, dass ca. 85 % aller Krankheiten durch Fehlernährung mitbedingt sind. *(Achtung: starke Aussage, nur mit Einordnung „Studien gehen davon aus" verwenden.)*
+- Markt für komplementäre und alternative Medizin in den USA wächst (Quelle: grandviewresearch.com, Grafik vorhanden).
+
+## Benannte Werkzeuge & Konzepte (wiederverwendbar)
+
+- **Standort-Check:** praktische Selbstreflexion im Webinar (wo stehe ich, wo liegt mein größter Hebel).
+- **Körpertypen-Test / Dosha-Test:** individueller Einstieg, auch als Lead-Magnet.
+- **Die 6 Stufen der Krankheitsentwicklung:** Früherkennung von Ungleichgewichten, inkl. Selbstcheck.
+- **Gesundheitsräuber / verborgene Energieblocker:** Alltagsgewohnheiten, die still Kraft kosten.
+- **Das Orchester-Prinzip (NEM):** welche Präparate sich verstärken, blockieren oder doppeln.
+- **Der Qualitätskompass (NEM):** Kriterien für naturnahe Zusammensetzung und sinnvolle Kombination.
+- **Frühe Warnzeichen (belegt):** Schlafprobleme, Verdauungsstörungen, innere Unruhe, Konzentrationsschwäche.
+</script>
+<!-- PRESET-DATA:END -->
+</body>
+</html>

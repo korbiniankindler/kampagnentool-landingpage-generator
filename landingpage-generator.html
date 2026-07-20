@@ -12,6 +12,7 @@ body{font-family:var(--font);background:var(--bg-tertiary);min-height:100vh;padd
 .header{display:flex;align-items:center;gap:10px;margin-bottom:2rem}
 .logo{width:36px;height:36px;background:#111;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:500;flex-shrink:0}
 .header-name{font-size:14px;font-weight:500}.header-sub{font-size:13px;color:var(--text-secondary)}
+.modul-nav{margin-left:auto;display:flex;gap:6px}.modul-nav a{font-size:12px;text-decoration:none;color:var(--text-secondary);padding:5px 11px;border-radius:20px;border:.5px solid var(--border-light);transition:background .15s,color .15s;white-space:nowrap}.modul-nav a:hover{background:var(--bg-secondary)}.modul-nav a.active{background:#111;color:#fff;border-color:#111}
 .progress-bar{display:flex;align-items:center;margin-bottom:2rem}
 .prog-step{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-tertiary);padding:6px 0}
 .prog-step.active{color:var(--text-primary);font-weight:500}.prog-step.done{color:var(--text-success)}
@@ -128,6 +129,10 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
 <div class="header">
   <div class="logo">BL</div>
   <div><div class="header-name">Webinar-Kampagnen Tool</div><div class="header-sub">Modul 2 - Landingpage Generator v2.1</div></div>
+  <div class="modul-nav">
+    <a href="hardfacts-generator.html" id="nav-m1">1 · Hardfacts</a>
+    <a href="landingpage-generator.html" id="nav-m2" class="active">2 · Landingpage</a>
+  </div>
 </div>
 
 <div class="progress-bar" id="progress-bar">
@@ -423,6 +428,9 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
 </div>
 <script>
 var PROXY_URL = 'https://claude.korbinian.workers.dev/';
+/* Modul 1 liegt als Geschwister-Datei im selben Verzeichnis. Bei Deployment
+   mit eigenen Routen (z.B. brand-lift.de/tools/...) hier anpassen. */
+var MODUL1_URL = 'hardfacts-generator.html';
 var HF = null;
 var sections = [];
 var sectionData = {};
@@ -526,6 +534,8 @@ function renderCopyPresetPicker() {
 
 function selectCopyPreset(id) {
   selectedCopyPreset = id;
+  // Auswahl mit Modul 1 teilen (gleicher sessionStorage-Key)
+  try { sessionStorage.setItem('wkt_copy_preset', id || ''); } catch(e) {}
   renderCopyPresetPicker();
   // Preset sofort beim Auswählen laden: Fehler fallen so schon in Schritt 1
   // auf statt erst bei der Generierung.
@@ -577,8 +587,16 @@ async function loadCopyPresetContent(id) {
 }
 
 window.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('nav-m1').href = MODUL1_URL;
   setP(1);
   updateProgClickability();
+  // In Modul 1 gewähltes Copywriter-Preset übernehmen
+  try {
+    var storedPreset = sessionStorage.getItem('wkt_copy_preset');
+    if (storedPreset && COPYWRITER_PRESETS.some(function(p){ return p.id === storedPreset; })) {
+      selectedCopyPreset = storedPreset;
+    }
+  } catch(e) {}
   renderCopyPresetPicker();
   try {
     var raw = sessionStorage.getItem('wkt_hardfacts');
