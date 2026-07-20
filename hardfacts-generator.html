@@ -31,7 +31,10 @@
 .bullet-item:hover{background:var(--bg-secondary);border-color:var(--border-light)}
 .bullet-item.checked{background:var(--accent-soft);border-color:var(--accent-border)}
 .bullet-cb{width:18px;height:18px;flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-top:1px}
-.bullet-text{font-size:13px;color:var(--text-primary);line-height:1.5;flex:1}
+.bullet-main{flex:1;min-width:0}
+.bullet-text{font-size:13px;color:var(--text-primary);line-height:1.5;display:block}
+.bullet-lock-hint{display:flex;align-items:center;gap:5px;font-size:10.5px;font-weight:500;color:var(--text-tertiary);margin-top:4px;letter-spacing:.01em}
+.bullet-lock-hint svg{flex-shrink:0}
 .bullet-acts{display:flex;gap:3px;opacity:.45;transition:opacity .15s;flex-shrink:0}
 .bullet-item:hover .bullet-acts{opacity:1}
 .feedback-wrap{margin-top:1.25rem;padding:1.25rem;border:1px solid var(--border-light);border-radius:var(--radius-lg);background:var(--bg-primary);box-shadow:var(--shadow-card)}
@@ -183,7 +186,7 @@ body{background:#fff;padding:0}
  <!-- ═══ PHASE 3: BULLETS ═══ -->
  <div id="phase-bullets" style="display:none">
  <div class="page-title">Webinar-Inhalte <span class="modul-badge">Schritt 3 / 4</span></div>
- <p class="page-desc">Bulletpoints auswählen, bearbeiten und anpassen.</p>
+ <p class="page-desc">Bulletpoints auswählen, bearbeiten und anpassen. Angehakte Bullets werden gesperrt und bei der Neu-Generierung mit Feedback nicht verändert.</p>
 
  <!-- Selected title summary -->
  <div class="selected-summary" id="selected-title-summary"></div>
@@ -220,6 +223,8 @@ const IC = {
  arrow: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>',
  refresh: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>',
  bulb: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 1 7 7c0 2.6-1.4 4.9-3.5 6.2L15 17H9l-.5-1.8A7 7 0 0 1 12 2z"/></svg>',
+ lock: '<svg width="15" height="15" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="3" fill="#111"/><path d="M8 10V7a4 4 0 0 1 8 0v3" fill="none" stroke="#111" stroke-width="2.5"/></svg>',
+ lockSmall: '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="4" y="10" width="16" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>',
 };
 
 let uploadedFiles = [];
@@ -786,20 +791,12 @@ function renderBullets() {
  <div class="strategy-text">${esc(strategyBullets)}</div>
  </div>` : '';
 
- const bullHtml = generatedBullets.map((b,i)=>`
- <div class="bullet-item${b.on?' checked':''}" id="bull-${i}">
- <div class="bullet-cb" onclick="toggleBull(${i})" id="bcb-${i}">${b.on?IC.squareCheck:IC.square}</div>
- <span class="bullet-text" id="btext-${i}">${esc(b.text)}</span>
- <div class="bullet-acts">
- <button class="icon-btn" onclick="editBull(${i})">${IC.edit}</button>
- <button class="icon-btn" onclick="removeBull(${i})">${IC.trash}</button>
- </div>
- </div>`).join('');
+ const bullHtml = generatedBullets.map(bulletItemHTML).join('');
 
  document.getElementById('bullets-content').innerHTML = `
  <hr class="output-divider" style="margin-top:0">
  ${stratHtml}
- <div class="section-label">Webinar-Inhalte <span class="section-count">- auswählen, bearbeiten oder entfernen</span></div>
+ <div class="section-label">Webinar-Inhalte <span class="section-count">- angehakte Inhalte sind gesperrt und bleiben bei Neu-Generierung erhalten</span></div>
  <div id="bull-list">${bullHtml}</div>
 
  <div class="feedback-wrap">
@@ -816,12 +813,41 @@ function renderBullets() {
  if (prevFb) document.getElementById('bull-fb').value = prevFb;
 }
 
+function bulletLockHintHTML(i) {
+ return `<div class="bullet-lock-hint" id="bhint-${i}">${IC.lockSmall} Gesperrt - wird bei "Mit Feedback neu generieren" nicht verändert, Text bleibt bearbeitbar</div>`;
+}
+
+function bulletItemHTML(b, i) {
+ return `
+ <div class="bullet-item${b.on?' checked':''}" id="bull-${i}">
+ <div class="bullet-cb" onclick="toggleBull(${i})" id="bcb-${i}" title="${b.on?'Gesperrt - klicken zum Entsperren':'Klicken zum Auswählen und Sperren'}">${b.on?IC.lock:IC.square}</div>
+ <div class="bullet-main">
+ <span class="bullet-text" id="btext-${i}">${esc(b.text)}</span>
+ ${b.on ? bulletLockHintHTML(i) : ''}
+ </div>
+ <div class="bullet-acts">
+ <button class="icon-btn" onclick="editBull(${i})">${IC.edit}</button>
+ <button class="icon-btn" onclick="removeBull(${i})">${IC.trash}</button>
+ </div>
+ </div>`;
+}
+
 function toggleBull(i) {
  generatedBullets[i].on = !generatedBullets[i].on;
  const item = document.getElementById(`bull-${i}`);
  const cb = document.getElementById(`bcb-${i}`);
- if (generatedBullets[i].on) { item.classList.add('checked'); cb.innerHTML=IC.squareCheck; }
- else { item.classList.remove('checked'); cb.innerHTML=IC.square; }
+ const hint = document.getElementById(`bhint-${i}`);
+ if (generatedBullets[i].on) {
+ item.classList.add('checked');
+ cb.innerHTML = IC.lock;
+ cb.title = 'Gesperrt - klicken zum Entsperren';
+ if (!hint) document.getElementById(`btext-${i}`).insertAdjacentHTML('afterend', bulletLockHintHTML(i));
+ } else {
+ item.classList.remove('checked');
+ cb.innerHTML = IC.square;
+ cb.title = 'Klicken zum Auswählen und Sperren';
+ if (hint) hint.remove();
+ }
 }
 
 function removeBull(i) {
@@ -849,15 +875,7 @@ function saveBull(i) {
 }
 
 function refreshBullets() {
- document.getElementById('bull-list').innerHTML = generatedBullets.map((b,i)=>`
- <div class="bullet-item${b.on?' checked':''}" id="bull-${i}">
- <div class="bullet-cb" onclick="toggleBull(${i})" id="bcb-${i}">${b.on?IC.squareCheck:IC.square}</div>
- <span class="bullet-text" id="btext-${i}">${esc(b.text)}</span>
- <div class="bullet-acts">
- <button class="icon-btn" onclick="editBull(${i})">${IC.edit}</button>
- <button class="icon-btn" onclick="removeBull(${i})">${IC.trash}</button>
- </div>
- </div>`).join('');
+ document.getElementById('bull-list').innerHTML = generatedBullets.map(bulletItemHTML).join('');
 }
 
 async function regenBullets() {
