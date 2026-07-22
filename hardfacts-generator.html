@@ -95,19 +95,19 @@ body{background:#fff;padding:0}
 
  <!-- Progress -->
  <div class="progress-bar" id="progress-bar">
- <div class="prog-step active" id="prog-1">
+ <div class="prog-step active" id="prog-1" onclick="goToStep(1)">
  <div class="prog-num">1</div> Input
  </div>
  <div class="prog-line"></div>
- <div class="prog-step" id="prog-2">
+ <div class="prog-step" id="prog-2" onclick="goToStep(2)">
  <div class="prog-num">2</div> Webinar-Titel
  </div>
  <div class="prog-line"></div>
- <div class="prog-step" id="prog-3">
+ <div class="prog-step" id="prog-3" onclick="goToStep(3)">
  <div class="prog-num">3</div> Webinar-Inhalte
  </div>
  <div class="prog-line"></div>
- <div class="prog-step" id="prog-4">
+ <div class="prog-step" id="prog-4" onclick="goToStep(4)">
  <div class="prog-num">4</div> Bestätigen
  </div>
  </div>
@@ -239,6 +239,9 @@ let strategyTitles = '';
 let generatedBullets = [];
 let strategyBullets = '';
 let selectedCopyPreset = CopyPresets.getSelected();
+let currentStep = 1;
+let maxStep = 1;
+let isGenerating = false;
 
 const TITLE_MSGS = ['Generiere Titel...','Formuliere Hooks...','Schärfe Varianten...'];
 const BULLET_MSGS = ['Generiere Inhalte...','Strukturiere Bullets...','Fast fertig...'];
@@ -372,14 +375,58 @@ function toBase64(file) {
 }
 
 function setProgress(step) {
+ currentStep = step;
+ maxStep = Math.max(maxStep, step);
  [1,2,3,4].forEach(n => {
  const el = document.getElementById(`prog-${n}`);
  el.classList.remove('active','done');
  if (n < step) el.classList.add('done');
  else if (n === step) el.classList.add('active');
+ el.classList.toggle('reachable', n <= maxStep && n !== step);
  const num = el.querySelector('.prog-num');
  num.innerHTML = n < step ? IC.check : n;
  });
+}
+
+function setBusy(b) {
+ isGenerating = b;
+ document.getElementById('progress-bar').classList.toggle('nav-locked', b);
+}
+
+/* Schritt-Navigation wie in Modul 2: bereits besuchte Schritte sind über
+   die Progress-Bar erreichbar. Es findet dabei NIE eine KI-Generierung
+   statt - neue Titel/Bullets entstehen nur über die Feedback-Buttons bzw.
+   den Generieren-Button in Schritt 1. Titel und Bullets bleiben beim
+   Zurückspringen frei bearbeitbar. */
+function goToStep(n) {
+ if (isGenerating || n > maxStep || n === currentStep) return;
+ ['phase-input','phase-titles','phase-bullets','phase-confirmed'].forEach(id => {
+ document.getElementById(id).style.display = 'none';
+ });
+ if (n === 1) {
+ document.getElementById('phase-input').style.display = 'block';
+ setProgress(1);
+ } else if (n === 2) {
+ document.getElementById('phase-titles').style.display = 'block';
+ setProgress(2);
+ renderTitles();
+ } else if (n === 3) {
+ document.getElementById('phase-bullets').style.display = 'block';
+ setProgress(3);
+ renderTitleSummary();
+ renderBullets();
+ } else if (n === 4) {
+ // Bestätigt-Ansicht aus dem aktuellen Stand neu aufbauen (idempotent,
+ // schreibt auch sessionStorage für Modul 2 frisch)
+ confirmHardfacts();
+ if (document.getElementById('phase-confirmed').style.display === 'none') {
+ // Validierung fehlgeschlagen (kein Bullet aktiv) - zurück zu Schritt 3
+ document.getElementById('phase-bullets').style.display = 'block';
+ setProgress(3);
+ renderTitleSummary();
+ renderBullets();
+ }
+ }
 }
 
 /* ===== CLAUDE API CALL (über Cloudflare-Proxy, wie Modul 2) =====
@@ -499,8 +546,11 @@ async function generateTitles(feedback) {
  setProgress(2);
 
  const btn = document.getElementById('btn-gen-titles');
+ const btnHtml = btn ? btn.innerHTML : '';
  if (btn) { btn.disabled=true; btn.innerHTML='<div class="spinner-sm"></div> Wird generiert...'; }
+ const restoreBtn = () => { if (btn) { btn.disabled=false; btn.innerHTML=btnHtml; } };
 
+ setBusy(true);
  const loadEl = document.getElementById('titles-loading');
  loadEl.style.display = 'flex';
  document.getElementById('titles-content').innerHTML = '';
@@ -554,10 +604,14 @@ Nur JSON.`;
 
  if (!feedback) selectedTitleIdx = null;
  clearInterval(msgInt);
+ setBusy(false);
+ restoreBtn();
  loadEl.style.display = 'none';
  renderTitles();
  } catch(e) {
  clearInterval(msgInt);
+ setBusy(false);
+ restoreBtn();
  loadEl.style.display = 'none';
  document.getElementById('titles-content').innerHTML = `<div class="error-box">Fehler: ${esc(e.message)}</div>`;
  }
@@ -651,6 +705,13 @@ async function regenTitles() {
 }
 
 function proceedToBullets() {
+ // Inhalte existieren bereits: nur navigieren, keine neue Generierung.
+ // Auch nach einem Titelwechsel bleiben die Bullets stehen - neu generiert
+ // wird nur über "Mit Feedback neu generieren" in Schritt 3.
+ if (generatedBullets.length) {
+ goToStep(3);
+ return;
+ }
  if (selectedTitleIdx === null) {
  if (!confirm('Kein Titel ausgewählt - trotzdem fortfahren und Inhalte generieren?')) return;
  }
@@ -679,6 +740,7 @@ async function generateBullets(feedback) {
 
  renderTitleSummary();
 
+ setBusy(true);
  const loadEl = document.getElementById('bullets-loading');
  loadEl.style.display = 'flex';
  document.getElementById('bullets-content').innerHTML = '';
@@ -731,10 +793,12 @@ Genau 10 Bulletpoints. Jeder beginnt mit Fragewort oder Aktivverb. Keine Wiederh
  }
  strategyBullets = parsed.strategie || '';
  clearInterval(msgInt);
+ setBusy(false);
  loadEl.style.display = 'none';
  renderBullets();
  } catch(e) {
  clearInterval(msgInt);
+ setBusy(false);
  loadEl.style.display = 'none';
  document.getElementById('bullets-content').innerHTML = `<div class="error-box">Fehler: ${esc(e.message)}</div>`;
  }
@@ -821,11 +885,7 @@ async function regenBullets() {
 }
 
 function backToTitles() {
- document.getElementById('phase-bullets').style.display = 'none';
- document.getElementById('phase-titles').style.display = 'block';
- setProgress(2);
- renderTitles();
- if (selectedTitleIdx !== null) setTimeout(()=>pickTitle(selectedTitleIdx),10);
+ goToStep(2);
 }
 
 function confirmHardfacts() {
@@ -902,10 +962,7 @@ function confirmHardfacts() {
 }
 
 function editAgain() {
- document.getElementById('phase-confirmed').style.display = 'none';
- document.getElementById('phase-bullets').style.display = 'block';
- setProgress(3);
- renderBullets();
+ goToStep(3);
 }
 
 function exportPDF() {
