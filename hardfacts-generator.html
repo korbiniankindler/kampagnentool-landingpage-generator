@@ -37,6 +37,10 @@
 .bullet-lock-hint svg{flex-shrink:0}
 .bullet-acts{display:flex;gap:3px;opacity:.45;transition:opacity .15s;flex-shrink:0}
 .bullet-item:hover .bullet-acts{opacity:1}
+.m1-editable{padding:3px 6px;margin:-3px -6px;border-radius:6px;border:1px solid transparent;cursor:text;transition:border-color .15s,background .15s;white-space:pre-wrap}
+.m1-editable:hover{background:var(--bg-secondary);border-color:var(--border-light)}
+.m1-editable[contenteditable=true]:focus{background:var(--bg-primary);border-color:var(--border-strong);outline:none;box-shadow:0 0 0 3px rgba(254,253,75,.5)}
+.m1-editable:empty:before{content:attr(data-ph);color:var(--text-tertiary);font-weight:400;text-transform:none;letter-spacing:normal}
 .feedback-wrap{margin-top:1.25rem;padding:1.25rem;border:1px solid var(--border-light);border-radius:var(--radius-lg);background:var(--bg-primary);box-shadow:var(--shadow-card)}
 .feedback-wrap textarea{min-height:60px;font-size:13px}
 .feedback-actions{display:flex;gap:8px;margin-top:8px}
@@ -176,7 +180,7 @@ body{background:#fff;padding:0}
  <!-- ═══ PHASE 2: TITEL ═══ -->
  <div id="phase-titles" style="display:none">
  <div class="page-title">Webinar-Titel <span class="modul-badge">Schritt 2 / 4</span></div>
- <p class="page-desc">Titel auswählen oder Feedback für neue Variante geben.</p>
+ <p class="page-desc">Titel auswählen, Texte direkt anklicken und bearbeiten, oder per Feedback neue Varianten generieren.</p>
  <div id="titles-loading" class="loading-card" style="display:none">
  <div class="spinner"></div><span id="titles-loading-msg">Titel werden generiert...</span>
  </div>
@@ -186,7 +190,7 @@ body{background:#fff;padding:0}
  <!-- ═══ PHASE 3: BULLETS ═══ -->
  <div id="phase-bullets" style="display:none">
  <div class="page-title">Webinar-Inhalte <span class="modul-badge">Schritt 3 / 4</span></div>
- <p class="page-desc">Bulletpoints auswählen, bearbeiten und anpassen. Angehakte Bullets werden gesperrt und bei der Neu-Generierung mit Feedback nicht verändert.</p>
+ <p class="page-desc">Bulletpoints auswählen und direkt im Text bearbeiten. Angehakte Bullets werden gesperrt und bei der Neu-Generierung mit Feedback nicht verändert.</p>
 
  <!-- Selected title summary -->
  <div class="selected-summary" id="selected-title-summary"></div>
@@ -571,11 +575,10 @@ function renderTitles() {
  <div class="title-option${selectedTitleIdx===i?' selected':''}" id="topt-${i}" onclick="pickTitle(${i})">
  <div class="title-radio" id="tradio-${i}">${selectedTitleIdx===i ? IC.circleCheck : IC.circle}</div>
  <div class="title-body" id="tbody-${i}">
- <div class="title-pre" id="tpre-${i}">${esc(t.pre||'')}</div>
- <div class="title-main" id="tmain-${i}">${esc(t.titel)}</div>
- <div class="title-sub" id="tsub-${i}">${esc(t.sub)}</div>
+ <div class="title-pre m1-editable" contenteditable="true" data-kind="title" data-idx="${i}" data-field="pre" data-ph="Pre-Headline ergänzen..." onclick="event.stopPropagation()">${esc(t.pre||'')}</div>
+ <div class="title-main m1-editable" contenteditable="true" data-kind="title" data-idx="${i}" data-field="titel" onclick="event.stopPropagation()">${esc(t.titel)}</div>
+ <div class="title-sub m1-editable" contenteditable="true" data-kind="title" data-idx="${i}" data-field="sub" onclick="event.stopPropagation()">${esc(t.sub)}</div>
  </div>
- <button class="icon-btn" style="flex-shrink:0;margin-top:1px" onclick="event.stopPropagation();editTitle(${i})">${IC.edit}</button>
  </div>`).join('');
 
  document.getElementById('titles-content').innerHTML = `
@@ -618,37 +621,29 @@ function pickTitle(i) {
  });
 }
 
-function editTitle(i) {
- const t = generatedTitles[i];
- const body = document.getElementById(`tbody-${i}`);
- body.innerHTML =
- `<div style="display:flex;flex-direction:column;gap:8px;flex:1">` +
- `<div>
- <label style="display:block;font-size:11px;font-weight:500;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Pre-Headline</label>
- <input class="edit-input" id="tedit-pre-${i}" value="${escAttr(t.pre||'')}" placeholder="z.B. DAS VERSCHWEIGT DIE SCHULMEDIZIN">
- </div>` +
- `<div>
- <label style="display:block;font-size:11px;font-weight:500;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Main Headline</label>
- <input class="edit-input" id="tedit-main-${i}" value="${escAttr(t.titel)}" placeholder="Haupttitel" style="font-weight:500">
- </div>` +
- `<div>
- <label style="display:block;font-size:11px;font-weight:500;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Sub-Headline</label>
- <textarea class="edit-input" id="tedit-sub-${i}" rows="2" style="line-height:1.5;resize:vertical">${escAttr(t.sub)}</textarea>
- </div>` +
- `<div class="edit-row">` +
- `<button class="edit-save" onclick="saveTitle(${i})">Speichern</button>` +
- `<button class="edit-cancel" onclick="renderTitles()">Abbrechen</button>` +
- `</div></div>`;
- document.getElementById(`tedit-main-${i}`).focus();
-}
+/* Inline-Editing wie in Modul 2: contenteditable-Felder, Speichern beim
+   Verlassen des Felds (blur). Ein delegierter Capture-Listener deckt
+   Titel-Varianten, Titel-Zusammenfassung und Bullets ab. */
+document.addEventListener('blur', function(ev) {
+ const el = ev.target;
+ if (!el.classList || !el.classList.contains('m1-editable')) return;
+ const kind = el.dataset.kind;
+ const val = (el.textContent || '').trim();
 
-function saveTitle(i) {
- generatedTitles[i].pre = (document.getElementById(`tedit-pre-${i}`)?.value||'').trim();
- generatedTitles[i].titel = (document.getElementById(`tedit-main-${i}`)?.value||'').trim() || generatedTitles[i].titel;
- generatedTitles[i].sub = (document.getElementById(`tedit-sub-${i}`)?.value||'').trim() || generatedTitles[i].sub;
- renderTitles();
- if (selectedTitleIdx !== null) setTimeout(()=>pickTitle(selectedTitleIdx),10);
-}
+ if (kind === 'title' || kind === 'summary') {
+ const idx = kind === 'title' ? parseInt(el.dataset.idx) : selectedTitleIdx;
+ if (idx === null || isNaN(idx) || !generatedTitles[idx]) return;
+ const field = el.dataset.field;
+ // Haupttitel und Subline dürfen nicht leer werden - alten Wert wiederherstellen
+ if (field !== 'pre' && !val) { el.textContent = generatedTitles[idx][field] || ''; return; }
+ generatedTitles[idx][field] = val;
+ } else if (kind === 'bull') {
+ const idx = parseInt(el.dataset.idx);
+ if (isNaN(idx) || !generatedBullets[idx]) return;
+ if (!val) { el.textContent = generatedBullets[idx].text; return; }
+ generatedBullets[idx].text = val;
+ }
+}, true);
 
 async function regenTitles() {
  const fb = (document.getElementById('title-fb')||{}).value||'';
@@ -663,54 +658,16 @@ function proceedToBullets() {
 }
 
 function renderTitleSummary() {
- const t = selectedTitleIdx !== null ? generatedTitles[selectedTitleIdx] : {pre:'',titel:'(kein Titel gewählt)',sub:''};
+ const editable = selectedTitleIdx !== null && !!generatedTitles[selectedTitleIdx];
+ const t = editable ? generatedTitles[selectedTitleIdx] : {pre:'',titel:'(kein Titel gewählt)',sub:''};
+ const field = (cls, f, val, ph) => editable
+ ? `<div class="${cls} m1-editable" contenteditable="true" data-kind="summary" data-field="${f}"${ph ? ` data-ph="${ph}"` : ''}>${esc(val||'')}</div>`
+ : (val ? `<div class="${cls}">${esc(val)}</div>` : '');
  document.getElementById('selected-title-summary').innerHTML = `
- <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
- <div style="flex:1;min-width:0">
  <div class="selected-summary-label">Ausgewählter Titel</div>
- ${t.pre ? `<div class="selected-summary-pre">${esc(t.pre)}</div>` : ''}
- <div class="selected-summary-title" id="sts-title">${esc(t.titel)}</div>
- <div class="selected-summary-sub" id="sts-sub">${esc(t.sub)}</div>
- </div>
- <button class="icon-btn" style="flex-shrink:0;margin-top:2px" onclick="editTitleSummary()">${IC.edit}</button>
- </div>`;
-}
-
-function editTitleSummary() {
- const t = selectedTitleIdx !== null ? generatedTitles[selectedTitleIdx] : {pre:'',titel:'',sub:''};
- document.getElementById('selected-title-summary').innerHTML = `
- <div class="selected-summary-label">Ausgewählter Titel bearbeiten</div>
- <div style="display:flex;flex-direction:column;gap:8px;margin-top:.5rem">
- <div>
- <label style="display:block;font-size:11px;font-weight:500;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Pre-Headline</label>
- <input class="edit-input" id="sts-edit-pre" value="${escAttr(t.pre||'')}" placeholder="z.B. DAS VERSCHWEIGT DIE SCHULMEDIZIN" style="width:100%">
- </div>
- <div>
- <label style="display:block;font-size:11px;font-weight:500;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Main Headline</label>
- <input class="edit-input" id="sts-edit-main" value="${escAttr(t.titel)}" placeholder="Haupttitel" style="width:100%;font-weight:500">
- </div>
- <div>
- <label style="display:block;font-size:11px;font-weight:500;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Sub-Headline</label>
- <textarea class="edit-input" id="sts-edit-sub" rows="2" style="width:100%;line-height:1.5;resize:vertical">${escAttr(t.sub)}</textarea>
- </div>
- <div class="edit-row">
- <button class="edit-save" onclick="saveTitleSummary()">Speichern</button>
- <button class="edit-cancel" onclick="renderTitleSummary()">Abbrechen</button>
- </div>
- </div>`;
- document.getElementById('sts-edit-main').focus();
-}
-
-function saveTitleSummary() {
- const pre = (document.getElementById('sts-edit-pre')?.value||'').trim();
- const main = (document.getElementById('sts-edit-main')?.value||'').trim();
- const sub = (document.getElementById('sts-edit-sub')?.value||'').trim();
- if (selectedTitleIdx !== null) {
- if (pre !== '') generatedTitles[selectedTitleIdx].pre = pre;
- if (main !== '') generatedTitles[selectedTitleIdx].titel = main;
- if (sub !== '') generatedTitles[selectedTitleIdx].sub = sub;
- }
- renderTitleSummary();
+ ${field('selected-summary-pre','pre',t.pre,'Pre-Headline ergänzen...')}
+ ${field('selected-summary-title','titel',t.titel)}
+ ${field('selected-summary-sub','sub',t.sub)}`;
 }
 
 async function generateBullets(feedback) {
@@ -822,11 +779,10 @@ function bulletItemHTML(b, i) {
  <div class="bullet-item${b.on?' checked':''}" id="bull-${i}">
  <div class="bullet-cb" onclick="toggleBull(${i})" id="bcb-${i}" title="${b.on?'Gesperrt - klicken zum Entsperren':'Klicken zum Auswählen und Sperren'}">${b.on?IC.lock:IC.square}</div>
  <div class="bullet-main">
- <span class="bullet-text" id="btext-${i}">${esc(b.text)}</span>
+ <div class="bullet-text m1-editable" contenteditable="true" data-kind="bull" data-idx="${i}" id="btext-${i}">${esc(b.text)}</div>
  ${b.on ? bulletLockHintHTML(i) : ''}
  </div>
  <div class="bullet-acts">
- <button class="icon-btn" onclick="editBull(${i})">${IC.edit}</button>
  <button class="icon-btn" onclick="removeBull(${i})">${IC.trash}</button>
  </div>
  </div>`;
@@ -852,25 +808,6 @@ function toggleBull(i) {
 
 function removeBull(i) {
  generatedBullets.splice(i,1);
- refreshBullets();
-}
-
-function editBull(i) {
- const span = document.getElementById(`btext-${i}`);
- span.innerHTML =
- `<textarea class="edit-input" id="binp-${i}" rows="3" style="line-height:1.5;resize:vertical">${escAttr(generatedBullets[i].text)}</textarea>` +
- `<div class="edit-row">` +
- `<button class="edit-save" onclick="saveBull(${i})">Speichern</button>` +
- `<button class="edit-cancel" onclick="refreshBullets()">Abbrechen</button>` +
- `</div>`;
- const ta = document.getElementById(`binp-${i}`);
- ta.focus();
- ta.setSelectionRange(ta.value.length, ta.value.length);
-}
-
-function saveBull(i) {
- const v = (document.getElementById(`binp-${i}`)?.value||'').trim();
- if (v) generatedBullets[i].text = v;
  refreshBullets();
 }
 
