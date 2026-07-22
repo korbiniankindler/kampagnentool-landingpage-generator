@@ -261,22 +261,6 @@
           <div class="preset-card-desc">Bewährte Struktur für kostenfreie Live-Webinare mit Anmeldung. Hero (mit Announcement Bar), Social Proof, Authority, CTA.</div>
           <div class="preset-card-count">9 Sections</div>
         </div>
-        <div class="preset-card" id="preset-leadgen" onclick="selectPreset('leadgen')">
-          <div class="preset-card-name">
-            <div class="preset-check" id="pc-leadgen"></div>
-            Platzhalter: Lead Gen Kompakt
-          </div>
-          <div class="preset-card-desc">Platzhalter - nicht ausgearbeitet</div>
-          <div class="preset-card-count">5 Sections</div>
-        </div>
-        <div class="preset-card" id="preset-sales" onclick="selectPreset('sales')">
-          <div class="preset-card-name">
-            <div class="preset-check" id="pc-sales"></div>
-            Platzhalter: Sales / Produkt
-          </div>
-          <div class="preset-card-desc">Platzhalter - nicht ausgearbeitet</div>
-          <div class="preset-card-count">8 Sections</div>
-        </div>
         <div class="preset-card" id="preset-custom" onclick="selectPreset('custom')">
           <div class="preset-card-name">
             <div class="preset-check" id="pc-custom"></div>
@@ -775,23 +759,6 @@ var PRESETS = {
     {id:'benefits', name:'Benefit Stack', desc:'3 Gründe teilzunehmen', active:true, custom:false},
     {id:'finalcta', name:'Final CTA / Scarcity', desc:'Abschluss mit Verknappung', active:true, custom:false}
   ],
-  leadgen: [
-    {id:'hero', name:'Hero', desc:'Pre-Headline, H1, H2, CTA', active:true, custom:false},
-    {id:'problem', name:'Problem / Mirror Effect', desc:'Selbstreflexions-Checkliste', active:true, custom:false},
-    {id:'social', name:'Social Proof', desc:'3 Testimonials', active:true, custom:false},
-    {id:'authority', name:'Authority / Speaker', desc:'Experten-Bio, Webinar-Rolle', active:true, custom:false},
-    {id:'finalcta', name:'Final CTA / Scarcity', desc:'Abschluss mit Verknappung', active:true, custom:false}
-  ],
-  sales: [
-    {id:'hero', name:'Hero', desc:'Pre-Headline, H1, H2, CTA', active:true, custom:false},
-    {id:'problem', name:'Problem / Mirror Effect', desc:'Selbstreflexions-Checkliste', active:true, custom:false},
-    {id:'framework', name:'Educational Gap', desc:'Erklär-Block mit Kontext und Hintergrund-Wissen', active:true, custom:false},
-    {id:'social', name:'Social Proof', desc:'3 Testimonials', active:true, custom:false},
-    {id:'authority', name:'Authority / Speaker', desc:'Experten-Bio, Webinar-Rolle', active:true, custom:false},
-    {id:'benefits', name:'Benefit Stack', desc:'3 Gründe teilzunehmen', active:true, custom:false},
-    {id:'custom_price', name:'Preis & Angebot', desc:'Preisdarstellung, Boni, Vergleich', active:true, custom:true},
-    {id:'finalcta', name:'Final CTA / Scarcity', desc:'Abschluss mit Verknappung', active:true, custom:false}
-  ],
   custom: []
 };
 
@@ -814,7 +781,7 @@ function switchSecMode(mode) {
 
 function selectPreset(key) {
   activePreset = key;
-  ['webinar','leadgen','sales','custom'].forEach(function(k) {
+  ['webinar','custom'].forEach(function(k) {
     var card = document.getElementById('preset-'+k);
     var check = document.getElementById('pc-'+k);
     card.classList.toggle('selected', k === key);
@@ -824,7 +791,7 @@ function selectPreset(key) {
 
 function applyPresetAndShow() {
   sections = (PRESETS[activePreset]||[]).map(function(s){ return Object.assign({}, s); });
-  var labels = {webinar:'Webinar Standard', leadgen:'Lead Gen Kompakt', sales:'Sales / Produkt', custom:'Eigene Sections'};
+  var labels = {webinar:'Webinar Standard', custom:'Eigene Sections'};
   document.getElementById('sec-editor-label').textContent = 'Sections – ' + (labels[activePreset]||'Preset');
   hide('sec-mode-picker'); show('sec-editor');
   document.getElementById('copy-preset-hint').innerHTML = copyPresetHintHTML();
