@@ -62,6 +62,12 @@
 .field-editable.ro:hover{background:transparent;border-color:transparent}
 .checklist-item{border:1px solid var(--border-light);border-radius:8px;padding:8px 10px;margin-bottom:6px;background:var(--bg-secondary)}
 .checklist-item .field-editable{background:transparent}
+.lock-btn{width:18px;height:18px;border:none;background:transparent;padding:0;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;color:var(--text-tertiary);opacity:.3;transition:opacity .15s,color .15s}
+.lock-btn:hover{opacity:1}
+.lock-btn.on{opacity:1;color:var(--text-primary)}
+.field-editable.locked{background:var(--accent-soft);border-color:var(--accent-border)}
+.field-editable.locked:hover{background:var(--accent-soft);border-color:var(--accent-border)}
+.lock-count{font-size:11px;font-weight:500;color:var(--text-tertiary);display:flex;align-items:center;gap:5px}
 .testimonial-card{border:1px solid var(--border-light);border-radius:8px;padding:10px 12px;margin-bottom:6px;background:var(--bg-secondary)}
 .review-feedback{margin-top:10px;padding:10px 1.25rem 1.1rem;border-top:1px solid var(--border-light)}
 .review-feedback textarea{min-height:48px;font-size:12px}
@@ -340,7 +346,7 @@
 <!-- PHASE REVIEW -->
 <div id="phase-review" style="display:none">
   <div class="page-title">Review <span class="modul-badge">Schritt 3</span></div>
-  <p class="page-desc">Felder direkt anklicken und bearbeiten, oder per Feedback eine Section neu generieren.</p>
+  <p class="page-desc">Felder direkt anklicken und bearbeiten, oder per Feedback eine Section neu generieren. Mit dem Schloss gesperrte Felder bleiben bei der Neu-Generierung unverändert.</p>
   <div id="review-loading" class="loading-card" style="display:none"><div class="spinner"></div><span id="review-loading-msg">Landingpage wird generiert...</span></div>
   <div id="review-list"></div>
   <button class="primary-btn" id="to-export-btn" style="display:none" onclick="goExport()">
@@ -1234,6 +1240,7 @@ function renderReview(active, opts) {
         '<textarea id="fb-'+s.id+'" placeholder="Feedback zu dieser Section, z.B. konfrontativer formulieren, kürzer, anderer Fokus..."></textarea>' +
         '<div class="review-feedback-row">' +
           '<button class="mini-btn" onclick="regenSection(\''+s.id+'\')" id="rgb-'+s.id+'"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> Section neu generieren</button>' +
+          '<span class="lock-count" id="lc-'+s.id+'"></span>' +
         '</div>' +
       '</div>') +
       '</div>';
@@ -1243,6 +1250,7 @@ function renderReview(active, opts) {
     active.forEach(function(s) {
       var el = document.getElementById('fb-'+s.id);
       if (el && prevFb[s.id]) el.value = prevFb[s.id];
+      updateLockCount(s.id);
     });
   }
   if (ro) {
@@ -1250,8 +1258,82 @@ function renderReview(active, opts) {
       el.removeAttribute('contenteditable');
       el.classList.add('ro');
     });
+    document.querySelectorAll('#review-list .lock-btn').forEach(function(el) {
+      el.style.display = 'none';
+    });
   }
   document.getElementById('to-export-btn').style.display = ro ? 'none' : 'flex';
+}
+
+/* ===== FELD-LOCKS =====
+   Wie die gesperrten Bullets in Modul 1: gesperrte Felder gehen als
+   Fixtext in den Regenerierungs-Prompt UND werden nach der Antwort im
+   Code wieder mit den Originalwerten überschrieben - ein Lock hält also
+   garantiert, egal was das Modell zurückgibt. */
+var lockedFields = {}; // secId -> {path: true}
+
+function isLocked(secId, path) {
+  return !!(lockedFields[secId] && lockedFields[secId][path]);
+}
+
+function toggleLock(secId, path) {
+  lockedFields[secId] = lockedFields[secId] || {};
+  if (lockedFields[secId][path]) delete lockedFields[secId][path];
+  else lockedFields[secId][path] = true;
+  var s = sections.find(function(x){return x.id===secId;});
+  var body = document.getElementById('rb-'+secId);
+  if (s && body) body.innerHTML = renderSectionFields(s);
+  updateLockCount(secId);
+}
+
+function lockIconSVG(size) {
+  return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="4" y="10" width="16" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>';
+}
+
+function lockBtnHTML(secId, path) {
+  var on = isLocked(secId, path);
+  var title = on
+    ? 'Gesperrt - wird bei &quot;Section neu generieren&quot; nicht verändert. Klicken zum Entsperren.'
+    : 'Feld sperren - bleibt bei &quot;Section neu generieren&quot; unverändert';
+  return '<button class="lock-btn'+(on?' on':'')+'" onclick="toggleLock(\''+secId+'\',\''+path+'\')" title="'+title+'">'+lockIconSVG(11)+'</button>';
+}
+
+function fieldPair(secId, path, label, value, tagStyle) {
+  return '<div class="field-tag"'+(tagStyle?' style="'+tagStyle+'"':'')+'>'+ex(label)+lockBtnHTML(secId,path)+'</div>' +
+    '<div class="field-editable'+(isLocked(secId,path)?' locked':'')+'" contenteditable="true" data-sec="'+secId+'" data-path="'+path+'">'+ex(value||'')+'</div>';
+}
+
+function updateLockCount(secId) {
+  var el = document.getElementById('lc-'+secId);
+  if (!el) return;
+  var n = Object.keys(lockedFields[secId]||{}).length;
+  el.innerHTML = n
+    ? lockIconSVG(10)+' '+(n===1 ? '1 Feld gesperrt - bleibt' : n+' Felder gesperrt - bleiben')+' bei Neu-Generierung unverändert'
+    : '';
+}
+
+function getByPath(obj, path) {
+  var parts = path.split('.');
+  var cur = obj;
+  for (var i=0;i<parts.length;i++) {
+    if (cur == null) return undefined;
+    var key = isNaN(parts[i]) ? parts[i] : parseInt(parts[i]);
+    cur = cur[key];
+  }
+  return cur;
+}
+
+function setByPathValue(obj, path, value) {
+  var parts = path.split('.');
+  var cur = obj;
+  for (var i=0;i<parts.length-1;i++) {
+    var key = isNaN(parts[i]) ? parts[i] : parseInt(parts[i]);
+    if (cur == null || cur[key] == null) return;
+    cur = cur[key];
+  }
+  if (cur == null) return;
+  var lastKey = isNaN(parts[parts.length-1]) ? parts[parts.length-1] : parseInt(parts[parts.length-1]);
+  cur[lastKey] = value;
 }
 
 function renderSectionFields(s) {
@@ -1267,9 +1349,8 @@ function renderSectionFields(s) {
       out += '<div class="field-tag" style="margin-top:4px">Inhalts-Bulletpoints (aus Webinar-Hardfacts)</div>';
       d.bulletpoints.forEach(function(bp, i) {
         out += '<div class="checklist-item">' +
-          '<div class="field-tag">Bullet '+(i+1)+' Titel</div>' +
-          '<div class="field-editable" contenteditable="true" data-sec="hero" data-path="bulletpoints.'+i+'.title">'+ex(bp.title)+'</div>' +
-          (bp.text ? '<div class="field-tag" style="margin-top:6px">Erklärung</div><div class="field-editable" contenteditable="true" data-sec="hero" data-path="bulletpoints.'+i+'.text">'+ex(bp.text)+'</div>' : '') +
+          fieldPair('hero','bulletpoints.'+i+'.title','Bullet '+(i+1)+' Titel', bp.title) +
+          (bp.text ? fieldPair('hero','bulletpoints.'+i+'.text','Erklärung', bp.text, 'margin-top:6px') : '') +
           '</div>';
       });
     }
@@ -1294,8 +1375,8 @@ function renderSectionFields(s) {
   if (s.id === 'problem' && d.checklist) {
     var items = d.checklist.map(function(it, i) {
       return '<div class="checklist-item">' +
-        '<div class="field-tag">Item '+(i+1)+' Titel</div><div class="field-editable" contenteditable="true" data-sec="'+s.id+'" data-path="checklist.'+i+'.title">'+ex(it.title)+'</div>' +
-        '<div class="field-tag" style="margin-top:6px">Text</div><div class="field-editable" contenteditable="true" data-sec="'+s.id+'" data-path="checklist.'+i+'.text">'+ex(it.text)+'</div>' +
+        fieldPair(s.id,'checklist.'+i+'.title','Item '+(i+1)+' Titel', it.title) +
+        fieldPair(s.id,'checklist.'+i+'.text','Text', it.text, 'margin-top:6px') +
         '</div>';
     }).join('');
     return fieldBlock(s.id,'headline','Headline',d.headline) + fieldBlock(s.id,'introCopy','Intro-Copy',d.introCopy) +
@@ -1305,9 +1386,9 @@ function renderSectionFields(s) {
   if (s.id === 'social' && d.testimonials) {
     var tests = d.testimonials.map(function(t, i) {
       return '<div class="testimonial-card">' +
-        '<div class="field-tag">Zitat '+(i+1)+'</div><div class="field-editable" contenteditable="true" data-sec="'+s.id+'" data-path="testimonials.'+i+'.quote">'+ex(t.quote)+'</div>' +
-        '<div class="field-tag" style="margin-top:6px">Name</div><div class="field-editable" contenteditable="true" data-sec="'+s.id+'" data-path="testimonials.'+i+'.name">'+ex(t.name)+'</div>' +
-        '<div class="field-tag" style="margin-top:6px">Rolle</div><div class="field-editable" contenteditable="true" data-sec="'+s.id+'" data-path="testimonials.'+i+'.role">'+ex(t.role)+'</div>' +
+        fieldPair(s.id,'testimonials.'+i+'.quote','Zitat '+(i+1), t.quote) +
+        fieldPair(s.id,'testimonials.'+i+'.name','Name', t.name, 'margin-top:6px') +
+        fieldPair(s.id,'testimonials.'+i+'.role','Rolle', t.role, 'margin-top:6px') +
         '</div>';
     }).join('');
     return fieldBlock(s.id,'headline','Headline',d.headline) + '<div class="field-tag">Testimonials</div>' + tests;
@@ -1315,8 +1396,8 @@ function renderSectionFields(s) {
   if (s.id === 'benefits' && d.items) {
     var bens = d.items.map(function(it,i){
       return '<div class="checklist-item">' +
-        '<div class="field-tag">Benefit '+(i+1)+' Titel</div><div class="field-editable" contenteditable="true" data-sec="'+s.id+'" data-path="items.'+i+'.title">'+ex(it.title)+'</div>' +
-        '<div class="field-tag" style="margin-top:6px">Text</div><div class="field-editable" contenteditable="true" data-sec="'+s.id+'" data-path="items.'+i+'.text">'+ex(it.text)+'</div>' +
+        fieldPair(s.id,'items.'+i+'.title','Benefit '+(i+1)+' Titel', it.title) +
+        fieldPair(s.id,'items.'+i+'.text','Text', it.text, 'margin-top:6px') +
         '</div>';
     }).join('');
     return fieldBlock(s.id,'headline','Headline',d.headline) + '<div class="field-tag">Benefits</div>' + bens;
@@ -1329,8 +1410,7 @@ function renderSectionFields(s) {
 }
 
 function fieldBlock(secId, path, label, value) {
-  return '<div class="field-block"><div class="field-tag">'+ex(label)+'</div>' +
-    '<div class="field-editable" contenteditable="true" data-sec="'+secId+'" data-path="'+path+'">'+ex(value||'')+'</div></div>';
+  return '<div class="field-block">'+fieldPair(secId, path, label, value)+'</div>';
 }
 
 function labelFor(k) {
@@ -1364,6 +1444,11 @@ async function regenSection(secId) {
   var s = sections.find(function(x){return x.id===secId;});
   if (!s) return;
   var fb = (document.getElementById('fb-'+secId)||{}).value || '';
+  // Gesperrte Felder VOR der Generierung sichern - sie gehen als Fixtext in
+  // den Prompt und werden nach der Antwort im Code wieder hergestellt
+  var lockedSnap = Object.keys(lockedFields[secId] || {})
+    .map(function(p){ return {path: p, value: getByPath(sectionData[secId], p)}; })
+    .filter(function(l){ return l.value !== undefined; });
   var btn = document.getElementById('rgb-'+secId);
   btn.disabled = true; btn.innerHTML = '<div class="spinner-sm"></div> Wird generiert...';
   document.getElementById('rs-'+secId).textContent = 'wird aktualisiert...';
@@ -1394,6 +1479,7 @@ async function regenSection(secId) {
       ctxPromptBlock() + '\n' +
       'Überarbeite NUR die Section "'+s.name+'" ('+s.id+'). Erwartetes Schema:\n' + sectionSchemaHint(s) + '\n\n' +
       'Feedback: ' + (fb || 'Allgemein verbessern, Konsistenz mit Rest der Page wahren.') + '\n\n' +
+      (lockedSnap.length ? 'GESPERRTE FELDER - diese Werte unverändert und wörtlich in das JSON übernehmen, NICHT umformulieren (der Rest der Section muss inhaltlich dazu passen):\n' + lockedSnap.map(function(l){ return '- ' + l.path + ': ' + JSON.stringify(l.value); }).join('\n') + '\n\n' : '') +
       'Wichtig: KEINE inhaltlichen Dopplungen mit den anderen Sections aus dem Gesamtkontext - Argumente, Beispiele und Formulierungen, die dort bereits vorkommen, nicht wiederholen (auch nicht umformuliert). Diese Section behält ihren eigenen Blickwinkel.\n\n' +
       'Gib NUR das JSON-Objekt für diese Section zurück - kein Wrapper, kein Markdown, kein Text drumherum.';
 
@@ -1423,6 +1509,11 @@ async function regenSection(secId) {
     }
 
     sectionData[secId] = parsed;
+    // Code-Garantie: gesperrte Felder wieder mit den Originalwerten überschreiben,
+    // egal was das Modell zurückgegeben hat (wie bei den Bullets in Modul 1)
+    lockedSnap.forEach(function(l) {
+      try { setByPathValue(sectionData[secId], l.path, l.value); } catch(e) {}
+    });
     document.getElementById('rb-'+secId).innerHTML = renderSectionFields(s);
     document.getElementById('rs-'+secId).textContent = 'aktualisiert';
   } catch(e) {
@@ -1813,7 +1904,7 @@ function renderSecListView() {
 }
 
 function restartAll() {
-  HF = null; sections = []; sectionData = {}; activePreset = 'webinar'; customCounter = 0;
+  HF = null; sections = []; sectionData = {}; lockedFields = {}; activePreset = 'webinar'; customCounter = 0;
   currentStep = 1; maxStep = 1;
   // Copywriter-Preset bewusst BEHALTEN: es ist eine Marken-Einstellung, keine
   // Kampagnen-Eingabe. Ein stiller Reset führte dazu, dass nach "Komplett neu
