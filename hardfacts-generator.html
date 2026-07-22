@@ -190,7 +190,7 @@ body{background:#fff;padding:0}
  <!-- ═══ PHASE 3: BULLETS ═══ -->
  <div id="phase-bullets" style="display:none">
  <div class="page-title">Webinar-Inhalte <span class="modul-badge">Schritt 3 / 4</span></div>
- <p class="page-desc">Bulletpoints auswählen und direkt im Text bearbeiten. Angehakte Bullets werden gesperrt und bei der Neu-Generierung mit Feedback nicht verändert.</p>
+ <p class="page-desc">Wähle die gewünschten Bulletpoints aus oder passe diese textuell oder mit AI-Feedback an. Empfohlen sind 4-5 Bullets für die Landingpage.</p>
 
  <!-- Selected title summary -->
  <div class="selected-summary" id="selected-title-summary"></div>
@@ -753,7 +753,7 @@ function renderBullets() {
  document.getElementById('bullets-content').innerHTML = `
  <hr class="output-divider" style="margin-top:0">
  ${stratHtml}
- <div class="section-label">Webinar-Inhalte <span class="section-count">- angehakte Inhalte sind gesperrt und bleiben bei Neu-Generierung erhalten</span></div>
+ <div class="section-label">Webinar-Inhalte <span class="section-count">- angehakte Inhalte sind gesperrt und bleiben bei Neu-Generierung erhalten.</span></div>
  <div id="bull-list">${bullHtml}</div>
 
  <div class="feedback-wrap">
@@ -771,7 +771,7 @@ function renderBullets() {
 }
 
 function bulletLockHintHTML(i) {
- return `<div class="bullet-lock-hint" id="bhint-${i}">${IC.lockSmall} Gesperrt - wird bei "Mit Feedback neu generieren" nicht verändert, Text bleibt bearbeitbar</div>`;
+ return `<div class="bullet-lock-hint" id="bhint-${i}">${IC.lockSmall} Gesperrt </div>`;
 }
 
 function bulletItemHTML(b, i) {
