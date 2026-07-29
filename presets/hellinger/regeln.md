@@ -56,6 +56,8 @@ Statt Ich-Sätzen wird die Sache selbst formuliert:
 
 Sophie erscheint als **Person in der dritten Person** (Absender-Zeile "Mit Sophie Hellinger", Zitatboxen, Vita, Fragerunde), nicht als Ich-Stimme der Copy.
 
+**Das "Wir" der Hellinger®schule ist erlaubt** und ersetzt das gestrichene Ich: "Wir laden Dich ein …". Gemeint ist immer die Schule als Absenderin, nie ein anonymes Agentur-Wir und nie ein vereinnahmendes "wir alle". Ein "wir" im Sinne von "wir Menschen" ist zulässig, wenn es eine geteilte Erfahrung beschreibt: "Manchmal spüren wir: So wie es ist, darf es nicht bleiben."
+
 **Signatur, wenn die Copy von Sophie gezeichnet wird:**
 > Deine Sophie Hellinger
 
@@ -69,6 +71,10 @@ Alle Beispiele hier stammen aus dem Projektmaterial (Ad-Skripte, Landingpage-Tex
    - "Würdest Du abheben?"
    - "Bist Du bereit?"
    - "Wie willst Du ein Problem lösen, dessen Ursprung Du nicht siehst?"
+   - "Gibt es in Deinem Leben Situationen, die sich immer wiederholen?"
+   - "Trägst Du etwas, das gar nicht zu Dir gehört?"
+
+   Die Frage zielt aufs Spüren, nicht aufs Beantworten. Sie holt den Leser in seine eigene Erfahrung, statt ein Argument vorzubereiten.
 
    **Ausnahme Webinartitel:** Dieses Muster gilt **nicht für den Webinartitel** (Pre-Headline, Titel, Sub-Headline des Webinars). Dort sind Fragen nicht erwünscht. Der Webinartitel wird immer als Aussage formuliert.
    - Falsch: "Warum wiederholt sich immer dasselbe Muster?"
@@ -90,9 +96,13 @@ Alle Beispiele hier stammen aus dem Projektmaterial (Ad-Skripte, Landingpage-Tex
    - Wurzel, Ursache statt Symptom, tiefe Ebene, Tiefe
    - Sehen, Anerkennen, Lassen, Frieden schließen
    - Muster, Wiederholung, wiederkehrend
-   - Klarheit, Ruhe, Leichtigkeit, das Leben, das schon lange auf Dich wartet
+   - Klarheit, Ruhe, Ordnung, Zugehörigkeit, innerer Platz, Leichtigkeit, das Leben, das schon lange auf Dich wartet
    - Original, an der Quelle lernen
    - Live-Webinar, Live-Seminar, kostenfrei, dabei sein
+
+   **Verben: sehen, erkennen, spüren statt machen, erreichen, schaffen.** Die Bewegung ist Wahrnehmung, nicht Leistung.
+   - Falsch: "So erreichst Du endlich Deine Ziele." / "Damit schaffst Du den Durchbruch."
+   - Besser: "Du erkennst, was Dich hält." / "Du spürst, was sich löst, wenn Ordnung zurückkehrt."
 
 4. **Auflösungs-Bewegung Sehen → Anerkennen → Platz einnehmen → Frieden.**
    - "Erst die Information, wenn wir sie in uns aufnehmen und erkennen, dann sind wir nicht mehr erreicht."
@@ -108,7 +118,25 @@ Alle Beispiele hier stammen aus dem Projektmaterial (Ad-Skripte, Landingpage-Tex
    - "Nicht, um Dich direkt festzulegen, sondern, um in Ruhe zu spüren, ob dieser Weg gerade jetzt für Dich stimmt."
    - "Festgefahrenes löst sich nicht durch Anstrengung, sondern durch Einsicht."
 
-6. **Event- und CTA-Ritual. Immer gleich aufgebaut, immer diese Bausteine.**
+6. **Bilder und Vergleiche statt Erklärung. Ein Bild trägt weiter als ein Absatz Theorie.**
+   - "Manchmal spüren wir: So wie es ist, darf es nicht bleiben."
+   - "Es gibt Momente, die Dein Leben teilen in ein Vorher und ein Nachher."
+   - "Ein stilles Aufatmen, wenn Ordnung zurückkehrt."
+   Die Bilder bleiben alltagsnah und ruhig. Keine Symbolik aus dem Esoterik-Repertoire (siehe Verbote).
+
+7. **Einladen statt drängen. Der Leser entscheidet, die Copy hält ihm die Tür auf.**
+   - "Wir laden Dich ein …"
+   - "Wenn Du spürst, dass …"
+   - "Vielleicht erkennst Du Dich darin …"
+   - "Wenn es für Dich stimmt, melde Dich jetzt an."
+   Konjunktiv und "vielleicht" sind hier bewusst gesetzt, nicht schwach. Sie lassen dem Leser den Ausstieg und machen die Zusage dadurch tragfähiger.
+
+8. **Gemeinschaft und Bewegung. Der Leser ist nicht allein mit dem Thema.**
+   - "Ein Raum voller Menschen, die denselben Weg gehen."
+   - "Teil einer Bewegung werden."
+   Gemeinschaft wird als Erfahrung beschrieben, nicht als Mitgliedschaft verkauft. Kein Community-Marketing-Vokabular.
+
+9. **Event- und CTA-Ritual. Immer gleich aufgebaut, immer diese Bausteine.**
    - Live-Termin mit Datum und Uhrzeit, meist als Banner:
      `🔴 Kostenfreies Live-Seminar | 🗓 [Datum] | ⏰ [Uhrzeit]`
      oder inline: `📅 Live am [Datum] um [Uhrzeit] Uhr`
@@ -117,6 +145,7 @@ Alle Beispiele hier stammen aus dem Projektmaterial (Ad-Skripte, Landingpage-Tex
    - CTA-Wortlaute (belegt): "Jetzt kostenfrei anmelden", "Jetzt kostenfrei anmelden!", "Mehr dazu im kostenfreien Webinar mit Sophie Hellinger", "Jetzt anmelden!", "Melde Dich jetzt kostenfrei an"
    - Für die Ausbildung: "Jetzt auf Platz bewerben", "Hier Kennenlerntermin reservieren"
    - Nach dem Webinar häufig: "Vereinbare Dir jetzt Dein persönliches Kennenlerngespräch"
+   - Offene Einladung am Ende, vor allem in Mails: "Hier kannst Du Deinen Platz sichern.", "Wenn es für Dich stimmt, melde Dich jetzt an."
 
 ## 4. Landingpage-Architektur
 
@@ -180,11 +209,18 @@ Am Ende Adressierung typischer Fragen (Bereitschaft, Zeitpunkt, Alltagsintegrati
 
 ## 5. Dos
 
+Diese Liste gilt für alle Assets. Sie enthält zusätzlich die Punkte aus dem Dokument "Hellinger Mailstil, Dos & Don'ts", die dort für Mails formuliert sind, aber genauso für Landingpages, Ads und Skripte gelten.
+
 - Sophie über die Sache sprechen lassen, nicht über sich: Aussagen statt Ich-Sätze, Absender-Zeile "Mit Sophie Hellinger" statt "Ich lade Dich ein".
 - "Du" durchgängig groß, in allen Assets, in B2C wie B2B.
 - "Ordnungen der Liebe", "Original Hellinger® Familienstellen", "Hellinger®schule" wörtlich und mit ® verwenden.
 - Ein ruhiger, zugewandter Einstieg statt harter Werbeeröffnung.
 - "Nicht … sondern"-Umkehr nutzen, um zu entlasten und dann umzulenken.
+- Einladen statt drängen: "Wir laden Dich ein …", "Wenn Du spürst, dass …", "Vielleicht erkennst Du Dich darin …".
+- Innere Fragen stellen, die den Leser ins Spüren bringen, statt Argumente vorzubereiten.
+- Mit Bildern und Vergleichen arbeiten statt mit Theorie: "Ein stilles Aufatmen, wenn Ordnung zurückkehrt."
+- Wahrnehmungsverben nutzen: sehen, erkennen, spüren. Nicht machen, erreichen, schaffen.
+- Zugehörigkeit und gemeinsamen Weg zeigen: "Ein Raum voller Menschen, die denselben Weg gehen."
 - Konkrete Beispiele aus dem Leben (Beziehung, Erfolg, Erschöpfung, wiederkehrende Konflikte) statt abstrakter Werbepromises.
 - Termin, Uhrzeit, Kostenfrei-Hinweis und CTA am Ende jedes Copy-Blocks, konsistent.
 - Nach dem Webinar sanft in Richtung Kennenlerngespräch überleiten, ohne Druck.
@@ -230,13 +266,27 @@ Was nicht geht, mit Falsch- und Besser-Beispielen. Vieles davon ist im Projektma
 - **Keine Manipulation, keine künstliche Verknappung ohne echten Grund.**
   Verknappung nur, wenn sie real ist (echtes Termin-Kontingent, echte Bewerbungsphase, echter Frühbucher-Cutoff). Sonst nicht.
 
+- **Keine Druck-Sprache, keine Werbe-Ausrufe.**
+  Falsch: "Nur jetzt!" / "Verpasse es nicht!" / "Exklusiv!" / "Sichere Dir jetzt sofort Deinen Platz, bevor es zu spät ist!"
+  Besser, ruhig und ehrlich, wenn der Anlass real ist: "Die Frühbucherpreise gelten bis [Datum]." / "Die Plätze sind begrenzt."
+  Der Unterschied liegt im Ausruf, nicht im Sachverhalt: Eine belegte Frist oder Kapazität darf genannt werden, aber als Information, nicht als Alarm. Der belegte Badge "Exklusiv: Live-Fragerunde mit Sophie Hellinger & Überraschungsgast" bleibt zulässig, weil "exklusiv" dort ein Format beschreibt und kein Dringlichkeitssignal ist.
+
+- **Keine Übertreibungen und keine Superlative.**
+  Falsch: "Das größte Event aller Zeiten." / "Die wirkungsvollste Methode überhaupt."
+  Besser: "Ein besonderes Jubiläums-Event." / "Ein Werkzeug, das an die Wurzel geht."
+
 - **Keine Marketing-Floskeln.**
-  Falsch: "Life-Changing! Der Gamechanger für Dein Leben. Jetzt zuschlagen!"
-  Besser: "Vielleicht ist es der erste Schritt dorthin, wo Du wirklich hingehörst."
+  Falsch: "Life-Changing Experience! Der Gamechanger für Dein Leben. Mega-Angebot. Jetzt zuschlagen!"
+  Besser: "Eine Erfahrung, die bleibt." / "Ein Moment, der Dich bewegen kann." / "Vielleicht ist es der erste Schritt dorthin, wo Du wirklich hingehörst."
 
 - **Kein Pathos, kein Überschwang.**
   Falsch: "Diese unglaubliche, revolutionäre Methode wird Dein Leben für immer transformieren!"
   Besser: "Das Original Hellinger® Familienstellen bleibt nicht an der Oberfläche. Es geht bis an die Wurzel."
+
+- **Nicht zu viel erklären.**
+  Keine endlosen Theorieblöcke, keine Methoden-Vorlesung. Nach spätestens zwei erklärenden Sätzen zurück ins Erleben: ein Bild, ein Beispiel, eine Frage.
+  Falsch: drei Absätze über die Systemtheorie hinter den Grundordnungen.
+  Besser: "Es gibt Ordnungen, die wir nicht gemacht haben. Wir spüren sie erst, wenn sie fehlen."
 
 - **Keine Gedankenstriche und keine Halbgeviertstriche im laufenden Text.**
   Das ist Hausstil-Regel. Nutze Kommata, Doppelpunkte, Punkte oder eigene Sätze.
@@ -255,6 +305,7 @@ Was nicht geht, mit Falsch- und Besser-Beispielen. Vieles davon ist im Projektma
 
 - **Keine Preise nennen.**
   Weder Webinar- noch Ausbildungspreise oder Paketpreise erscheinen in der Copy. Der Webinar-Einstieg ist kostenfrei; Konditionen zur Ausbildung klärt das persönliche Kennenlerngespräch.
+  Gemeint sind konkrete Beträge. Der **Hinweis auf eine Frist** ohne Betrag ist zulässig, wenn er real ist: "Die Frühbucherpreise gelten bis [Datum]." Sobald eine Zahl genannt würde, gilt das Verbot.
 
 ## 7. Kontrollfragen vor jeder Ausgabe
 
@@ -263,7 +314,10 @@ Was nicht geht, mit Falsch- und Besser-Beispielen. Vieles davon ist im Projektma
 3. Steht irgendwo ein "ich" von Sophie an den Leser? Wenn ja, raus und in eine Aussage umbauen. Ausgenommen: gekennzeichnete Zitatbox und Signaturzeile.
 4. Sind Staccato- und Ein-Wort-Reihungen vermieden?
 5. Ist der Webinartitel (Pre, Titel, Sub) frei von Fragen und als Aussage formuliert?
-6. Steht mindestens ein Sophie-typisches Sprachmuster drin ("nicht … sondern"-Umkehr, Frage ohne Antwort in der Bodycopy, Tiefen-Kontrast)?
-7. Ist der Nutzen als Zustand formuliert ("Klarheit, die bleibt"), nicht als Feature-Aufzählung?
-8. Enthält die Copy einen sauberen Event-Block (Datum, Uhrzeit, kostenfrei, CTA) und, wenn Sophie zeichnet, den Standard-Abschluss?
-9. Sind alle Verbote eingehalten? Kein Heilsversprechen, keine Esoterik, kein Gold, kein Gedankenstrich, kein "Schmerz zurückgeben", kein "blinde Liebe", keine Preise?
+6. Steht mindestens ein Sophie-typisches Sprachmuster drin ("nicht … sondern"-Umkehr, Frage ohne Antwort in der Bodycopy, Tiefen-Kontrast, Bild statt Erklärung)?
+7. Lädt der Text ein, statt zu drängen? Kein "Nur jetzt!", kein "Verpasse es nicht!", kein Superlativ?
+8. Stehen Wahrnehmungsverben (sehen, erkennen, spüren) im Vordergrund statt Leistungsverben (machen, erreichen, schaffen)?
+9. Gibt es einen Theorieblock, der länger als zwei Sätze erklärt, ohne zurück ins Erleben zu führen?
+10. Ist der Nutzen als Zustand formuliert ("Klarheit, die bleibt"), nicht als Feature-Aufzählung?
+11. Enthält die Copy einen sauberen Event-Block (Datum, Uhrzeit, kostenfrei, CTA) und, wenn Sophie zeichnet, den Standard-Abschluss?
+12. Sind alle Verbote eingehalten? Kein Heilsversprechen, keine Esoterik, kein Gold, kein Gedankenstrich, kein "Schmerz zurückgeben", kein "blinde Liebe", keine Preise?
