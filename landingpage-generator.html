@@ -1016,6 +1016,24 @@ function sectionSchemaHint(s) {
   return schemas[s.id] || '{"headline":"...", "bodyCopy":"...", "ctaButton":"... (falls passend)"}';
 }
 
+/* Wortlaengen und Zitat-Regeln fuer alle Textfelder. Bewusst als gemeinsame
+   Konstante: sie muessen in der Voll-Generierung UND in der Section-
+   Neugenerierung gelten - stuenden sie nur im ersten Prompt, wuerde jede
+   Ueberarbeitung die Vorgaben wieder verlieren.
+   Zahlen aus echten BrandLift-Landingpages ausgezaehlt (Hellinger-Kongress,
+   Hellinger-Webinar, HH-NEM, HH-B2B, HH-Reset). */
+var COPY_LENGTH_RULES = [
+  'TEXTLAENGEN (verbindlich): Reine Fliesstext-Bloecke duerfen und sollen ausfuehrlich sein - knappe Stichpunkte wirken auf einer Landingpage duenn und nehmen der Copy die Wirkung. Richtwerte:',
+  '- introtext para1/para2/para3: je 45-70 Woerter. Variiere die Absatzlaenge spuerbar (ein kurzer, verdichteter Absatz neben zwei ausfuehrlichen) - gleich lange Bloecke lesen sich monoton.',
+  '- framework bodyCopy und jeder andere freie Fliesstext-Block: 90-140 Woerter.',
+  '- problem introCopy und transitionCopy: je 30-50 Woerter.',
+  '- checklist-, items- und bulletpoints-Eintraege: "title" 2-6 Woerter, "text" 20-35 Woerter.',
+  '- authority bioBlock: 60-100 Woerter.',
+  '- Ausnahmen, die kurz bleiben: closingLine, scarcityCopy, ctaSubline, ctaButton, badge, announcement - je ein Satz oder weniger.',
+  '',
+  'TESTIMONIALS (verbindlich): Zitate stammen WOERTLICH und UNGEKUERZT aus der Wissensdatenbank des Presets. Nicht umformulieren, nicht zusammenfassen, keine Saetze weglassen - ein belegtes Zitat ist ein Zitat, kein Rohmaterial. "name" exakt wie belegt. "role" nur setzen, wenn die Wissensdatenbank eine Rolle nennt (z.B. "Coach", "Heilpraktikerin"); ist keine belegt, "role" leer lassen statt eine allgemeine Rolle wie "Teilnehmerin" zu erfinden. Enthaelt die Wissensdatenbank keine Testimonials, Platzhalter in eckigen Klammern setzen.'
+].join('\n');
+
 /* ===== GENERATION (Phase 3) ===== */
 async function startGeneration() {
   var active = sections.filter(function(s){return s.active;});
@@ -1185,7 +1203,7 @@ async function generateChunk(chunk, sysBlocks, ctx, attempt) {
     'Regeln:\n' +
     '- KEINE inhaltlichen Dopplungen zwischen Sections: Jede Section erfüllt exakt ihre Rolle laut Seitenaufbau' + (ctx.planText ? ' und Content-Plan' : '') + '. Argumente, Beispiele, Formulierungen und Narrative, die zu einer anderen Section gehören, hier NICHT wiederholen - auch nicht umformuliert. Schreibe jede Section aus ihrem eigenen Blickwinkel.\n' +
     '- Hero: announcement = kurzer Termin-Hinweis für die Announcement-Bar ganz oben (Live-Charakter, basierend auf "Termin", z.B. "LIVE-Webinar am [Termin]"). Verwende die Hardfacts DIREKT und ungekürzt: preHeadline = exakt aus "Pre-Headline", h1 = exakt aus "Titel", h2 = exakt aus "Sub-Headline". Die bulletpoints kommen 1:1 aus "Webinar-Inhalte" - parse jeden Bullet als {"title":"...", "text":"..."} wobei title der Hauptpunkt ist und text die Erklärung (falls vorhanden, sonst leer lassen). Generiere 4 Bulletpoints. ctaButton = "Jetzt kostenlos anmelden", ctaSubline = "100% kostenfrei am [Termin]", videoPlaceholder = "[16:9 Video-Platzhalter: Anmeldeseiten-Video mit Referent]"\n' +
-    '- introtext (Intro Text): badge = kurze Pill-Kategorie (max 5 Worte), headline = aufmerksamkeitsstarke H2, para1/para2/para3 = je ein langer Fließtext-Absatz (3-5 Sätze) der eine Kontext-Story aufbaut (gesellschaftlicher Wandel, Warum-jetzt-Narrativ, Marktentwicklung oder ähnliches passend zur Kampagne), closingLine = Brücken-Satz der auf den Referenten und das Webinar leitet. Den Aufhänger der Kontext-Story frisch und spezifisch für DIESE Kampagne wählen: NICHT automatisch das Zeitgeschehen-Ereignis oder den Einstieg der Referenz-Copy übernehmen (z.B. eine bestimmte Reform) - die Referenz zeigt nur, WIE so eine Story erzählt wird, nicht WORÜBER. Belegte Fakten aus der Wissensdatenbank passend zum Kampagnen-Thema auswählen.\n' +
+    '- introtext (Intro Text): badge = kurze Pill-Kategorie (max 5 Worte), headline = aufmerksamkeitsstarke H2, para1/para2/para3 = je ein ausführlicher Fließtext-Absatz (Länge siehe TEXTLAENGEN unten) der eine Kontext-Story aufbaut (gesellschaftlicher Wandel, Warum-jetzt-Narrativ, Marktentwicklung oder ähnliches passend zur Kampagne), closingLine = Brücken-Satz der auf den Referenten und das Webinar leitet. Den Aufhänger der Kontext-Story frisch und spezifisch für DIESE Kampagne wählen: NICHT automatisch das Zeitgeschehen-Ereignis oder den Einstieg der Referenz-Copy übernehmen (z.B. eine bestimmte Reform) - die Referenz zeigt nur, WIE so eine Story erzählt wird, nicht WORÜBER. Belegte Fakten aus der Wissensdatenbank passend zum Kampagnen-Thema auswählen.\n' +
     '- Educational Gap (framework): headline + bodyCopy als erklärenden Fließtext-Block, KEIN Kompass-Prinzip\n' +
     '- Problem-Checklist: exakt 5 Einträge als Array mit je "title" und "text"\n' +
     '- Testimonials: exakt 3 Einträge als Array mit je "quote", "name", "role"\n' +
@@ -1193,7 +1211,8 @@ async function generateChunk(chunk, sysBlocks, ctx, attempt) {
     '- Alle String-Werte EINZEILIG (kein echter Zeilenumbruch, ggf. \\n verwenden)\n' +
     '- Referent/Host NIEMALS erfinden: Verwende für Authority/Speaker und alle Referenten-Nennungen ausschließlich die Person aus der Kampagnen-Beschreibung bzw. dem Copywriter-Preset (Name, Titel, belegte Fakten). Fehlen Angaben zur Person komplett, schreibe neutral ohne erfundene Namen, Qualifikationen oder Erfahrungsjahre und setze Platzhalter in eckigen Klammern, z.B. [Name Referent].\n' +
     '- Alle CTAs auf kostenfreie Webinar-Anmeldung\n' +
-    '- Sprache: Deutsch\n' +
+    '- Sprache: Deutsch\n\n' +
+    COPY_LENGTH_RULES + '\n\n' +
     '- NUR das JSON-Objekt, absolut kein anderer Text';
 
   var d = await callClaude({
@@ -1493,6 +1512,7 @@ async function regenSection(secId) {
       'Feedback: ' + (fb || 'Allgemein verbessern, Konsistenz mit Rest der Page wahren.') + '\n\n' +
       (lockedSnap.length ? 'GESPERRTE FELDER - diese Werte unverändert und wörtlich in das JSON übernehmen, NICHT umformulieren (der Rest der Section muss inhaltlich dazu passen):\n' + lockedSnap.map(function(l){ return '- ' + l.path + ': ' + JSON.stringify(l.value); }).join('\n') + '\n\n' : '') +
       'Wichtig: KEINE inhaltlichen Dopplungen mit den anderen Sections aus dem Gesamtkontext - Argumente, Beispiele und Formulierungen, die dort bereits vorkommen, nicht wiederholen (auch nicht umformuliert). Diese Section behält ihren eigenen Blickwinkel.\n\n' +
+      COPY_LENGTH_RULES + '\n\n' +
       'Gib NUR das JSON-Objekt für diese Section zurück - kein Wrapper, kein Markdown, kein Text drumherum.';
 
     var userContent = buildUserContent(usr);
