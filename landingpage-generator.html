@@ -943,7 +943,15 @@ function sectionSchemaHint(s) {
     finalcta: '{"headline":"...", "scarcityCopy":"...", "ctaButton":"...", "ctaSubline":"..."}',
     faq: '{"headline":"...", "faqs":[{"question":"...","answer":"..."}, {"question":"...","answer":"..."}], "ctaButton":"... (falls passend)"}'
   };
-  return schemas[s.id] || '{"headline":"...", "bodyCopy":"...", "ctaButton":"... (falls passend)"}';
+  if (schemas[s.id]) return schemas[s.id];
+  /* Eigene Sections bekommen bewusst KEIN festes Schema. Vorher stand hier
+     immer {headline, bodyCopy, ctaButton} und die Section-Beschreibung folgte
+     nur als Kommentar - das Modell hat das Schema befolgt und die Beschreibung
+     als reinen Inhaltshinweis gelesen. Eine Beschreibung wie "Section mit 2
+     Columns" ergab dann einen einzigen Fliesstext-Block statt zwei Elementen.
+     Die Struktur muss aus der Beschreibung kommen, siehe Regel "Eigene
+     Sections" im Prompt. */
+  return '{ ...Felder und Struktur SELBST aus der Beschreibung dieser Section ableiten... }';
 }
 
 /* Wortlaengen und Zitat-Regeln fuer alle Textfelder. Bewusst als gemeinsame
@@ -961,6 +969,7 @@ var COPY_LENGTH_RULES = [
   '- problem introCopy und transitionCopy: je 30-50 Woerter.',
   '- checklist-, items- und bulletpoints-Eintraege: "title" 2-6 Woerter, "text" 20-35 Woerter.',
   '- authority bioBlock: 60-100 Woerter.',
+  '- Eintraege eigener Sections (columns, cards, steps o.ae.): "headline" 3-8 Woerter, "bodyCopy" 50-100 Woerter je Eintrag.',
   '- faq: "question" 5-12 Woerter, "answer" 25-50 Woerter. Die Antwort beantwortet die Frage zuerst konkret und haengt erst danach eine Einordnung an.',
   '- Ausnahmen, die kurz bleiben: closingLine, scarcityCopy, ctaSubline, ctaButton, badge, announcement - je ein Satz oder weniger.',
   '',
@@ -1120,7 +1129,7 @@ async function generateChunk(chunk, sysBlocks, ctx, attempt) {
   attempt = attempt || 1;
   var maxAttempts = 3;
   var schemaLines = chunk.map(function(s) {
-    return '"'+s.id+'": ' + sectionSchemaHint(s) + (s.custom ? '  // Custom: "'+s.name+'": '+s.desc : '');
+    return '"'+s.id+'": ' + sectionSchemaHint(s) + (s.custom ? '  // Eigene Section "'+s.name+'" - Beschreibung: '+s.desc : '');
   }).join(',\n  ');
 
   var bpList = (HF.bulletpoints||[]).map(function(b,i){return (i+1)+'. '+b;}).join('\n');
@@ -1149,7 +1158,8 @@ async function generateChunk(chunk, sysBlocks, ctx, attempt) {
     '- Testimonials: exakt 3 Einträge als Array mit je "quote", "name", "role"\n' +
     '- faq (FAQ): headline + "faqs" als Array mit 5-7 Einträgen, je "question" und "answer". Das ist eine echte Frage-Antwort-Liste, KEIN Fließtext-Block - fasse die Antworten NICHT zu einem Absatz zusammen. Die Fragen sind die, die eine Anmeldung tatsächlich blockieren: Termin und Dauer, Aufzeichnung falls verhindert, technische Voraussetzungen, Vorwissen, Kosten und Verbindlichkeit, für wen es geeignet ist, was danach passiert. Jede Frage in der Sprache des Lesers ("Was, wenn ich am Termin nicht kann?"), nicht in Marketingsprache. Fragezeichen sind hier ausdrücklich richtig, auch wenn das Marken-Preset Fragen an anderer Stelle ausschließt.\n' +
     '- Benefits items: exakt 3 Einträge als Array mit je "title" und "text"\n' +
-    '- Alle String-Werte EINZEILIG (kein echter Zeilenumbruch, ggf. \\n verwenden)\n' +
+    '- Eigene Sections (im Schema mit "Eigene Section ... Beschreibung:" kommentiert): Die Beschreibung gibt die STRUKTUR vor, nicht nur den Inhalt. Nennt sie mehrere gleichartige Elemente (z.B. zwei Columns, drei Karten, vier Schritte), dann liefere dafür ein Array aus Objekten - ein Objekt pro Element mit eigenen Feldern, z.B. "columns": [{"headline":"...","bodyCopy":"..."}, {"headline":"...","bodyCopy":"..."}]. Benenne den Array-Key nach dem, was die Beschreibung beschreibt (columns, cards, steps, ...), und liefere exakt so viele Einträge wie dort verlangt - fasse sie NIEMALS zu einem einzigen Fließtext-Block zusammen. Beschreibt die Beschreibung dagegen einen einzelnen Textblock, genügt {"headline":"...", "bodyCopy":"..."}. Erfinde keine Felder, die die Beschreibung nicht hergibt.\n' +
+    '- Alle String-Werte EINZEILIG: keine echten Zeilenumbrüche UND keine \\n-Sequenzen im Text (die erscheinen sonst wörtlich auf der Seite). Brauchst Du mehrere Absätze, nutze ein Array aus Strings statt einem String mit Umbrüchen.\n' +
     '- Innerhalb von Textwerten NIEMALS gerade Anführungszeichen ("...") verwenden - sie beenden den String und zerstören das JSON. Zum Zitieren im Fließtext typografische Anführungszeichen nutzen: „...".\n' +
     '- Referent/Host NIEMALS erfinden: Verwende für Authority/Speaker und alle Referenten-Nennungen ausschließlich die Person aus der Kampagnen-Beschreibung bzw. dem Copywriter-Preset (Name, Titel, belegte Fakten). Fehlen Angaben zur Person komplett, schreibe neutral ohne erfundene Namen, Qualifikationen oder Erfahrungsjahre und setze Platzhalter in eckigen Klammern, z.B. [Name Referent].\n' +
     '- Alle CTAs auf kostenfreie Webinar-Anmeldung\n' +
@@ -1419,7 +1429,7 @@ function fieldBlock(secId, path, label, value) {
 }
 
 function labelFor(k) {
-  var map = {h1:'H1 Haupttitel',h2:'H2 Sub-Headline',preHeadline:'Pre-Headline',ctaButton:'CTA Button',ctaSubline:'CTA Subline',dozentLine:'Dozenten-Zeile',announcement:'Announcement Bar (Termin-Hinweis)',bodyCopy:'Body Copy',badge:'Badge/Pill',paragraphs:'Fließtext',closingLine:'Abschluss-Satz (Brücke zum Webinar)',bioBlock:'Bio',webinarRole:'Rolle im Webinar',scarcityCopy:'Scarcity Copy',note:'Hinweis',headline:'Headline',introCopy:'Intro Copy',transitionCopy:'Transition Copy',text:'Text',title:'Titel',bulletpoints:'Inhalts-Bulletpoints',videoPlaceholder:'Video (16:9 Platzhalter)',testimonials:'Testimonials',links:'Links',checklist:'Checkliste',items:'Punkte',quote:'Zitat',name:'Name',role:'Rolle',faqs:'Fragen & Antworten',question:'Frage',answer:'Antwort'};
+  var map = {h1:'H1 Haupttitel',h2:'H2 Sub-Headline',preHeadline:'Pre-Headline',ctaButton:'CTA Button',ctaSubline:'CTA Subline',dozentLine:'Dozenten-Zeile',announcement:'Announcement Bar (Termin-Hinweis)',bodyCopy:'Body Copy',badge:'Badge/Pill',paragraphs:'Fließtext',closingLine:'Abschluss-Satz (Brücke zum Webinar)',bioBlock:'Bio',webinarRole:'Rolle im Webinar',scarcityCopy:'Scarcity Copy',note:'Hinweis',headline:'Headline',introCopy:'Intro Copy',transitionCopy:'Transition Copy',text:'Text',title:'Titel',bulletpoints:'Inhalts-Bulletpoints',videoPlaceholder:'Video (16:9 Platzhalter)',testimonials:'Testimonials',links:'Links',checklist:'Checkliste',items:'Punkte',quote:'Zitat',name:'Name',role:'Rolle',faqs:'Fragen & Antworten',question:'Frage',answer:'Antwort',columns:'Columns',cards:'Karten',steps:'Schritte',blocks:'Blöcke',subline:'Subline',label:'Label'};
   return map[k] || k;
 }
 
@@ -1475,7 +1485,7 @@ async function regenSection(secId) {
       '',
       'KRITISCH: Antworte AUSSCHLIESSLICH mit einem einzigen gültigen JSON-Objekt.',
       'KEINE Erklärungen, KEINE Markdown-Backticks, KEIN Text vor oder nach dem JSON.',
-      'Alle String-Werte EINZEILIG - KEINE echten Zeilenumbrüche in Strings.',
+      'Alle String-Werte EINZEILIG - KEINE echten Zeilenumbrüche und KEINE \\n-Sequenzen in Strings (die erscheinen sonst wörtlich auf der Seite). Mehrere Absätze gehören in ein Array aus Strings.',
       'Setze Wörter oder Begriffe NICHT dekorativ in Anführungszeichen - Anführungszeichen nur für wörtliche, belegte Zitate. Falls zitiert wird, nutze deutsche Anführungszeichen „..." statt gerader Anführungszeichen; falls doch gerade Anführungszeichen " im Text vorkommen, escape sie zwingend als \\".',
       'KEINE trailing commas. Valides JSON nach RFC 8259.'
     ].join('\n');
@@ -1486,6 +1496,11 @@ async function regenSection(secId) {
       (HF.beschreibung ? 'Kampagnen-Beschreibung (Thema, Host/Referent, Zielgruppe, Besonderheiten): ' + HF.beschreibung + '\n' : '') +
       ctxPromptBlock() + '\n' +
       'Überarbeite NUR die Section "'+s.name+'" ('+s.id+'). Erwartetes Schema:\n' + sectionSchemaHint(s) + '\n\n' +
+      /* Bei eigenen Sections stand hier bisher nur der generische Schema-Hinweis:
+         die Neu-Generierung kannte die Beschreibung der Section gar nicht und
+         hat deren Struktur bei jeder Überarbeitung wieder plattgemacht. */
+      (s.custom ? 'Beschreibung dieser eigenen Section: ' + s.desc + '\n' +
+        'Die Beschreibung gibt die STRUKTUR vor: Nennt sie mehrere gleichartige Elemente (z.B. zwei Columns, drei Karten), liefere ein Array aus Objekten mit einem Objekt pro Element (z.B. "columns": [{"headline":"...","bodyCopy":"..."}, ...]) und exakt so vielen Einträgen wie verlangt - niemals zu einem einzigen Fließtext-Block zusammenfassen. Behalte die Feldnamen der bestehenden Section bei, sofern sie zur Beschreibung passen.\n\n' : '') +
       'Feedback: ' + (fb || 'Allgemein verbessern, Konsistenz mit Rest der Page wahren.') + '\n\n' +
       (lockedSnap.length ? 'GESPERRTE FELDER - diese Werte unverändert und wörtlich in das JSON übernehmen, NICHT umformulieren (der Rest der Section muss inhaltlich dazu passen):\n' + lockedSnap.map(function(l){ return '- ' + l.path + ': ' + JSON.stringify(l.value); }).join('\n') + '\n\n' : '') +
       'Wichtig: KEINE inhaltlichen Dopplungen mit den anderen Sections aus dem Gesamtkontext - Argumente, Beispiele und Formulierungen, die dort bereits vorkommen, nicht wiederholen (auch nicht umformuliert). Diese Section behält ihren eigenen Blickwinkel.\n\n' +

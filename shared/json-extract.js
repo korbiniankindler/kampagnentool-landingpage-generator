@@ -11,6 +11,24 @@
    Beides wird hier zeichenweise repariert. opts.salvage schliesst zusaetzlich
    abgeschnittene Strukturen (Token-Limit) statt hart zu scheitern - per
    Default aus, damit echte Trunkierungen einen Retry ausloesen koennen. */
+/* Die KI schreibt trotz Vorgabe gelegentlich die ZEICHEN \ und n in einen
+   Textwert - im JSON steht dann \\n, und nach dem Parsen bleibt die
+   Zeichenfolge \n sichtbar mitten im Text stehen ("...zurueck.\n\nUnd dann...").
+   Hier werden solche Sequenzen zu echten Umbruechen aufgeloest, damit sie im
+   Editor als Absatz und nicht als Zeichenmuell erscheinen. */
+function normalizeModelText(value) {
+  if (typeof value === 'string') {
+    return value.replace(/\\r\\n|\\n|\\r/g, '\n').replace(/\\t/g, ' ').replace(/[ \t]+\n/g, '\n').trim();
+  }
+  if (Array.isArray(value)) return value.map(normalizeModelText);
+  if (value && typeof value === 'object') {
+    var out = {};
+    Object.keys(value).forEach(function(k) { out[k] = normalizeModelText(value[k]); });
+    return out;
+  }
+  return value;
+}
+
 function extractJSON(raw, opts) {
   opts = opts || {};
   var cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim();
@@ -71,10 +89,12 @@ function extractJSON(raw, opts) {
      hier ein Komma ergaenzt wird, sind ohne Komma ohnehin ungueltiges JSON.
      Wird nur als Fallback versucht, damit gueltiges JSON unangetastet bleibt. */
   function parseWithCommaRepair(text, onFail) {
-    try { return JSON.parse(text); } catch(e) {
-      var repaired = text.replace(/(["\}\]\d])(\s*\n\s*)(["\{\[])/g, '$1,$2$3');
-      if (repaired !== text) {
-        try { return JSON.parse(repaired); } catch(e2) { /* faellt unten durch */ }
+    try { return normalizeModelText(JSON.parse(text)); } catch(e) {
+      if (e instanceof SyntaxError) {
+        var repaired = text.replace(/(["\}\]\d])(\s*\n\s*)(["\{\[])/g, '$1,$2$3');
+        if (repaired !== text) {
+          try { return normalizeModelText(JSON.parse(repaired)); } catch(e2) { /* faellt unten durch */ }
+        }
       }
       throw onFail(e);
     }
