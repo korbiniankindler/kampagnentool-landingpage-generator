@@ -181,7 +181,7 @@ Was rechtlich und inhaltlich nicht behauptet werden darf, mit Belegen aus dem Ma
 
 - **Namensschutz.** "Original Hellinger® Familiensteller" darf nur wer die Ausbildung an der Hellinger®Schule absolviert hat (Informationsbroschüre). Diese Aussage ist strategisches Marketing-Argument und darf nicht relativiert werden.
 
-- **Testimonials nur mit Namen und, wenn belegt, Rolle.** Keine erfundenen Namen, keine erfundenen Berufsrollen. Video-Testimonials nicht wörtlich zitieren, wenn nur Namen ohne Text belegt sind.
+- **Keine erfundenen Zitate im Namen realer Personen.** Wo nur ein Name ohne Text belegt ist (z. B. die in Videos erwähnten Ausbildungsteilnehmer Barcha, Johannes, Elisabeth, Irina), wird kein Zitat dazu erfunden. Frei formulierte Testimonials laufen unter frei gewählten Namen, nicht unter den Namen belegter Personen.
 
 - **Keine erfundenen Zahlen.** Nur belegte Zahlen aus dem Abschnitt "Belegte Zahlen & Fakten" verwenden. Die Zahl "+50.000 begleitete Menschen" ist freigegeben und darf in B2C- wie B2B-/Fach-Assets verwendet werden.
 
