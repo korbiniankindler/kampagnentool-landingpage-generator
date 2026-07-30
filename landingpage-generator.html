@@ -961,11 +961,13 @@ var COPY_LENGTH_RULES = [
   '- Ausnahmen, die kurz bleiben: closingLine, scarcityCopy, ctaSubline, ctaButton, badge, announcement - je ein Satz oder weniger.',
   '',
   'TESTIMONIALS: Zitat, Name und Berufsrolle werden frei formuliert - als Entwurf, den die Marke spaeter durch echte Stimmen ersetzt oder freigibt. Nicht aus der Wissensdatenbank abschreiben, sondern zur konkreten Kampagne passend neu schreiben.',
-  '- Laenge je Zitat 25-45 Woerter. Zwei bis drei Saetze: erst die Ausgangslage, dann was sich veraendert hat. Ein Halbsatz wirkt beliebig.',
-  '- Sprache wie echte Teilnehmer, nicht wie Marketing: konkrete Alltagssituationen statt Superlative, ruhig auch mit einem Vorbehalt oder einer anfaenglichen Skepsis.',
+  '- Laenge je Zitat 70-110 Woerter, 4-6 Saetze. Das ist bewusst lang: kurze Statements lesen sich wie Werbetexte, ausfuehrliche wie echte Menschen.',
+  '- Baue jedes Zitat in drei Schritten: (1) die Ausgangslage mit EINEM konkreten Detail aus dem Alltag - nicht "ich hatte Konflikte", sondern die konkrete Situation, die Person, der wiederkehrende Moment. (2) Ein einzelner Moment aus dem Seminar, der etwas gekippt hat - eine Szene, keine Zusammenfassung. (3) Was sich seitdem im Alltag konkret zeigt, ebenfalls an einem Beispiel statt an einem Ergebnis-Satz.',
+  '- Persoenlich heisst konkret: Namen von Angehoerigen ("meine Schwester", "mein aeltester Sohn"), Orte, Situationen (das Telefonat, das Familienessen, die Teambesprechung). Abstrakte Nomen wie Klarheit, Veraenderung, Erkenntnis, Blockade sind Marketing-Vokabular und gehoeren nicht in ein Zitat.',
+  '- Sprache wie echte Teilnehmer: Umgangssprache, auch mal ein unrunder oder angefangener Satz, ein Vorbehalt, eine anfaengliche Skepsis, etwas das noch nicht fertig ist ("ich bin noch mittendrin"). Keine Superlative, keine Werbeformulierungen, kein rundes Fazit am Ende.',
   '- "name": Vorname plus abgekuerzter Nachname (z.B. "Martina K."). Drei klar unterscheidbare Personen, nicht dreimal derselbe Typ.',
   '- "role": frei gewaehlt und zur Zielgruppe passend (z.B. "Projektleiterin", "Selbststaendig", "Vater von zwei Kindern"). KEINE geschuetzten Berufsbezeichnungen erfinden - Arzt, Aerztin, Heilpraktiker, Psychotherapeut und vergleichbare Titel nur, wenn die Wissensdatenbank eine solche Person tatsaechlich belegt.',
-  '- Keine erfundenen Zahlen, Messwerte, Zeitraeume oder Heilungsverlaeufe in den Zitaten.'
+  '- Alltagsnahe Zeitangaben sind erwuenscht ("seit dem Wochenende", "ein halbes Jahr spaeter") - sie machen das Zitat konkret. Keine erfundenen Messwerte, Diagnosen, Heilungsverlaeufe oder Erfolgszahlen.'
 ].join('\n');
 
 /* ===== GENERATION (Phase 3) ===== */
@@ -2324,7 +2326,9 @@ Längere, atmende Bullets, die Situationen beschreiben, nicht Features:
 Bert Hellinger als Ursprung, Sophie als Weiterführung der Quelle. Kurze Vita-Elemente. Immer sachlich, würdevoll.
 
 **8. Erfahrungsberichte / Social Proof**
-Kreisförmige Testibilder, Name mit Kurzstatement, dazu die Rolle. Zitat, Name und Rolle werden frei formuliert, sofern keine belegte Stimme vorliegt: drei unterscheidbare Personen, Vorname plus abgekürzter Nachname, Teilnehmersprache statt Marketing. Rollen alltagsnah (Projektleiterin, Selbstständig, Vater von zwei Kindern); geschützte Berufsbezeichnungen nur bei belegten Personen.
+Kreisförmige Testibilder, Name mit Erfahrungsbericht, dazu die Rolle. Zitat, Name und Rolle werden frei formuliert, sofern keine belegte Stimme vorliegt: drei unterscheidbare Personen, Vorname plus abgekürzter Nachname, Teilnehmersprache statt Marketing. Rollen alltagsnah (Projektleiterin, Selbstständig, Vater von zwei Kindern); geschützte Berufsbezeichnungen nur bei belegten Personen.
+
+**Länge und Ton der Erfahrungsberichte:** ausführlich, 70 bis 110 Wörter, kein Kurzstatement. Aufbau in drei Schritten: die Ausgangslage an einem konkreten Alltagsdetail, ein einzelner Moment aus dem Seminar, der etwas gekippt hat, und was sich seitdem konkret zeigt. Persönlich heißt konkret: Angehörige, Orte, Situationen (das Telefonat, das Familienessen, die Teambesprechung). Abstrakte Nomen wie Klarheit, Veränderung, Erkenntnis oder Blockade sind Marketing-Vokabular und gehören nicht in ein Zitat. Ein Vorbehalt, eine anfängliche Skepsis oder etwas Unfertiges ("ich bin noch mittendrin") macht den Bericht glaubwürdiger als ein rundes Fazit.
 
 **9. Erlebe Sophie Hellinger im einzigartigen Live-Seminar**
 Wiederholung des Nutzens auf höherer Aufladung.
@@ -2353,7 +2357,7 @@ Diese Liste gilt für alle Assets. Sie enthält zusätzlich die Punkte aus dem D
 - Konkrete Beispiele aus dem Leben (Beziehung, Erfolg, Erschöpfung, wiederkehrende Konflikte) statt abstrakter Werbepromises.
 - Termin, Uhrzeit, Kostenfrei-Hinweis und CTA am Ende jedes Copy-Blocks, konsistent.
 - Nach dem Seminar sanft in Richtung Kennenlerngespräch überleiten, ohne Druck.
-- Testimonials mit Kurzstatement, Namen und Rolle. Zitat, Name und Rolle dürfen frei formuliert werden, wenn keine belegte Stimme vorgegeben ist. Ausnahme: geschützte Berufsbezeichnungen (Arzt, Heilpraktiker, Psychotherapeut) nur, wenn eine solche Person belegt ist, und keine erfundenen Zitate unter dem Namen einer real belegten Person.
+- Testimonials als ausführlicher Erfahrungsbericht (70 bis 110 Wörter), mit Namen und Rolle. Zitat, Name und Rolle dürfen frei formuliert werden, wenn keine belegte Stimme vorgegeben ist. Ausnahme: geschützte Berufsbezeichnungen (Arzt, Heilpraktiker, Psychotherapeut) nur, wenn eine solche Person belegt ist, und keine erfundenen Zitate unter dem Namen einer real belegten Person.
 - Für Fachzielgruppen: den Werkzeug-Charakter, den Wettbewerbsvorteil und die Grenze klassischer Methoden betonen (Coaching, Therapie, Mindset, KI).
 
 ## 6. Sprachliches Ausschlussregelwerk (Verbote)
