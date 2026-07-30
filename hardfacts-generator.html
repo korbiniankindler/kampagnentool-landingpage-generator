@@ -462,6 +462,12 @@ function isRateLimitError(err) {
 async function callClaude(body, attempt) {
  attempt = attempt || 1;
  await throttleClaudeRequest();
+ /* Thinking wird zentral abgeschaltet, nicht an den einzelnen Call-Stellen:
+    Sonnet 5 denkt adaptiv, sobald das Feld fehlt - ein neuer Call ohne
+    dieses Flag wuerde also still Thinking aktivieren, sich das Budget mit
+    dem sichtbaren Text teilen und die Wartezeit erhoehen. Hier steht es
+    genau einmal und gilt fuer alle Requests. */
+ if (!('thinking' in body)) body.thinking = { type: 'disabled' };
  var resp = await fetch(PROXY_URL, {
  method: 'POST',
  headers: { 'Content-Type': 'application/json' },
@@ -492,8 +498,13 @@ async function callAPI(systemP, userP) {
  userContent.push({type:'text', text:userP});
 
  const data = await callClaude({
- model: 'claude-sonnet-4-6',
- max_tokens: 4000,
+ model: 'claude-sonnet-5',
+ /* 6000 statt 4000: Sonnet 5 tokenisiert denselben deutschen Text rund 30%
+    feiner als Sonnet 4.6, die alte Reserve schrumpft entsprechend. Dieser
+    Pfad hat als einziger keine Salvage-Logik - eine abgeschnittene Antwort
+    ist hier ein harter Fehler fuer den Nutzer. Kostet nichts: abgerechnet
+    werden nur tatsaechlich erzeugte Tokens. */
+ max_tokens: 6000,
  system: systemP,
  messages: [{role:'user', content:userContent}]
  });

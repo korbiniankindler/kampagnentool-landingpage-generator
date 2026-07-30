@@ -439,6 +439,12 @@ function isRateLimitError(err) {
 async function callClaude(body, onRetry, attempt) {
   attempt = attempt || 1;
   await throttleClaudeRequest();
+  /* Thinking wird zentral abgeschaltet, nicht an den einzelnen Call-Stellen:
+     Sonnet 5 denkt adaptiv, sobald das Feld fehlt - ein neuer Call ohne
+     dieses Flag wuerde also still Thinking aktivieren, sich das Budget mit
+     dem sichtbaren Text teilen und die Wartezeit erhoehen. Hier steht es
+     genau einmal und gilt fuer alle Requests. */
+  if (!('thinking' in body)) body.thinking = { type: 'disabled' };
   var resp = await fetch(PROXY_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -837,7 +843,7 @@ async function suggestSectionsAI() {
       'NUR das JSON-Array, kein anderer Text, keine Backticks.';
 
     var d = await callClaude({
-      model: 'claude-sonnet-4-6',
+      model: 'claude-sonnet-5',
       max_tokens: 1000,
       messages: [{ role: 'user', content: buildUserContent(usr) }]
     }, function(attempt){ loadEl.innerHTML = '<div class="spinner"></div> Rate-Limit erreicht, versuche erneut (' + attempt + ')...'; });
@@ -1076,7 +1082,7 @@ async function generateContentPlan(active, sysBlocks) {
       'Erstelle einen Content-Plan für diese Landingpage: Lege für jede Section EINE Kernbotschaft mit eigenem Blickwinkel fest - je genau EIN prägnanter Satz (max 20 Wörter), keine Ausschmückung. Die Kernbotschaften müssen klar voneinander abgegrenzt sein - kein Argument, Beispiel oder Narrativ darf in zwei Sections vorkommen. Zusammen ergeben sie eine schlüssige Dramaturgie von der ersten bis zur letzten Section.\n\n' +
       'Antworte NUR mit einem JSON-Objekt mit exakt diesen Keys:\n{ ' + active.map(function(s){return '"'+s.id+'": "..."';}).join(', ') + ' }';
     var d = await callClaude({
-      model: 'claude-sonnet-4-6',
+      model: 'claude-sonnet-5',
       // Skaliert mit der Section-Zahl (~120 Tokens je Kernbotschaft + Puffer),
       // damit der Plan bei grossen Seiten nicht am Token-Limit abgeschnitten
       // wird. max_tokens ist nur eine Obergrenze - abgerechnet werden immer
@@ -1191,8 +1197,14 @@ async function generateChunk(chunk, sysBlocks, ctx, attempt) {
     '- NUR das JSON-Objekt, absolut kein anderer Text';
 
   var d = await callClaude({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 12000,
+    model: 'claude-sonnet-5',
+    /* 16000 statt 12000: groesster Output im Tool und schon vorher der
+       einzige Call, der regelmaessig ans Limit lief (daher Retry/Salvage
+       unten). Sonnet 5 tokenisiert denselben deutschen Text rund 30% feiner,
+       ohne Anhebung wuerde die Truncation-Quote spuerbar steigen. 16000 ist
+       zugleich die Obergrenze fuer ungestreamte Requests - darueber drohen
+       HTTP-Timeouts, weil die Verbindung minutenlang ohne Daten offen steht. */
+    max_tokens: 16000,
     system: sysBlocks,
     messages: [{role:'user', content: buildUserContent(usr)}]
   }, function(){ updateReviewLoadingMsg('Rate-Limit erreicht, warte kurz und versuche erneut...'); });
@@ -1488,7 +1500,7 @@ async function regenSection(secId) {
     for (var attempt = 1; attempt <= maxAttempts && !parsed; attempt++) {
       if (attempt > 1) document.getElementById('rs-'+secId).textContent = 'erneuter Versuch ('+attempt+')...';
       var d = await callClaude({
-        model: 'claude-sonnet-4-6',
+        model: 'claude-sonnet-5',
         max_tokens: 4000,
         system: sysBlocks,
         messages: [{role:'user', content:userContent}]
