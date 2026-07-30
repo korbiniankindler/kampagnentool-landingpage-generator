@@ -143,7 +143,7 @@ Alle Beispiele hier stammen aus dem Projektmaterial (Ad-Skripte, Landingpage-Tex
    - "Teil einer Bewegung werden."
    Gemeinschaft wird als Erfahrung beschrieben, nicht als Mitgliedschaft verkauft. Kein Community-Marketing-Vokabular.
 
-9. **Event- und CTA-Ritual. Immer gleich aufgebaut, immer diese Bausteine.**
+8. **Event- und CTA-Ritual. Immer gleich aufgebaut, immer diese Bausteine.**
    - Live-Termin mit Datum und Uhrzeit, meist als Banner:
      `🔴 Kostenfreies Live-Seminar | 🗓 [Datum] | ⏰ [Uhrzeit]`
      oder inline: `📅 Live am [Datum] um [Uhrzeit] Uhr`
@@ -299,13 +299,6 @@ Was nicht geht, mit Falsch- und Besser-Beispielen. Vieles davon ist im Projektma
   Falsch: "Diese unglaubliche, revolutionäre Methode wird Dein Leben für immer transformieren!"
   Besser: "Das Original Hellinger® Familienstellen bleibt nicht an der Oberfläche. Es geht bis an die Wurzel."
 
-- **Nicht dozieren.**
-  Keine Methoden-Vorlesung, keine Theorie um ihrer selbst willen. Wenn erklärt wird, dann kurz und sofort an einem Bild, einem Beispiel oder einer erlebbaren Situation festgemacht.
-  Falsch: drei Absätze über die Systemtheorie hinter den Grundordnungen.
-  Besser: "Es gibt Ordnungen, die wir nicht gemacht haben. Wir spüren sie erst, wenn sie fehlen."
-
-  **Das ist keine Längenbegrenzung.** Die Regel richtet sich gegen *erklärenden* Text, nicht gegen *erzählenden*. Eine Kontext-Story, die den Leser durch seine eigene Erfahrung führt ("Du hast vielleicht etliche Bücher gelesen und Seminare besucht … Und trotzdem zeigt sich manches immer wieder …"), darf und soll ausführlich sein. Sie erklärt nichts, sie erzählt, und genau davon lebt der Einstieg einer Landingpage. Kürze also die Theorie, nicht die Geschichte.
-
 - **Keine Gedankenstriche und keine Halbgeviertstriche im laufenden Text.**
   Das ist Hausstil-Regel. Nutze Kommata, Doppelpunkte, Punkte oder eigene Sätze.
 
@@ -340,9 +333,8 @@ Was nicht geht, mit Falsch- und Besser-Beispielen. Vieles davon ist im Projektma
 5. Sind Seminartitel (Pre, Titel, Sub) und Inhalts-Bullets frei von Fragezeichen und als Aussagen formuliert?
 6. Lädt der Text ein, statt zu drängen? Kein "Nur jetzt!", kein "Verpasse es nicht!", kein Superlativ?
 7. Stehen Wahrnehmungsverben (sehen, erkennen, spüren) im Vordergrund statt Leistungsverben (machen, erreichen, schaffen)?
-8. Wird irgendwo doziert, also Theorie erklärt, ohne sie an einem Bild oder einer erlebbaren Situation festzumachen? (Ein langer erzählender Abschnitt ist damit nicht gemeint, der darf ausführlich sein.)
-9. Ist der Nutzen als Zustand formuliert ("Klarheit, die bleibt"), nicht als Feature-Aufzählung?
-10. Enthält die Copy einen sauberen Event-Block (Datum, Uhrzeit, kostenfrei, CTA) und, wenn Sophie zeichnet, den Standard-Abschluss?
-11. Steht irgendwo "Webinar" statt "Live-Seminar" oder "Online-Seminar"?
-12. Steht irgendwo eine "nicht … sondern"-Konstruktion? Wenn ja, in eine fließende Perspektivverschiebung umbauen.
-13. Sind alle Verbote eingehalten? Kein Heilsversprechen, keine Esoterik, kein Gold, kein Gedankenstrich, kein "Schmerz zurückgeben", kein "blinde Liebe", keine Preise?
+8. Ist der Nutzen als Zustand formuliert ("Klarheit, die bleibt"), nicht als Feature-Aufzählung?
+9. Enthält die Copy einen sauberen Event-Block (Datum, Uhrzeit, kostenfrei, CTA) und, wenn Sophie zeichnet, den Standard-Abschluss?
+10. Steht irgendwo "Webinar" statt "Live-Seminar" oder "Online-Seminar"?
+11. Steht irgendwo eine "nicht … sondern"-Konstruktion? Wenn ja, in eine fließende Perspektivverschiebung umbauen.
+12. Sind alle Verbote eingehalten? Kein Heilsversprechen, keine Esoterik, kein Gold, kein Gedankenstrich, kein "Schmerz zurückgeben", kein "blinde Liebe", keine Preise?
