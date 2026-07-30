@@ -1,6 +1,6 @@
 ---
 name: Hellinger
-description: Stil- und Regelwerk für Copy der Hellinger®Schule. Absenderin ist Sophie Hellinger. Ziel jeder Copy im Standardfunnel ist die Anmeldung zum kostenfreien Live-Webinar als Einstieg in die Ausbildung zum Original Hellinger® Familiensteller.
+description: Stil- und Regelwerk für Copy der Hellinger®Schule. Absenderin ist Sophie Hellinger. Ziel jeder Copy im Standardfunnel ist die Anmeldung zum kostenfreien Live-Seminar als Einstieg in die Ausbildung zum Original Hellinger® Familiensteller.
 ---
 
 # Hellinger - Copywriter-Regelwerk
@@ -11,13 +11,13 @@ Dieses Preset arbeitet auf drei Ebenen. Diese sind bei jeder Copy-Aufgabe präse
 
 1. **Regelwerk (diese Datei).** Immer zuerst laden. Sie definiert, WIE geschrieben wird (Ton, Muster, Verbote, Architektur).
 2. **Wissensdatenbank (wissensdatenbank.md).** Liefert das WAS: belegte Fakten, Zahlen, Produktdetails, O-Töne, Zielgruppen, Testimonials.
-3. **Referenz-Copys aus dem Projekt.** Bestehende Landingpages, Ad-Scripts, Mails, Webinar-Skripte dienen als Stilvorbild und Fundgrube für Formulierungen. Nicht kopieren, aber tonal daran orientieren.
+3. **Referenz-Copys aus dem Projekt.** Bestehende Landingpages, Ad-Scripts, Mails, Seminar-Skripte dienen als Stilvorbild und Fundgrube für Formulierungen. Nicht kopieren, aber tonal daran orientieren.
 
 **Konfliktregeln (in dieser Reihenfolge):**
 
 - Widerspricht eine Referenz-Copy dem Regelwerk, gilt das Regelwerk.
 - Widerspricht eine Referenz-Copy der Wissensdatenbank bei Fakten, gilt die Wissensdatenbank.
-- Bei Datum, Uhrzeit, Kampagnentitel, Webinar-Thema schlägt das aktuelle Kampagnen-Briefing beide.
+- Bei Datum, Uhrzeit, Kampagnentitel, Seminar-Thema schlägt das aktuelle Kampagnen-Briefing beide.
 
 Wenn ein Kampagnen-Briefing fehlt, wird nicht geraten. Dann bitte nachfragen.
 
@@ -25,7 +25,7 @@ Wenn ein Kampagnen-Briefing fehlt, wird nicht geraten. Dann bitte nachfragen.
 
 Absenderin ist **Sophie Hellinger**. Die Copy wendet sich direkt und zugewandt an die einzelne Leserin, meist weiblich, im entwicklungsorientierten Milieu, DACH-Raum. Sophie steht als Absenderin über dem Text, spricht darin aber nicht in der Ich-Form (siehe Abschnitt 2).
 
-Die Copy dient dem **Funnel-Einstieg über das kostenfreie Live-Webinar** ("Live-Seminar" wird in neueren Assets synonym genutzt). Aus dem Webinar entsteht der Weg in die **Ausbildung zum Original Hellinger® Familiensteller** (Level 1 bis 3), meist über ein persönliches Kennenlerngespräch.
+Die Copy dient dem **Funnel-Einstieg über das kostenfreie Live-Seminar** (auch "Online-Seminar"). Aus dem Seminar entsteht der Weg in die **Ausbildung zum Original Hellinger® Familiensteller** (Level 1 bis 3), meist über ein persönliches Kennenlerngespräch.
 
 Es gibt zwei tonale Register, die im Material klar unterscheidbar sind:
 
@@ -46,7 +46,7 @@ Der Unterschied zwischen B2C und B2B ist **tonal, nicht in der Anrede**. Beide R
 
 **Grundton:** ruhig, klar, würdevoll, warm. Nie schwülstig, nie überemotional, nie reißerisch, nie belehrend.
 
-**Rhythmus:** kurze Sätze wechseln mit atmenden längeren. Pausen werden zugelassen. Fragen bleiben oft ohne unmittelbare Antwort, außerhalb des Webinartitels. Keine Staccato-Reihungen und keine Ein-Wort-Sätze zur Zuspitzung: Der Rhythmus kommt aus dem Wechsel der Satzlängen, nicht aus abgehackten Wortfolgen.
+**Rhythmus:** kurze Sätze wechseln mit atmenden längeren. Pausen werden zugelassen. Fragen bleiben oft ohne unmittelbare Antwort, außerhalb des Seminartitels. Keine Staccato-Reihungen und keine Ein-Wort-Sätze zur Zuspitzung: Der Rhythmus kommt aus dem Wechsel der Satzlängen, nicht aus abgehackten Wortfolgen.
 
 **Perspektive:** Die Copy spricht die einzelne Leserin direkt an, aber **nicht aus der Ich-Form von Sophie**. Sophie tritt nicht als Ich-Absenderin auf und adressiert den Leser nicht mit "ich". Kein anonymes "Wir" der Agentur. Wenn Team-Absender nötig (z. B. Follow-up-Mails der Schule), dann als "Dein Team der Hellinger®Schule".
 
@@ -76,7 +76,7 @@ Alle Beispiele hier stammen aus dem Projektmaterial (Ad-Skripte, Landingpage-Tex
 
    Die Frage zielt aufs Spüren, nicht aufs Beantworten. Sie holt den Leser in seine eigene Erfahrung, statt ein Argument vorzubereiten.
 
-   **Ausnahme Webinartitel:** Dieses Muster gilt **nicht für den Webinartitel** (Pre-Headline, Titel, Sub-Headline des Webinars). Dort sind Fragen nicht erwünscht. Der Webinartitel wird immer als Aussage formuliert.
+   **Ausnahme Seminartitel:** Dieses Muster gilt **nicht für den Seminartitel** (Pre-Headline, Titel, Sub-Headline des Live-Seminars; im Kampagnen-Tool heißt das Feld noch "Webinar-Titel"). Dort sind Fragen nicht erwünscht. Der Seminartitel wird immer als Aussage formuliert.
    - Falsch: "Warum wiederholt sich immer dasselbe Muster?"
    - Besser: "Wenn sich Muster wiederholen: Der Blick auf den Ursprung."
 
@@ -144,12 +144,12 @@ Alle Beispiele hier stammen aus dem Projektmaterial (Ad-Skripte, Landingpage-Tex
    - Kostenfrei-Hinweis, gerne als Banner: "100% kostenfrei"
    - CTA-Wortlaute (belegt): "Jetzt kostenfrei anmelden", "Jetzt kostenfrei anmelden!", "Mehr dazu im kostenfreien Seminar mit Sophie Hellinger", "Jetzt anmelden!", "Melde Dich jetzt kostenfrei an"
    - Für die Ausbildung: "Jetzt auf Platz bewerben", "Hier Kennenlerntermin reservieren"
-   - Nach dem Webinar häufig: "Vereinbare Dir jetzt Dein persönliches Kennenlerngespräch"
+   - Nach dem Seminar häufig: "Vereinbare Dir jetzt Dein persönliches Kennenlerngespräch"
    - Offene Einladung am Ende, vor allem in Mails: "Hier kannst Du Deinen Platz sichern.", "Wenn es für Dich stimmt, melde Dich jetzt an."
 
 ## 4. Landingpage-Architektur
 
-Die Standard-Architektur einer Hellinger-Webinar-Landingpage nach Projektmaterial:
+Die Standard-Architektur einer Hellinger-Seminar-Landingpage nach Projektmaterial:
 
 **1. Above the Fold**
 - Eyebrow-/Pre-Headline-Banner (z. B. "Original Hellinger® Methode")
@@ -186,9 +186,9 @@ Kurzer Erklärungsblock zur Methode.
 **6. Dieses Live-Seminar ist genau das Richtige für Dich, wenn …**
 Längere, atmende Bullets, die Situationen beschreiben, nicht Features:
 - "… Du spürst, dass in Deinem Leben etwas stockt: In der Liebe, im Beruf, der Gesundheit oder tief in Dir selbst."
-- "… Du nicht länger nur verstehen, sondern wirklich erleben möchtest, wie sich tiefe Veränderung anfühlt."
+- "… Du spürst, dass Verstehen allein nicht mehr weiterträgt, und tiefe Veränderung wirklich erleben möchtest."
 - "… Du systemische Zusammenhänge auch in Deinem Beruf erkennen und nutzen willst."
-- "… Du nicht nach der nächsten Methode suchst, sondern nach etwas, das Dich auf einer tieferen Ebene berührt."
+- "… Du die nächste Methode längst hinter Dir hast und nach etwas suchst, das Dich auf einer tieferen Ebene berührt."
 
 **7. Bert & Sophie-Sektion**
 Bert Hellinger als Ursprung, Sophie als Weiterführung der Quelle. Kurze Vita-Elemente. Immer sachlich, würdevoll.
@@ -196,7 +196,7 @@ Bert Hellinger als Ursprung, Sophie als Weiterführung der Quelle. Kurze Vita-El
 **8. Erfahrungsberichte / Social Proof**
 Kreisförmige Testibilder, echte Namen mit Kurzstatement. Rolle nennen (Coach, Heilpraktikerin, Therapeut) wenn belegt.
 
-**9. Erlebe Sophie Hellinger im einzigartigen Live-Webinar**
+**9. Erlebe Sophie Hellinger im einzigartigen Live-Seminar**
 Wiederholung des Nutzens auf höherer Aufladung.
 
 **10. Abschließender CTA-Block**
@@ -205,7 +205,7 @@ Meist mit einem zugewandten Einladungssatz ("Du bist herzlich eingeladen, dabei 
 **FAQ oder CTA-Wiederholung**
 Am Ende Adressierung typischer Fragen (Bereitschaft, Zeitpunkt, Alltagsintegration).
 
-**Belegtes Webinar-Format:** Live, online, kostenfrei, in der Regel vormittags 11:00 Uhr. Dauer wird als "Live-Seminar" positioniert, mit exklusiver Live-Fragerunde und teilweise Überraschungsgast. Die Termin-Nomenklatur "Live am [Datum] um [Uhrzeit] Uhr" ist Standard.
+**Belegtes Seminar-Format:** Live, online, kostenfrei, in der Regel vormittags 11:00 Uhr. Dauer wird als "Live-Seminar" positioniert, mit exklusiver Live-Fragerunde und teilweise Überraschungsgast. Die Termin-Nomenklatur "Live am [Datum] um [Uhrzeit] Uhr" ist Standard.
 
 ## 5. Dos
 
@@ -222,7 +222,7 @@ Diese Liste gilt für alle Assets. Sie enthält zusätzlich die Punkte aus dem D
 - Zugehörigkeit und gemeinsamen Weg zeigen: "Ein Raum voller Menschen, die denselben Weg gehen."
 - Konkrete Beispiele aus dem Leben (Beziehung, Erfolg, Erschöpfung, wiederkehrende Konflikte) statt abstrakter Werbepromises.
 - Termin, Uhrzeit, Kostenfrei-Hinweis und CTA am Ende jedes Copy-Blocks, konsistent.
-- Nach dem Webinar sanft in Richtung Kennenlerngespräch überleiten, ohne Druck.
+- Nach dem Seminar sanft in Richtung Kennenlerngespräch überleiten, ohne Druck.
 - Testimonials mit Kurzstatement und, wenn belegt, Rolle nennen.
 - Für Fachzielgruppen: den Werkzeug-Charakter, den Wettbewerbsvorteil und die Grenze klassischer Methoden betonen (Coaching, Therapie, Mindset, KI).
 
@@ -236,13 +236,19 @@ Was nicht geht, mit Falsch- und Besser-Beispielen. Vieles davon ist im Projektma
   Besser: "Du bist herzlich eingeladen." / "Viele Menschen, die diesen Weg gehen, haben schon einiges erlebt." / "Das Wichtigste kommt jetzt." / "Das Leben spricht mit uns, nicht laut, aber spürbar."
   Ausgenommen sind ausgewiesene, als solche gekennzeichnete Sophie-Zitate (Zitatbox mit Namensnennung) und die Signaturzeile "Deine Sophie Hellinger". Auch Aufforderungen im Absender-Ton ("Frag Dich selbst, ob Du bereit bist.") entfallen.
 
+- **Keine "nicht … sondern"-Konstruktion.**
+  Die entlastende Umdeutung bleibt (siehe Abschnitt 3, Muster 5), aber nicht in dieser Satzform. Sie klingt belehrend und stellt die falsche Annahme erst groß heraus, bevor sie sie korrigiert. Die Perspektivverschiebung soll fließend und selbstverständlich wirken.
+  Falsch: "Es liegt nicht an Deinem Partner, sondern an etwas, das viel älter ist als Du." / "Nicht durch Tun, sondern durch Erkennen." / "Festgefahrenes löst sich nicht durch Anstrengung, sondern durch Einsicht."
+  Besser: "Oft scheint es, als wäre Pech der Grund. Dahinter wirkt jedoch etwas, das viel älter ist als Du." / "Veränderung beginnt mit Erkennen." / "Festgefahrenes beginnt sich mit Einsicht zu lösen."
+  Das gilt auch für die Varianten "nicht nur … sondern auch" und "statt … lieber", wenn sie denselben Korrektur-Gestus tragen.
+
 - **Keine Staccato- und Ein-Wort-Sätze zur Zuspitzung.**
   Falsch: "Still. Klar und Berührend." / "Gefangen. Gebunden. Geprägt." / "Hart? Vielleicht. Aber wahr." / "Gleiche Themen. Gleiche Reaktionen. Gleiche Situationen." / "Klingt ungewöhnlich? Ist es nicht."
   Besser: "Es bleibt still und klar, und es berührt." / "Was Dich bindet, ist älter als Du und wirkt bis heute." / "Es sind immer wieder dieselben Themen, dieselben Reaktionen, dieselben Situationen."
   Der Rhythmus entsteht über den Wechsel kurzer und atmender Sätze, nicht über abgehackte Reihungen.
 
-- **Keine Fragen im Webinartitel.**
-  Pre-Headline, Titel und Sub-Headline des Webinars werden als Aussage formuliert. Fragen ohne Antwort bleiben ein Mittel der Bodycopy, nicht des Titels.
+- **Keine Fragen im Seminartitel.**
+  Pre-Headline, Titel und Sub-Headline des Live-Seminars werden als Aussage formuliert. Fragen ohne Antwort bleiben ein Mittel der Bodycopy, nicht des Titels.
   Falsch: "Bist Du bereit für Deinen Platz?"
   Besser: "Der Platz, der wirklich zu Dir gehört."
 
@@ -293,6 +299,12 @@ Was nicht geht, mit Falsch- und Besser-Beispielen. Vieles davon ist im Projektma
 - **Keine anti-therapeutische oder anti-Coaching-Rhetorik.**
   Kein Bashing anderer Berufsstände. Sophie positioniert die Methode als Ergänzung und tiefere Ebene, nicht als Feindbild gegen Coaching oder Therapie.
 
+- **Kein "Webinar" in der Copy.**
+  Das kostenfreie Event heißt "Live-Seminar" oder "Online-Seminar". "Webinar", "Live-Webinar" und "Webinar-Titel" sind überholt und erscheinen in keinem Asset.
+  Falsch: "Melde Dich jetzt zum kostenfreien Webinar an." / "Im Webinar erfährst Du …"
+  Besser: "Melde Dich jetzt zum kostenfreien Live-Seminar an." / "Im Live-Seminar erfährst Du …"
+  Ausnahme: Feldbezeichnungen im Kampagnen-Tool und belegte Zitate aus älterem Material (siehe wissensdatenbank.md) bleiben unverändert. In neu geschriebener Copy nie.
+
 - **Kein "Familienkonstellation" statt "Familienstellen".**
   Der Begriff "Familienstellen" bleibt unübersetzt und ist der Terminus technicus. "Familienkonstellation" beschreibt etwas historisch anderes.
 
@@ -303,7 +315,7 @@ Was nicht geht, mit Falsch- und Besser-Beispielen. Vieles davon ist im Projektma
   Sophie nutzt ihn nicht. Die gemeinte Dynamik (Kinder übernehmen aus Liebe unbewusst fremde Schicksale und Rollen) über die belegten Begriffe ausdrücken: Loyalität, Bindung, übernommene Verantwortung, Verstrickung.
 
 - **Keine Preise nennen.**
-  Weder Webinar- noch Ausbildungspreise oder Paketpreise erscheinen in der Copy. Der Webinar-Einstieg ist kostenfrei; Konditionen zur Ausbildung klärt das persönliche Kennenlerngespräch.
+  Weder Seminar- noch Ausbildungspreise oder Paketpreise erscheinen in der Copy. Der Seminar-Einstieg ist kostenfrei; Konditionen zur Ausbildung klärt das persönliche Kennenlerngespräch.
   Gemeint sind konkrete Beträge. Der **Hinweis auf eine Frist** ohne Betrag ist zulässig, wenn er real ist: "Die Frühbucherpreise gelten bis [Datum]." Sobald eine Zahl genannt würde, gilt das Verbot.
 
 ## 7. Kontrollfragen vor jeder Ausgabe
@@ -312,10 +324,12 @@ Was nicht geht, mit Falsch- und Besser-Beispielen. Vieles davon ist im Projektma
 2. Ist "Du" durchgängig großgeschrieben, und kein "Sie" versehentlich reingerutscht?
 3. Steht irgendwo ein "ich" von Sophie an den Leser? Wenn ja, raus und in eine Aussage umbauen. Ausgenommen: gekennzeichnete Zitatbox und Signaturzeile.
 4. Sind Staccato- und Ein-Wort-Reihungen vermieden?
-5. Ist der Webinartitel (Pre, Titel, Sub) frei von Fragen und als Aussage formuliert?
+5. Ist der Seminartitel (Pre, Titel, Sub) frei von Fragen und als Aussage formuliert?
 6. Lädt der Text ein, statt zu drängen? Kein "Nur jetzt!", kein "Verpasse es nicht!", kein Superlativ?
 7. Stehen Wahrnehmungsverben (sehen, erkennen, spüren) im Vordergrund statt Leistungsverben (machen, erreichen, schaffen)?
 8. Gibt es einen Theorieblock, der länger als zwei Sätze erklärt, ohne zurück ins Erleben zu führen?
 9. Ist der Nutzen als Zustand formuliert ("Klarheit, die bleibt"), nicht als Feature-Aufzählung?
 10. Enthält die Copy einen sauberen Event-Block (Datum, Uhrzeit, kostenfrei, CTA) und, wenn Sophie zeichnet, den Standard-Abschluss?
-11. Sind alle Verbote eingehalten? Kein Heilsversprechen, keine Esoterik, kein Gold, kein Gedankenstrich, kein "Schmerz zurückgeben", kein "blinde Liebe", keine Preise?
+11. Steht irgendwo "Webinar" statt "Live-Seminar" oder "Online-Seminar"?
+12. Steht irgendwo eine "nicht … sondern"-Konstruktion? Wenn ja, in eine fließende Perspektivverschiebung umbauen.
+13. Sind alle Verbote eingehalten? Kein Heilsversprechen, keine Esoterik, kein Gold, kein Gedankenstrich, kein "Schmerz zurückgeben", kein "blinde Liebe", keine Preise?
