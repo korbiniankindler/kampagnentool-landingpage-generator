@@ -390,6 +390,7 @@
 </div>
 
 </div>
+<script src="shared/json-extract.js"></script>
 <script src="shared/copywriter-presets.js"></script>
 <script>
 var PROXY_URL = 'https://claude.korbinian.workers.dev/';
@@ -928,78 +929,6 @@ function addCustomSection() {
   renderSecList();
 }
 
-/* ===== JSON PARSING (robust) ===== */
-// opts.salvage: wenn true und die Antwort abgeschnitten wurde (z.B. Token-Limit),
-// wird versucht offene Strings/Arrays/Objekte automatisch zu schließen statt
-// hart zu scheitern. Nur als letzter Rettungsversuch nach Retries nutzen -
-// per Default aus, damit echte Trunkierungen normal einen Retry auslösen.
-function extractJSON(raw, opts) {
-  opts = opts || {};
-  var cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim();
-  var start = cleaned.indexOf('{');
-  if (start === -1) throw new Error('Kein JSON-Objekt in der Antwort gefunden.');
-
-  // Repariert das JSON zeichenweise: entkommt Zeilenumbrüche innerhalb von
-  // Strings und erkennt/entkommt nicht escapte Anführungszeichen innerhalb
-  // von Textwerten (z.B. wenn die KI in einem Satz ein Wort in "..." setzt),
-  // indem geprüft wird ob nach einem " tatsächlich ein JSON-Trenner folgt.
-  var stack = [], inStr = false, escape = false, closed = false;
-  var candidate = '';
-  for (var i = start; i < cleaned.length; i++) {
-    var ch = cleaned[i];
-    if (escape) { candidate += ch; escape = false; continue; }
-    if (ch === '\\' && inStr) { candidate += ch; escape = true; continue; }
-    if (ch === '"') {
-      if (inStr) {
-        var j = i + 1;
-        while (j < cleaned.length && /\s/.test(cleaned[j])) j++;
-        var next = cleaned[j];
-        var isTerminator = (next === undefined || next === ',' || next === '}' || next === ']' || next === ':');
-        if (isTerminator) { inStr = false; candidate += ch; }
-        else { candidate += '\\"'; }
-      } else {
-        inStr = true; candidate += ch;
-      }
-      continue;
-    }
-    if (inStr) {
-      if (ch === '\n') { candidate += '\\n'; continue; }
-      if (ch === '\r') { candidate += '\\r'; continue; }
-      if (ch === '\t') { candidate += '\\t'; continue; }
-      candidate += ch;
-      continue;
-    }
-    candidate += ch;
-    if (ch === '{' || ch === '[') stack.push(ch);
-    else if (ch === '}' || ch === ']') {
-      stack.pop();
-      if (stack.length === 0) { closed = true; break; }
-    }
-  }
-
-  if (closed) {
-    candidate = candidate.replace(/,\s*([}\]])/g, '$1');
-    try {
-      return JSON.parse(candidate);
-    } catch(e) {
-      throw new Error('JSON-Parse fehlgeschlagen: ' + e.message + '. Bitte erneut versuchen.');
-    }
-  }
-
-  if (!opts.salvage) throw new Error('JSON-Objekt ist unvollständig (Antwort wurde abgeschnitten, evtl. Token-Limit).');
-
-  // Letzter Rettungsversuch: offene Struktur schließen und parsen
-  var salvage = candidate;
-  if (inStr) salvage += '"';
-  salvage = salvage.replace(/,\s*$/, '');
-  for (var k = stack.length - 1; k >= 0; k--) salvage += (stack[k] === '{' ? '}' : ']');
-  salvage = salvage.replace(/,\s*([}\]])/g, '$1');
-  try {
-    return JSON.parse(salvage);
-  } catch(e2) {
-    throw new Error('JSON-Objekt ist unvollständig und konnte nicht gerettet werden (Antwort wurde abgeschnitten).');
-  }
-}
 
 function sectionSchemaHint(s) {
   var schemas = {
@@ -1214,6 +1143,7 @@ async function generateChunk(chunk, sysBlocks, ctx, attempt) {
     '- Testimonials: exakt 3 Einträge als Array mit je "quote", "name", "role"\n' +
     '- Benefits items: exakt 3 Einträge als Array mit je "title" und "text"\n' +
     '- Alle String-Werte EINZEILIG (kein echter Zeilenumbruch, ggf. \\n verwenden)\n' +
+    '- Innerhalb von Textwerten NIEMALS gerade Anführungszeichen ("...") verwenden - sie beenden den String und zerstören das JSON. Zum Zitieren im Fließtext typografische Anführungszeichen nutzen: „...".\n' +
     '- Referent/Host NIEMALS erfinden: Verwende für Authority/Speaker und alle Referenten-Nennungen ausschließlich die Person aus der Kampagnen-Beschreibung bzw. dem Copywriter-Preset (Name, Titel, belegte Fakten). Fehlen Angaben zur Person komplett, schreibe neutral ohne erfundene Namen, Qualifikationen oder Erfahrungsjahre und setze Platzhalter in eckigen Klammern, z.B. [Name Referent].\n' +
     '- Alle CTAs auf kostenfreie Webinar-Anmeldung\n' +
     '- Sprache: Deutsch\n\n' +

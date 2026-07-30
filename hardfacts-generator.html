@@ -212,6 +212,7 @@ body{background:#fff;padding:0}
 
 </div>
 
+<script src="shared/json-extract.js"></script>
 <script src="shared/copywriter-presets.js"></script>
 <script>
 var PROXY_URL = 'https://claude.korbinian.workers.dev/';
@@ -509,9 +510,11 @@ async function callAPI(systemP, userP) {
  messages: [{role:'user', content:userContent}]
  });
  const raw = data.content.map(b=>b.text||'').join('');
- const match = raw.match(/\{[\s\S]*\}/);
- if (!match) throw new Error('Kein JSON in der Antwort');
- return JSON.parse(match[0]);
+ /* extractJSON aus shared/json-extract.js statt JSON.parse: die KI zitiert in
+    der Strategie-Begruendung regelmaessig den Kampagnentitel und laesst die
+    inneren Anfuehrungszeichen unescaped - reines JSON.parse scheitert daran
+    hart, weil dieser Pfad keine Retry- oder Salvage-Logik hat. */
+ return extractJSON(raw, {salvage: true});
 }
 
 function baseSystemPrompt() {
@@ -520,7 +523,8 @@ function baseSystemPrompt() {
 TITEL-STRUKTUREN: "Vom Chaos zum System", Zeitgeschehen-Hijacking, Faktencheck-Angle, Frage-Formate, Pre-Headline / Haupttitel / Sub-Headline (3 Ebenen immer).
 BULLETPOINTS: konkrete Zahlen, Neugier + Versprechen. Fragewörter (Warum/Wie/Welche/Was) sind ein Mittel von mehreren, kein Muss - eine reine Fragenliste wirkt monoton.
 TONALITÄT: direkt, klar, Experten-Kontext, Curiosity Gaps, bei Gesundheit formales "Sie".
-Nur gültiges JSON zurückgeben - kein Markdown, keine Backticks.`;
+Nur gültiges JSON zurückgeben - kein Markdown, keine Backticks.
+WICHTIG für gültiges JSON: Innerhalb von Textwerten NIEMALS gerade Anführungszeichen ("...") verwenden - sie beenden den String und zerstören das JSON. Wenn Du im Fließtext etwas zitierst (z.B. einen Titel), nutze typografische Anführungszeichen: „...".`;
 }
 
 /* System-Prompt als Blöcke: gemeinsamer Preset-Cache-Block (siehe
