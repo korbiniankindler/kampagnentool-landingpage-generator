@@ -9,7 +9,7 @@ description: Belegte Fakten, O-Töne, Produktdetails, Testimonials und Complianc
 
 Belegte Vita-Fakten aus dem Projektmaterial (Datei "Sophie Hellinger.docx", "SH_Neues LPKonzept_Webinar Mai 2.pdf", "Hellinger Ausbildung Informationsbroschüre_compressed.pdf"):
 
-- Sophie Hellinger ist seit 2018 die alleinige, maßgebende Repräsentantin des Original Hellinger® Familienstellens. Bert Hellinger hat ihr in diesem Jahr sein Werk, seine sämtlichen Aufgaben und seine Firmenanteile übertragen.
+- Sophie Hellinger ist seit 2018 die alleinige, maßgebende Repräsentantin des Original Hellinger® Familienstellens. Bert Hellinger hat ihr in diesem Jahr sein Werk übertragen.
 - Sie begegnete Bert Hellinger vor mehr als zwanzig Jahren. Vor dieser Begegnung hatte sie Ausbildungen in Ayurveda und Traditioneller Chinesischer Medizin (TCM) absolviert, verschiedene Meditationsarten und alternative Heilmethoden studiert.
 - Sie leitete im Ausland ein Gesundheitszentrum für alternative Heilmethoden und ein Seminarhaus mit angeschlossenem Hotel.
 - Beruflicher Vorlauf: erfolgreiche Unternehmerin in den Sparten Immobilien und Bauträgertätigkeit.
