@@ -1005,7 +1005,7 @@ function sectionSchemaHint(s) {
   var schemas = {
     hero: '{"announcement":"...", "preHeadline":"...", "h1":"...", "h2":"...", "bulletpoints":[{"title":"...","text":"..."},{"title":"...","text":"..."},{"title":"...","text":"..."},{"title":"...","text":"..."}], "ctaButton":"...", "ctaSubline":"...", "videoPlaceholder":"[16:9 Video-Platzhalter]"}',
     trustbar: '{"note":"Platzhalter-Hinweis Text für Presselogos"}',
-    introtext: '{"badge":"...", "headline":"...", "para1":"...", "para2":"...", "para3":"...", "closingLine":"..."}',
+    introtext: '{"badge":"...", "headline":"...", "paragraphs":["...", "...", "...", "..."], "closingLine":"..."}',
     problem: '{"headline":"...", "introCopy":"...", "checklist":[{"title":"...","text":"..."},{"title":"...","text":"..."},{"title":"...","text":"..."},{"title":"...","text":"..."},{"title":"...","text":"..."}], "transitionCopy":"...", "ctaButton":"..."}',
     framework: '{"headline":"...", "bodyCopy":"..."}',
     social: '{"headline":"...", "testimonials":[{"quote":"...","name":"...","role":"..."},{"quote":"...","name":"...","role":"..."},{"quote":"...","name":"...","role":"..."}]}',
@@ -1024,14 +1024,19 @@ function sectionSchemaHint(s) {
    Hellinger-Webinar, HH-NEM, HH-B2B, HH-Reset). */
 var COPY_LENGTH_RULES = [
   'TEXTLAENGEN (verbindlich): Reine Fliesstext-Bloecke duerfen und sollen ausfuehrlich sein - knappe Stichpunkte wirken auf einer Landingpage duenn und nehmen der Copy die Wirkung. Richtwerte:',
-  '- introtext para1/para2/para3: je 45-70 Woerter. Variiere die Absatzlaenge spuerbar (ein kurzer, verdichteter Absatz neben zwei ausfuehrlichen) - gleich lange Bloecke lesen sich monoton.',
+  '- introtext "paragraphs": 3 bis 6 Absaetze, je 25-70 Woerter. Die Anzahl richtet sich danach, was die Story braucht - lieber ein Absatz mehr als ein ueberladener. Variiere die Absatzlaenge deutlich: ein kurzer, verdichteter Absatz (25-35 Woerter) neben ausfuehrlichen (55-70) erzeugt Lesefluss, gleich lange Bloecke lesen sich monoton.',
   '- framework bodyCopy und jeder andere freie Fliesstext-Block: 90-140 Woerter.',
   '- problem introCopy und transitionCopy: je 30-50 Woerter.',
   '- checklist-, items- und bulletpoints-Eintraege: "title" 2-6 Woerter, "text" 20-35 Woerter.',
   '- authority bioBlock: 60-100 Woerter.',
   '- Ausnahmen, die kurz bleiben: closingLine, scarcityCopy, ctaSubline, ctaButton, badge, announcement - je ein Satz oder weniger.',
   '',
-  'TESTIMONIALS (verbindlich): Zitate stammen WOERTLICH und UNGEKUERZT aus der Wissensdatenbank des Presets. Nicht umformulieren, nicht zusammenfassen, keine Saetze weglassen - ein belegtes Zitat ist ein Zitat, kein Rohmaterial. "name" exakt wie belegt. "role" nur setzen, wenn die Wissensdatenbank eine Rolle nennt (z.B. "Coach", "Heilpraktikerin"); ist keine belegt, "role" leer lassen statt eine allgemeine Rolle wie "Teilnehmerin" zu erfinden. Enthaelt die Wissensdatenbank keine Testimonials, Platzhalter in eckigen Klammern setzen.'
+  'TESTIMONIALS: Zitat, Name und Berufsrolle werden frei formuliert - als Entwurf, den die Marke spaeter durch echte Stimmen ersetzt oder freigibt. Nicht aus der Wissensdatenbank abschreiben, sondern zur konkreten Kampagne passend neu schreiben.',
+  '- Laenge je Zitat 25-45 Woerter. Zwei bis drei Saetze: erst die Ausgangslage, dann was sich veraendert hat. Ein Halbsatz wirkt beliebig.',
+  '- Sprache wie echte Teilnehmer, nicht wie Marketing: konkrete Alltagssituationen statt Superlative, ruhig auch mit einem Vorbehalt oder einer anfaenglichen Skepsis.',
+  '- "name": Vorname plus abgekuerzter Nachname (z.B. "Martina K."). Drei klar unterscheidbare Personen, nicht dreimal derselbe Typ.',
+  '- "role": frei gewaehlt und zur Zielgruppe passend (z.B. "Projektleiterin", "Selbststaendig", "Vater von zwei Kindern"). KEINE geschuetzten Berufsbezeichnungen erfinden - Arzt, Aerztin, Heilpraktiker, Psychotherapeut und vergleichbare Titel nur, wenn die Wissensdatenbank eine solche Person tatsaechlich belegt.',
+  '- Keine erfundenen Zahlen, Messwerte, Zeitraeume oder Heilungsverlaeufe in den Zitaten.'
 ].join('\n');
 
 /* ===== GENERATION (Phase 3) ===== */
@@ -1203,7 +1208,7 @@ async function generateChunk(chunk, sysBlocks, ctx, attempt) {
     'Regeln:\n' +
     '- KEINE inhaltlichen Dopplungen zwischen Sections: Jede Section erfüllt exakt ihre Rolle laut Seitenaufbau' + (ctx.planText ? ' und Content-Plan' : '') + '. Argumente, Beispiele, Formulierungen und Narrative, die zu einer anderen Section gehören, hier NICHT wiederholen - auch nicht umformuliert. Schreibe jede Section aus ihrem eigenen Blickwinkel.\n' +
     '- Hero: announcement = kurzer Termin-Hinweis für die Announcement-Bar ganz oben (Live-Charakter, basierend auf "Termin", z.B. "LIVE-Webinar am [Termin]"). Verwende die Hardfacts DIREKT und ungekürzt: preHeadline = exakt aus "Pre-Headline", h1 = exakt aus "Titel", h2 = exakt aus "Sub-Headline". Die bulletpoints kommen 1:1 aus "Webinar-Inhalte" - parse jeden Bullet als {"title":"...", "text":"..."} wobei title der Hauptpunkt ist und text die Erklärung (falls vorhanden, sonst leer lassen). Generiere 4 Bulletpoints. ctaButton = "Jetzt kostenlos anmelden", ctaSubline = "100% kostenfrei am [Termin]", videoPlaceholder = "[16:9 Video-Platzhalter: Anmeldeseiten-Video mit Referent]"\n' +
-    '- introtext (Intro Text): badge = kurze Pill-Kategorie (max 5 Worte), headline = aufmerksamkeitsstarke H2, para1/para2/para3 = je ein ausführlicher Fließtext-Absatz (Länge siehe TEXTLAENGEN unten) der eine Kontext-Story aufbaut (gesellschaftlicher Wandel, Warum-jetzt-Narrativ, Marktentwicklung oder ähnliches passend zur Kampagne), closingLine = Brücken-Satz der auf den Referenten und das Webinar leitet. Den Aufhänger der Kontext-Story frisch und spezifisch für DIESE Kampagne wählen: NICHT automatisch das Zeitgeschehen-Ereignis oder den Einstieg der Referenz-Copy übernehmen (z.B. eine bestimmte Reform) - die Referenz zeigt nur, WIE so eine Story erzählt wird, nicht WORÜBER. Belegte Fakten aus der Wissensdatenbank passend zum Kampagnen-Thema auswählen.\n' +
+    '- introtext (Intro Text): badge = kurze Pill-Kategorie (max 5 Worte), headline = aufmerksamkeitsstarke H2, paragraphs = Array aus 3-6 Fließtext-Absätzen (Anzahl und Länge siehe TEXTLAENGEN unten), die zusammen eine Kontext-Story aufbauen (gesellschaftlicher Wandel, Warum-jetzt-Narrativ, Marktentwicklung oder ähnliches passend zur Kampagne), closingLine = Brücken-Satz der auf den Referenten und das Webinar leitet. Den Aufhänger der Kontext-Story frisch und spezifisch für DIESE Kampagne wählen: NICHT automatisch das Zeitgeschehen-Ereignis oder den Einstieg der Referenz-Copy übernehmen (z.B. eine bestimmte Reform) - die Referenz zeigt nur, WIE so eine Story erzählt wird, nicht WORÜBER. Belegte Fakten aus der Wissensdatenbank passend zum Kampagnen-Thema auswählen.\n' +
     '- Educational Gap (framework): headline + bodyCopy als erklärenden Fließtext-Block, KEIN Kompass-Prinzip\n' +
     '- Problem-Checklist: exakt 5 Einträge als Array mit je "title" und "text"\n' +
     '- Testimonials: exakt 3 Einträge als Array mit je "quote", "name", "role"\n' +
@@ -1397,8 +1402,8 @@ function renderSectionFields(s) {
   if (s.id === 'introtext') {
     var out = fieldBlock(s.id,'badge','Badge/Pill',d.badge);
     out += fieldBlock(s.id,'headline','Headline',d.headline);
-    ['para1','para2','para3'].forEach(function(k,i){
-      if (d[k]) out += fieldBlock(s.id, k, 'Absatz '+(i+1), d[k]);
+    (d.paragraphs || []).forEach(function(p,i){
+      if (p) out += fieldBlock(s.id, 'paragraphs.'+i, 'Absatz '+(i+1), p);
     });
     if (d.closingLine) out += fieldBlock(s.id,'closingLine','Abschluss-Satz (Brücke zum Webinar)',d.closingLine);
     return out;
@@ -1445,7 +1450,7 @@ function fieldBlock(secId, path, label, value) {
 }
 
 function labelFor(k) {
-  var map = {h1:'H1 Haupttitel',h2:'H2 Sub-Headline',preHeadline:'Pre-Headline',ctaButton:'CTA Button',ctaSubline:'CTA Subline',dozentLine:'Dozenten-Zeile',announcement:'Announcement Bar (Termin-Hinweis)',bodyCopy:'Body Copy',badge:'Badge/Pill',para1:'Absatz 1',para2:'Absatz 2',para3:'Absatz 3',closingLine:'Abschluss-Satz (Brücke zum Webinar)',bioBlock:'Bio',webinarRole:'Rolle im Webinar',scarcityCopy:'Scarcity Copy',note:'Hinweis',headline:'Headline',introCopy:'Intro Copy',transitionCopy:'Transition Copy',text:'Text',title:'Titel',bulletpoints:'Inhalts-Bulletpoints',videoPlaceholder:'Video (16:9 Platzhalter)',testimonials:'Testimonials',links:'Links',checklist:'Checkliste',items:'Punkte',quote:'Zitat',name:'Name',role:'Rolle'};
+  var map = {h1:'H1 Haupttitel',h2:'H2 Sub-Headline',preHeadline:'Pre-Headline',ctaButton:'CTA Button',ctaSubline:'CTA Subline',dozentLine:'Dozenten-Zeile',announcement:'Announcement Bar (Termin-Hinweis)',bodyCopy:'Body Copy',badge:'Badge/Pill',paragraphs:'Absätze',closingLine:'Abschluss-Satz (Brücke zum Webinar)',bioBlock:'Bio',webinarRole:'Rolle im Webinar',scarcityCopy:'Scarcity Copy',note:'Hinweis',headline:'Headline',introCopy:'Intro Copy',transitionCopy:'Transition Copy',text:'Text',title:'Titel',bulletpoints:'Inhalts-Bulletpoints',videoPlaceholder:'Video (16:9 Platzhalter)',testimonials:'Testimonials',links:'Links',checklist:'Checkliste',items:'Punkte',quote:'Zitat',name:'Name',role:'Rolle'};
   return map[k] || k;
 }
 
@@ -1660,6 +1665,17 @@ function fieldsToBlocks(d) {
   Object.keys(d).forEach(function(k) {
     var val = d[k];
     var label = labelFor(k);
+    /* paragraphs ist Fliesstext, kein Aufzaehlungsfeld: als nummerierte
+       Absaetze exportieren statt als Bullet-Liste (sonst landet die Intro-
+       Story in DOC und PDF als Stichpunkte). */
+    if (k === 'paragraphs' && Array.isArray(val)) {
+      val.forEach(function(p, i) {
+        if (!p) return;
+        blocks.push({type:'label', text: 'Absatz ' + (i + 1)});
+        blocks.push({type:'text', text: String(p)});
+      });
+      return;
+    }
     if (Array.isArray(val)) {
       blocks.push({type:'h2', text: label});
       val.forEach(function(item, i) {
