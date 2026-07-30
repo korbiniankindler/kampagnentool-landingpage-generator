@@ -80,7 +80,14 @@ Alle Beispiele hier stammen aus dem Projektmaterial (Ad-Skripte, Landingpage-Tex
    - Falsch: "Warum wiederholt sich immer dasselbe Muster?"
    - Besser: "Wenn sich Muster wiederholen: Der Blick auf den Ursprung."
 
-   Das gilt für alle drei Titel-Ebenen, auch für Pre-Headline und Sub-Headline. Fragen bleiben der Fließ- und Bodycopy, den Bullets und den Ad-Hooks vorbehalten.
+   **Ausnahme Seminar-Inhalte:** Dieses Muster gilt ebenfalls **nicht für die Inhalts-Bullets** (die "Webinar-Inhalte" aus Modul 1, die später die Bullets auf der Anmeldeseite bilden). Dort steht **keine einzige Frage**, auch nicht als Teilsatz mit Fragezeichen. Jeder Bullet ist eine Aussage.
+   - Falsch: "Warum wiederholen sich bestimmte Konflikte in Deinem Leben?"
+   - Besser: "Warum sich bestimmte Konflikte wiederholen, auch wenn Du sie längst verstanden hast."
+   - Besser: "Erkenne, welche Ordnung hinter Deinen wiederkehrenden Themen wirkt."
+
+   Ein Fragewort am Satzanfang ist erlaubt, solange der Satz eine Aussage bleibt und ohne Fragezeichen endet.
+
+   Fragen bleiben damit der Fließ- und Bodycopy sowie den Ad-Hooks vorbehalten.
 
 2. **Tiefen-Kontrast: Oberfläche gegen Wurzel, sichtbar gegen wirksam, Symptom gegen Ursache.**
    - "Im Unterschied zu vielen Coaching- oder Therapieformen bleibt das Original Hellinger® Familienstellen nicht an der Oberfläche. Es geht bis an die Wurzel."
@@ -194,7 +201,7 @@ Längere, atmende Bullets, die Situationen beschreiben, nicht Features:
 Bert Hellinger als Ursprung, Sophie als Weiterführung der Quelle. Kurze Vita-Elemente. Immer sachlich, würdevoll.
 
 **8. Erfahrungsberichte / Social Proof**
-Kreisförmige Testibilder, echte Namen mit Kurzstatement. Rolle nennen (Coach, Heilpraktikerin, Therapeut) wenn belegt.
+Kreisförmige Testibilder, Name mit Kurzstatement, dazu die Rolle. Zitat, Name und Rolle werden frei formuliert, sofern keine belegte Stimme vorliegt: drei unterscheidbare Personen, Vorname plus abgekürzter Nachname, Teilnehmersprache statt Marketing. Rollen alltagsnah (Projektleiterin, Selbstständig, Vater von zwei Kindern); geschützte Berufsbezeichnungen nur bei belegten Personen.
 
 **9. Erlebe Sophie Hellinger im einzigartigen Live-Seminar**
 Wiederholung des Nutzens auf höherer Aufladung.
@@ -223,7 +230,7 @@ Diese Liste gilt für alle Assets. Sie enthält zusätzlich die Punkte aus dem D
 - Konkrete Beispiele aus dem Leben (Beziehung, Erfolg, Erschöpfung, wiederkehrende Konflikte) statt abstrakter Werbepromises.
 - Termin, Uhrzeit, Kostenfrei-Hinweis und CTA am Ende jedes Copy-Blocks, konsistent.
 - Nach dem Seminar sanft in Richtung Kennenlerngespräch überleiten, ohne Druck.
-- Testimonials mit Kurzstatement und, wenn belegt, Rolle nennen.
+- Testimonials mit Kurzstatement, Namen und Rolle. Zitat, Name und Rolle dürfen frei formuliert werden, wenn keine belegte Stimme vorgegeben ist. Ausnahme: geschützte Berufsbezeichnungen (Arzt, Heilpraktiker, Psychotherapeut) nur, wenn eine solche Person belegt ist, und keine erfundenen Zitate unter dem Namen einer real belegten Person.
 - Für Fachzielgruppen: den Werkzeug-Charakter, den Wettbewerbsvorteil und die Grenze klassischer Methoden betonen (Coaching, Therapie, Mindset, KI).
 
 ## 6. Sprachliches Ausschlussregelwerk (Verbote)
@@ -247,10 +254,12 @@ Was nicht geht, mit Falsch- und Besser-Beispielen. Vieles davon ist im Projektma
   Besser: "Es bleibt still und klar, und es berührt." / "Was Dich bindet, ist älter als Du und wirkt bis heute." / "Es sind immer wieder dieselben Themen, dieselben Reaktionen, dieselben Situationen."
   Der Rhythmus entsteht über den Wechsel kurzer und atmender Sätze, nicht über abgehackte Reihungen.
 
-- **Keine Fragen im Seminartitel.**
-  Pre-Headline, Titel und Sub-Headline des Live-Seminars werden als Aussage formuliert. Fragen ohne Antwort bleiben ein Mittel der Bodycopy, nicht des Titels.
-  Falsch: "Bist Du bereit für Deinen Platz?"
+- **Keine Fragen im Seminartitel und in den Inhalts-Bullets.**
+  Pre-Headline, Titel und Sub-Headline des Live-Seminars werden als Aussage formuliert. Dasselbe gilt für die Inhalts-Bullets ("Webinar-Inhalte" aus Modul 1, später die Bullets der Anmeldeseite): dort steht keine einzige Frage, auch kein Teilsatz mit Fragezeichen. Fragen ohne Antwort bleiben ein Mittel der Bodycopy.
+  Falsch (Titel): "Bist Du bereit für Deinen Platz?"
   Besser: "Der Platz, der wirklich zu Dir gehört."
+  Falsch (Bullet): "Welche innere Haltung entscheidet, ob Du handlungsfähig bleibst?"
+  Besser: "Welche innere Haltung darüber entscheidet, ob Du handlungsfähig bleibst oder feststeckst."
 
 - **Keine Heilsversprechen, keine Diagnosesprache.**
   Falsch: "Das heilt Deine Depression / Dein Trauma / Deine Angststörung."
@@ -324,7 +333,7 @@ Was nicht geht, mit Falsch- und Besser-Beispielen. Vieles davon ist im Projektma
 2. Ist "Du" durchgängig großgeschrieben, und kein "Sie" versehentlich reingerutscht?
 3. Steht irgendwo ein "ich" von Sophie an den Leser? Wenn ja, raus und in eine Aussage umbauen. Ausgenommen: gekennzeichnete Zitatbox und Signaturzeile.
 4. Sind Staccato- und Ein-Wort-Reihungen vermieden?
-5. Ist der Seminartitel (Pre, Titel, Sub) frei von Fragen und als Aussage formuliert?
+5. Sind Seminartitel (Pre, Titel, Sub) und Inhalts-Bullets frei von Fragezeichen und als Aussagen formuliert?
 6. Lädt der Text ein, statt zu drängen? Kein "Nur jetzt!", kein "Verpasse es nicht!", kein Superlativ?
 7. Stehen Wahrnehmungsverben (sehen, erkennen, spüren) im Vordergrund statt Leistungsverben (machen, erreichen, schaffen)?
 8. Gibt es einen Theorieblock, der länger als zwei Sätze erklärt, ohne zurück ins Erleben zu führen?
