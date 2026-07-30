@@ -838,8 +838,8 @@ async function suggestSectionsAI() {
       '- "id": einzigartiger snake_case Identifier\n' +
       '- "name": Anzeigename der Section (kurz, max 4 Worte)\n' +
       '- "desc": kurze Beschreibung was diese Section enthält (max 12 Worte)\n\n' +
-      'Nutze diese Standard-IDs wenn passend (damit das Rendering-System greift): hero, trustbar, introtext, problem, framework, social, authority, benefits, finalcta\n' +
-      'Für neue/eigene Sections wähle beschreibende IDs wie "faq", "guarantee", "price", "video_section" etc.\n\n' +
+      'Nutze diese Standard-IDs wenn passend (damit das Rendering-System greift): hero, trustbar, introtext, problem, framework, social, authority, benefits, finalcta, faq\n' +
+      'Für neue/eigene Sections wähle beschreibende IDs wie "guarantee", "price", "video_section" etc.\n\n' +
       'Beispiel-Output:\n[{"id":"hero","name":"Hero","desc":"Hauptheadline, CTA und Video"},{"id":"problem","name":"Problem","desc":"Selbstreflexions-Checkliste"}]\n\n' +
       'NUR das JSON-Array, kein anderer Text, keine Backticks.';
 
@@ -859,7 +859,7 @@ async function suggestSectionsAI() {
     var parsed = JSON.parse(cleaned.slice(arrStart, arrEnd+1));
 
     sections = parsed.map(function(s) {
-      return { id: s.id||('custom_'+Math.random().toString(36).slice(2,6)), name: s.name||s.id, desc: s.desc||'', active: true, custom: !['hero','trustbar','introtext','problem','framework','social','authority','benefits','finalcta'].includes(s.id) };
+      return { id: s.id||('custom_'+Math.random().toString(36).slice(2,6)), name: s.name||s.id, desc: s.desc||'', active: true, custom: !['hero','trustbar','introtext','problem','framework','social','authority','benefits','finalcta','faq'].includes(s.id) };
     });
 
     document.getElementById('sec-editor-label').textContent = 'Sections – KI-Vorschlag';
@@ -940,7 +940,8 @@ function sectionSchemaHint(s) {
     social: '{"headline":"...", "testimonials":[{"quote":"...","name":"...","role":"..."},{"quote":"...","name":"...","role":"..."},{"quote":"...","name":"...","role":"..."}]}',
     authority: '{"headline":"...", "bioBlock":"...", "webinarRole":"...", "ctaButton":"..."}',
     benefits: '{"headline":"...", "items":[{"title":"...","text":"..."},{"title":"...","text":"..."},{"title":"...","text":"..."}]}',
-    finalcta: '{"headline":"...", "scarcityCopy":"...", "ctaButton":"...", "ctaSubline":"..."}'
+    finalcta: '{"headline":"...", "scarcityCopy":"...", "ctaButton":"...", "ctaSubline":"..."}',
+    faq: '{"headline":"...", "faqs":[{"question":"...","answer":"..."}, {"question":"...","answer":"..."}], "ctaButton":"... (falls passend)"}'
   };
   return schemas[s.id] || '{"headline":"...", "bodyCopy":"...", "ctaButton":"... (falls passend)"}';
 }
@@ -960,6 +961,7 @@ var COPY_LENGTH_RULES = [
   '- problem introCopy und transitionCopy: je 30-50 Woerter.',
   '- checklist-, items- und bulletpoints-Eintraege: "title" 2-6 Woerter, "text" 20-35 Woerter.',
   '- authority bioBlock: 60-100 Woerter.',
+  '- faq: "question" 5-12 Woerter, "answer" 25-50 Woerter. Die Antwort beantwortet die Frage zuerst konkret und haengt erst danach eine Einordnung an.',
   '- Ausnahmen, die kurz bleiben: closingLine, scarcityCopy, ctaSubline, ctaButton, badge, announcement - je ein Satz oder weniger.',
   '',
   'TESTIMONIALS: Zitat, Name und Berufsrolle werden frei formuliert - als Entwurf, den die Marke spaeter durch echte Stimmen ersetzt oder freigibt. Nicht aus der Wissensdatenbank abschreiben, sondern zur konkreten Kampagne passend neu schreiben.',
@@ -1145,6 +1147,7 @@ async function generateChunk(chunk, sysBlocks, ctx, attempt) {
     '- Educational Gap (framework): headline + bodyCopy als erklärenden Fließtext-Block, KEIN Kompass-Prinzip\n' +
     '- Problem-Checklist: exakt 5 Einträge als Array mit je "title" und "text"\n' +
     '- Testimonials: exakt 3 Einträge als Array mit je "quote", "name", "role"\n' +
+    '- faq (FAQ): headline + "faqs" als Array mit 5-7 Einträgen, je "question" und "answer". Das ist eine echte Frage-Antwort-Liste, KEIN Fließtext-Block - fasse die Antworten NICHT zu einem Absatz zusammen. Die Fragen sind die, die eine Anmeldung tatsächlich blockieren: Termin und Dauer, Aufzeichnung falls verhindert, technische Voraussetzungen, Vorwissen, Kosten und Verbindlichkeit, für wen es geeignet ist, was danach passiert. Jede Frage in der Sprache des Lesers ("Was, wenn ich am Termin nicht kann?"), nicht in Marketingsprache. Fragezeichen sind hier ausdrücklich richtig, auch wenn das Marken-Preset Fragen an anderer Stelle ausschließt.\n' +
     '- Benefits items: exakt 3 Einträge als Array mit je "title" und "text"\n' +
     '- Alle String-Werte EINZEILIG (kein echter Zeilenumbruch, ggf. \\n verwenden)\n' +
     '- Innerhalb von Textwerten NIEMALS gerade Anführungszeichen ("...") verwenden - sie beenden den String und zerstören das JSON. Zum Zitieren im Fließtext typografische Anführungszeichen nutzen: „...".\n' +
@@ -1378,9 +1381,35 @@ function renderSectionFields(s) {
     }).join('');
     return fieldBlock(s.id,'headline','Headline',d.headline) + '<div class="field-tag">Benefits</div>' + bens;
   }
+  if (s.id === 'faq' && d.faqs) {
+    var qs = d.faqs.map(function(f,i){
+      return '<div class="checklist-item">' +
+        fieldPair(s.id,'faqs.'+i+'.question','Frage '+(i+1), f.question) +
+        fieldPair(s.id,'faqs.'+i+'.answer','Antwort', f.answer, 'margin-top:6px') +
+        '</div>';
+    }).join('');
+    return fieldBlock(s.id,'headline','Headline',d.headline) + '<div class="field-tag">Fragen &amp; Antworten</div>' + qs +
+      (d.ctaButton ? fieldBlock(s.id,'ctaButton','CTA-Button',d.ctaButton) : '');
+  }
+  /* Generischer Fallback fuer eigene Sections. Rendert auch Arrays: vorher
+     wurden nur String-Felder ausgegeben, ein Array (z.B. Frage/Antwort-Paare
+     einer selbst angelegten Section) verschwand kommentarlos aus dem Editor -
+     die Daten waren da, nur unsichtbar und nicht editierbar. */
   var out = '';
   Object.keys(d).forEach(function(k) {
-    if (typeof d[k] === 'string') out += fieldBlock(s.id, k, labelFor(k), d[k]);
+    var val = d[k];
+    if (typeof val === 'string') { out += fieldBlock(s.id, k, labelFor(k), val); return; }
+    if (!Array.isArray(val) || !val.length) return;
+    out += '<div class="field-tag">' + ex(labelFor(k)) + '</div>';
+    val.forEach(function(item, i) {
+      if (item && typeof item === 'object') {
+        out += '<div class="checklist-item">' + Object.keys(item).map(function(ik, n){
+          return fieldPair(s.id, k+'.'+i+'.'+ik, labelFor(ik) + (n === 0 ? ' ' + (i+1) : ''), item[ik], n ? 'margin-top:6px' : '');
+        }).join('') + '</div>';
+      } else if (typeof item === 'string') {
+        out += fieldBlock(s.id, k+'.'+i, labelFor(k) + ' ' + (i+1), item);
+      }
+    });
   });
   return out || '<div class="field-editable">Keine editierbaren Felder.</div>';
 }
@@ -1390,7 +1419,7 @@ function fieldBlock(secId, path, label, value) {
 }
 
 function labelFor(k) {
-  var map = {h1:'H1 Haupttitel',h2:'H2 Sub-Headline',preHeadline:'Pre-Headline',ctaButton:'CTA Button',ctaSubline:'CTA Subline',dozentLine:'Dozenten-Zeile',announcement:'Announcement Bar (Termin-Hinweis)',bodyCopy:'Body Copy',badge:'Badge/Pill',paragraphs:'Fließtext',closingLine:'Abschluss-Satz (Brücke zum Webinar)',bioBlock:'Bio',webinarRole:'Rolle im Webinar',scarcityCopy:'Scarcity Copy',note:'Hinweis',headline:'Headline',introCopy:'Intro Copy',transitionCopy:'Transition Copy',text:'Text',title:'Titel',bulletpoints:'Inhalts-Bulletpoints',videoPlaceholder:'Video (16:9 Platzhalter)',testimonials:'Testimonials',links:'Links',checklist:'Checkliste',items:'Punkte',quote:'Zitat',name:'Name',role:'Rolle'};
+  var map = {h1:'H1 Haupttitel',h2:'H2 Sub-Headline',preHeadline:'Pre-Headline',ctaButton:'CTA Button',ctaSubline:'CTA Subline',dozentLine:'Dozenten-Zeile',announcement:'Announcement Bar (Termin-Hinweis)',bodyCopy:'Body Copy',badge:'Badge/Pill',paragraphs:'Fließtext',closingLine:'Abschluss-Satz (Brücke zum Webinar)',bioBlock:'Bio',webinarRole:'Rolle im Webinar',scarcityCopy:'Scarcity Copy',note:'Hinweis',headline:'Headline',introCopy:'Intro Copy',transitionCopy:'Transition Copy',text:'Text',title:'Titel',bulletpoints:'Inhalts-Bulletpoints',videoPlaceholder:'Video (16:9 Platzhalter)',testimonials:'Testimonials',links:'Links',checklist:'Checkliste',items:'Punkte',quote:'Zitat',name:'Name',role:'Rolle',faqs:'Fragen & Antworten',question:'Frage',answer:'Antwort'};
   return map[k] || k;
 }
 
