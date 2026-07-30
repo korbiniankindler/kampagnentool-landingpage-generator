@@ -518,7 +518,7 @@ function baseSystemPrompt() {
  return `Du bist ein Senior Conversion-Copywriter für deutschsprachige Webinar-Kampagnen im Gesundheits-, Coaching- und Ausbildungsbereich. Du kennst BrandLift-Erfolgsformeln aus echten Kampagnen (Holistic House / Dr. Bauhofer, Doguniversity).
 
 TITEL-STRUKTUREN: "Vom Chaos zum System", Zeitgeschehen-Hijacking, Faktencheck-Angle, Frage-Formate, Pre-Headline / Haupttitel / Sub-Headline (3 Ebenen immer).
-BULLETPOINTS: beginnen mit Warum/Wie/Welche/Was, konkrete Zahlen, Neugier + Versprechen.
+BULLETPOINTS: konkrete Zahlen, Neugier + Versprechen. Fragewörter (Warum/Wie/Welche/Was) sind ein Mittel von mehreren, kein Muss - eine reine Fragenliste wirkt monoton.
 TONALITÄT: direkt, klar, Experten-Kontext, Curiosity Gaps, bei Gesundheit formales "Sie".
 Nur gültiges JSON zurückgeben - kein Markdown, keine Backticks.`;
 }
@@ -597,6 +597,10 @@ REGELN FÜR PRE-HEADLINES (kritisch wichtig):
 - Erzeugt Spannung oder Kontext, der den Haupttitel emotional auflädt
 - Bewährte MUSTER (nur Stil-Vorbilder aus fremden Kampagnen - NIEMALS wörtlich oder leicht abgewandelt übernehmen, immer neu und themenspezifisch formulieren): "DAS VERSCHWEIGT DIE SCHULMEDIZIN", "WARUM IMMER MEHR FRAUEN AB 45 UMDENKEN", "STATT MEHR - DAS RICHTIGE", "DIE FRAGE, DIE ALLES VERAENDERT"
 - ABSOLUT VERBOTEN: Einwort-Labels wie "ZEITGESCHEHEN", "FAKTENCHECK", "VERSPRECHEN", "CURIOSITY GAP" - interne Kategorien, keine Pre-Headlines
+
+LAENGEN (aus echten BrandLift-Landingpages abgeleitet, verbindlich):
+- "titel": 4-10 Woerter. Kurz und tragend, keine Nebensaetze.
+- "sub": 20-35 Woerter, ein bis zwei Saetze. Die Sub-Headline traegt den Nutzenrahmen und darf ausformuliert sein - sie ist KEIN verkuerzter Zweitaufschlag des Titels. Bleib nicht unter 20 Woertern.
 
 5 Varianten mit je eigenem Winkel: Curiosity Gap, Zeitgeschehen, Versprechen, Frage-Format, Faktencheck.
 
@@ -776,20 +780,20 @@ ${feedback ? `\nFeedback des Nutzers:\n${feedback}` : ''}
 Generiere 10 Webinar-Inhalts-Bulletpoints als JSON:
 {
  "strategie": "2-3 Sätze: Warum diese Inhalte für die Zielgruppe und den gewählten Titel passen.",
- "bulletpoints": [
- "Warum ...",
- "Wie Sie ...",
- "Welche ...",
- "Was ...",
- "Warum ...",
- "Wie ...",
- "Welche ...",
- "Was ...",
- "Warum ...",
- "Wie ..."
- ]
+ "bulletpoints": ["...", "...", "...", "...", "...", "...", "...", "...", "...", "..."]
 }
-Genau 10 Bulletpoints. Jeder beginnt mit Fragewort oder Aktivverb. Keine Wiederholungen. Nur JSON.`;
+
+Genau 10 Bulletpoints, keine inhaltlichen Wiederholungen.
+
+LAENGE (aus echten BrandLift-Landingpages abgeleitet, verbindlich):
+- Jeder Bulletpoint 15-30 Woerter. Ein Halbsatz reicht nicht - benenne das Thema UND was der Teilnehmer konkret mitnimmt.
+
+FORM (wichtig):
+- Mische die Satzformen. HOECHSTENS die Haelfte der 10 Bullets darf eine Frage sein, der Rest sind Aussagen oder beginnen mit einem Aktivverb ("Erkenne ...", "Erlebe ...", "Lerne ...", "Entdecke ...").
+- Eine Liste aus zehn gleichfoermigen Fragen ist ausdruecklich unerwuenscht.
+- Variiere auch die Satzanfaenge innerhalb der Fragen: nicht durchgehend "Warum ...".
+
+Nur JSON.`;
 
  try {
  const sysP = await buildSystemPrompt();
