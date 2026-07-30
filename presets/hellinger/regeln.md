@@ -215,7 +215,6 @@ Diese Liste gilt für alle Assets. Sie enthält zusätzlich die Punkte aus dem D
 - "Du" durchgängig groß, in allen Assets, in B2C wie B2B.
 - "Ordnungen der Liebe", "Original Hellinger® Familienstellen", "Hellinger®Schule" wörtlich und mit ® verwenden.
 - Ein ruhiger, zugewandter Einstieg statt harter Werbeeröffnung.
-- "Nicht … sondern"-Umkehr nutzen, um zu entlasten und dann umzulenken.
 - Einladen statt drängen: "Wir laden Dich ein …", "Wenn Du spürst, dass …", "Vielleicht erkennst Du Dich darin …".
 - Innere Fragen stellen, die den Leser ins Spüren bringen, statt Argumente vorzubereiten.
 - Mit Bildern und Vergleichen arbeiten statt mit Theorie: "Ein stilles Aufatmen, wenn Ordnung zurückkehrt."
@@ -314,10 +313,9 @@ Was nicht geht, mit Falsch- und Besser-Beispielen. Vieles davon ist im Projektma
 3. Steht irgendwo ein "ich" von Sophie an den Leser? Wenn ja, raus und in eine Aussage umbauen. Ausgenommen: gekennzeichnete Zitatbox und Signaturzeile.
 4. Sind Staccato- und Ein-Wort-Reihungen vermieden?
 5. Ist der Webinartitel (Pre, Titel, Sub) frei von Fragen und als Aussage formuliert?
-6. Steht mindestens ein Sophie-typisches Sprachmuster drin ("nicht … sondern"-Umkehr, Frage ohne Antwort in der Bodycopy, Tiefen-Kontrast, Bild statt Erklärung)?
-7. Lädt der Text ein, statt zu drängen? Kein "Nur jetzt!", kein "Verpasse es nicht!", kein Superlativ?
-8. Stehen Wahrnehmungsverben (sehen, erkennen, spüren) im Vordergrund statt Leistungsverben (machen, erreichen, schaffen)?
-9. Gibt es einen Theorieblock, der länger als zwei Sätze erklärt, ohne zurück ins Erleben zu führen?
-10. Ist der Nutzen als Zustand formuliert ("Klarheit, die bleibt"), nicht als Feature-Aufzählung?
-11. Enthält die Copy einen sauberen Event-Block (Datum, Uhrzeit, kostenfrei, CTA) und, wenn Sophie zeichnet, den Standard-Abschluss?
-12. Sind alle Verbote eingehalten? Kein Heilsversprechen, keine Esoterik, kein Gold, kein Gedankenstrich, kein "Schmerz zurückgeben", kein "blinde Liebe", keine Preise?
+6. Lädt der Text ein, statt zu drängen? Kein "Nur jetzt!", kein "Verpasse es nicht!", kein Superlativ?
+7. Stehen Wahrnehmungsverben (sehen, erkennen, spüren) im Vordergrund statt Leistungsverben (machen, erreichen, schaffen)?
+8. Gibt es einen Theorieblock, der länger als zwei Sätze erklärt, ohne zurück ins Erleben zu führen?
+9. Ist der Nutzen als Zustand formuliert ("Klarheit, die bleibt"), nicht als Feature-Aufzählung?
+10. Enthält die Copy einen sauberen Event-Block (Datum, Uhrzeit, kostenfrei, CTA) und, wenn Sophie zeichnet, den Standard-Abschluss?
+11. Sind alle Verbote eingehalten? Kein Heilsversprechen, keine Esoterik, kein Gold, kein Gedankenstrich, kein "Schmerz zurückgeben", kein "blinde Liebe", keine Preise?
