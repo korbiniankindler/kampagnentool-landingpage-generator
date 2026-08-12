@@ -20,7 +20,7 @@ und ausgewertet werden können:
 | Thema | Entscheidung |
 |---|---|
 | Backend | Cloudflare Workers + D1 |
-| Tool-Domain | eigene kleine Domain bei Cloudflare; `brandlift.de` bleibt bei All-Inkl |
+| Tool-Domain | `ab.brandlift.de` als Cloudflare-Subdomain-Zone per NS-Delegation; `brandlift.de` bleibt bei All-Inkl |
 | Webflow-Domains | bleiben unangetastet, laufen **nicht** über Cloudflare |
 | Dankeseite | genau eine je Test, auf derselben Domain wie die Landingpage |
 | Datenhaltung | D1 mit EU-Location-Hint, keine IPs, keine Formulardaten |
@@ -241,24 +241,45 @@ existierenden, laufenden Tests und ist ratenbegrenzt.
 ## 9. Domain-Anbindung
 
 Cloudflare Workers brauchen für eine eigene Domain, dass die **Zone bei
-Cloudflare liegt** (Nameserver dort). Ein bloßes CNAME aus fremder DNS auf
-einen Worker funktioniert nicht – das CNAME-Setup ohne Nameserver-Wechsel ist
-dem Cloudflare-Business-Tarif vorbehalten. Die Top-Domain `brandlift.de` liegt
-bei All-Inkl.
+Cloudflare liegt**. Ein bloßes CNAME aus fremder DNS auf einen Worker
+funktioniert nicht – das CNAME-Setup ohne Nameserver-Wechsel ist dem
+Business-Tarif vorbehalten. Die Top-Domain `brandlift.de` liegt bei All-Inkl.
 
-| Weg | Was passiert | Bewertung |
-|---|---|---|
-| A `brandlift.de` umziehen | Nameserver von All-Inkl zu Cloudflare, alle Records inkl. MX/SPF/DKIM/DMARC exakt übernehmen | funktioniert, aber ein Fehler beim Übertrag trifft den Mailverkehr |
-| **B eigene Tool-Domain** | z. B. `bl-split.de`, ausschließlich bei Cloudflare, `ab.bl-split.de` → Worker | **empfohlen**, ~10 €/Jahr, null Risiko für Mail und Bestandsseiten |
-| C `*.workers.dev` | kein DNS nötig | steht auf Adblock-Listen, nur für die Entwicklungsphase |
+**Lösung: Subdomain-Zone per NS-Delegation.** Cloudflare kann eine Subdomain
+als eigene Zone führen, auch wenn die Elterndomain bei einem anderen Anbieter
+liegt (Kombination *Parent extern → Child full*, im Free-Plan verfügbar):
 
-Ausschlaggebend für B: Für die Webflow-Kundenseiten ist der Collector ohnehin
-eine Fremd-Domain, egal ob er unter `brandlift.de` oder `bl-split.de` läuft.
-Der erhoffte Adblock-Vorteil der eigenen Domain entsteht erst, wenn der
-Collector auf der *Kunden*-Domain liegt – der riskante Umzug von
-`brandlift.de` bringt also nichts.
+1. `ab.brandlift.de` in Cloudflare als Zone anlegen (Full Setup)
+2. Cloudflare gibt zwei Nameserver für diese Zone aus
+3. im All-Inkl-KAS zwei **NS-Records** für `ab` auf diese Nameserver setzen
 
-An der bestehenden DNS ändert sich damit nichts: Das Dashboard bleibt statisch
+Damit bleiben `brandlift.de` selbst, alle bestehenden Records und vor allem
+MX/SPF/DKIM/DMARC vollständig bei All-Inkl. Cloudflare verwaltet ausschließlich
+das, was unterhalb von `ab.brandlift.de` liegt. Kein Nameserver-Wechsel, kein
+Mail-Risiko, keine zusätzliche Domain nötig.
+
+Beim Aufsetzen zu verifizieren: dass Workers Custom Domains auf einer
+Subdomain-Zone laufen. Eine „full" Child-Zone ist laut Doku eine vollwertige
+Zone; wird als erster Schritt praktisch gegengetestet.
+
+Verworfene Alternativen:
+
+- **`brandlift.de` komplett zu Cloudflare umziehen** – funktioniert, aber ein
+  Fehler beim Record-Übertrag trifft den Mailverkehr. Unnötiges Risiko.
+- **Eigene Tool-Domain** (`bl-split.de` o. ä.) – funktioniert ebenfalls, ist
+  seit der Subdomain-Lösung aber überflüssig.
+- **Subdirectory** (`tools.brandlift.de/ab/`) – bräuchte einen Reverse-Proxy
+  davor, und der erhoffte Adblock-Vorteil entsteht ohnehin nur auf derselben
+  Domain wie die gemessene Seite. Die liegt auf der Webflow-Kundendomain, von
+  dort aus ist jede brandlift-Adresse gleich fremd.
+- **`*.workers.dev`** – kein DNS nötig, steht aber auf Adblock-Listen. Nur für
+  die Entwicklungsphase.
+- **Collector direkt bei All-Inkl** (PHP + MariaDB auf `ab.brandlift.de`) –
+  bei diesem Traffic-Volumen ausreichend, alles auf einem deutschen Server und
+  ohne Drittanbieter-Diskussion. Dagegen sprechen Deployment, Backups und
+  Wartung von Hand sowie das fehlende Edge-Netz. Als Rückfalloption notiert.
+
+An der bestehenden DNS ändert sich sonst nichts: Das Dashboard bleibt statisch
 auf `tools.brandlift.de` und spricht per CORS mit dem Worker.
 
 Optionale Ausbaustufe, falls Adblock-Verluste stören: Mit *Cloudflare for SaaS*
@@ -315,7 +336,7 @@ optional echte User-Accounts und Rechte je Marke.
 
 ## 12. Offene Punkte
 
-1. Tool-Domain registrieren und bei Cloudflare aufsetzen (Abschnitt 9, Weg B) –
-   Name noch festzulegen.
+1. `ab.brandlift.de` als Cloudflare-Zone anlegen und die NS-Records im
+   All-Inkl-KAS setzen (Abschnitt 9), danach Workers Custom Domain gegentesten.
 2. Umsatzwert je Conversion mitschreiben – erst später relevant?
 3. Rechtsprüfung Cookie-Modus (siehe Abschnitt 10).
