@@ -19,9 +19,11 @@ und ausgewertet werden können:
 
 | Thema | Entscheidung |
 |---|---|
-| Backend | Cloudflare Workers + D1, eigene Subdomain (z. B. `ab.brandlift.de`) |
+| Backend | Cloudflare Workers + D1 |
+| Tool-Domain | eigene kleine Domain bei Cloudflare; `brandlift.de` bleibt bei All-Inkl |
 | Webflow-Domains | bleiben unangetastet, laufen **nicht** über Cloudflare |
-| Dankeseite | liegt auf derselben Domain wie die Landingpage |
+| Dankeseite | genau eine je Test, auf derselben Domain wie die Landingpage |
+| Datenhaltung | D1 mit EU-Location-Hint, keine IPs, keine Formulardaten |
 | Stickiness | First-Party-Cookie, 90 Tage, plus localStorage-Spiegel |
 | Datenschutz | Cookie-Modus, keine IP-Speicherung, kein Fingerprinting, EU-Region |
 | Mandanten | von Anfang an mehrere Webflow-Sites |
@@ -116,13 +118,13 @@ Die Dankeseiten-URL wird **pro Test im Dashboard hinterlegt**, nicht im Code.
 Es muss auf der Dankeseite selbst nichts eingebaut werden – das site-weite
 Snippet läuft dort ohnehin mit.
 
+**Genau eine Dankeseite je Test.** Alle Varianten eines Tests führen also auf
+dieselbe Dankeseite; das hält die Messung eindeutig und die Oberfläche schlank.
+
 Konfiguration je Test:
 
-- **Regeltyp**: Pfad *ist genau* / *beginnt mit* / *enthält* / Regex
+- **Regeltyp**: Pfad *ist genau* / *beginnt mit* / *enthält*
 - **Wert**: z. B. `/danke-webinar`
-- **mehrere Dankeseiten** je Test erlaubt (Liste, ODER-verknüpft), falls
-  Varianten eigene Dankeseiten haben
-- optionale Query-Bedingung (z. B. nur bei `?status=ok`)
 - Vorbelegung aus einer Site-Vorgabe
 
 Ablauf auf der Dankeseite: Für jeden Test mit gültigem Zuweisungs-Cookie prüft
@@ -137,10 +139,10 @@ Fehler, der einen kompletten Test still auf 0 % CR laufen lässt.
 
 Dreifach abgesichert, weil jede einzelne Ebene umgangen werden kann:
 
-1. **Client** – nach dem Senden wird `bl_c_<testId>_<goalId>` in Cookie und
+1. **Client** – nach dem Senden wird `bl_c_<testId>` in Cookie und
    localStorage gesetzt. Bei Reload sieht das Snippet das Flag und sendet nicht.
 2. **Server (die eigentliche Garantie)** – jedes Event trägt einen
-   Idempotenz-Schlüssel `hash(visitorId + testId + goalId)` mit
+   Idempotenz-Schlüssel `hash(visitorId + testId + eventType)` mit
    UNIQUE-Constraint in D1, geschrieben per `INSERT OR IGNORE`. Auch bei
    gelöschten Cookies, Inkognito-Reload oder doppeltem Beacon entsteht kein
    zweiter Zähler.
@@ -168,13 +170,13 @@ soll, kommt ein Schalter „wiederholte Conversions zählen" dazu.
 ## 5. Datenmodell (D1)
 
 ```
-sites      (id, name, domain, snippet_key, default_goal_json, settings_json,
+sites      (id, name, domain, snippet_key, default_goal_match, settings_json,
             created_at)
 tests      (id, site_id, name, slug, splitter_path, status,
+            goal_match_type, goal_match_value,
             created_at, started_at, ended_at)
-goals      (id, test_id, name, match_type, match_value, query_condition, sort)
 variants   (id, test_id, name, target_path, weight, is_control, sort)
-events     (id, ts, site_id, test_id, variant_id, goal_id, visitor_id,
+events     (id, ts, site_id, test_id, variant_id, visitor_id,
             session_id, type, dedupe_key, path, referrer, utm_source,
             utm_medium, utm_campaign, utm_content, utm_term, click_id,
             device, country, excluded)
@@ -182,8 +184,9 @@ events     (id, ts, site_id, test_id, variant_id, goal_id, visitor_id,
 rollups    (site_id, test_id, variant_id, day, visitors, views, conversions)
 ```
 
-- `goals` als eigene Tabelle, damit ein Test mehrere Dankeseiten haben kann und
-  später mehrere Ziele nebeneinander möglich sind (Lead und Kauf getrennt)
+- genau ein Conversion-Ziel je Test, direkt in `tests`. Sollten später mehrere
+  Ziele nebeneinander nötig werden, wird daraus eine eigene Tabelle – die
+  Events tragen die Struktur schon mit.
 - `dedupe_key` ist der Idempotenz-Schlüssel aus 4.5 und trägt die
   Doppelzählungs-Sperre auf Datenbankebene
 - `events` ist das Rohlog für Breakdowns und Nachrechnen
@@ -212,8 +215,8 @@ Als weiteres statisches Modul in diesem Repo (`splittest-dashboard.html`,
 Modul 3, Look der bestehenden Tools), spricht nur per `fetch` mit dem Worker.
 
 - Site auswählen, Test anlegen: Name, Splitter-Pfad
-- Conversion-Ziel: Dankeseiten-URL mit Regeltyp, mehrere möglich, inkl.
-  Live-Prüfung gegen eine Beispiel-URL beim Speichern
+- Conversion-Ziel: eine Dankeseiten-URL mit Regeltyp, inkl. Live-Prüfung gegen
+  eine Beispiel-URL beim Speichern
 - Varianten: Name, Zielpfad, Gewicht; Summenprüfung auf 100 %
 - Status: Entwurf / läuft / pausiert / beendet
 - Snippet zum Kopieren inkl. Einbau-Anleitung für Webflow
@@ -235,20 +238,66 @@ existierenden, laufenden Tests und ist ratenbegrenzt.
 - **Performance**: das Snippet ist ein synchrones Head-Script (~3–4 KB gzip),
   Redirect-Hop ~100–200 ms.
 
-## 9. Datenschutz
+## 9. Domain-Anbindung
+
+Cloudflare Workers brauchen für eine eigene Domain, dass die **Zone bei
+Cloudflare liegt** (Nameserver dort). Ein bloßes CNAME aus fremder DNS auf
+einen Worker funktioniert nicht – das CNAME-Setup ohne Nameserver-Wechsel ist
+dem Cloudflare-Business-Tarif vorbehalten. Die Top-Domain `brandlift.de` liegt
+bei All-Inkl.
+
+| Weg | Was passiert | Bewertung |
+|---|---|---|
+| A `brandlift.de` umziehen | Nameserver von All-Inkl zu Cloudflare, alle Records inkl. MX/SPF/DKIM/DMARC exakt übernehmen | funktioniert, aber ein Fehler beim Übertrag trifft den Mailverkehr |
+| **B eigene Tool-Domain** | z. B. `bl-split.de`, ausschließlich bei Cloudflare, `ab.bl-split.de` → Worker | **empfohlen**, ~10 €/Jahr, null Risiko für Mail und Bestandsseiten |
+| C `*.workers.dev` | kein DNS nötig | steht auf Adblock-Listen, nur für die Entwicklungsphase |
+
+Ausschlaggebend für B: Für die Webflow-Kundenseiten ist der Collector ohnehin
+eine Fremd-Domain, egal ob er unter `brandlift.de` oder `bl-split.de` läuft.
+Der erhoffte Adblock-Vorteil der eigenen Domain entsteht erst, wenn der
+Collector auf der *Kunden*-Domain liegt – der riskante Umzug von
+`brandlift.de` bringt also nichts.
+
+An der bestehenden DNS ändert sich damit nichts: Das Dashboard bleibt statisch
+auf `tools.brandlift.de` und spricht per CORS mit dem Worker.
+
+Optionale Ausbaustufe, falls Adblock-Verluste stören: Mit *Cloudflare for SaaS*
+kann pro Kundendomain ein `t.kunde.de` per CNAME auf den Worker zeigen, ohne
+dass die Kundendomain zu Cloudflare umziehen muss – dann ist das Tracking echt
+first-party. Kostenpflichtiges Add-on, Konditionen vor Umsetzung prüfen.
+
+## 10. Datenspeicherung und Datenschutz
+
+**Wo:** Cloudflare D1 (SQLite), angelegt mit Location-Hint `weur` – der
+Datenbestand liegt damit in einem EU-Rechenzentrum. Die *Verarbeitung* läuft im
+Worker am Edge-Standort nächst dem Besucher (bei deutschem Traffic praktisch
+Frankfurt, garantiert ist der Ort nicht). Cloudflare ist ein US-Unternehmen:
+AV-Vertrag und Standardvertragsklauseln sind nötig, für strengere Anforderungen
+gibt es die kostenpflichtige EU Data Localisation Suite. Alternative bei harter
+EU-Only-Anforderung: eigener Server in Deutschland (z. B. Hetzner + Postgres),
+dafür höhere Latenz und mehr Betriebsaufwand.
+
+**Was gespeichert wird**, je Event: zufällige Besucher-UUID aus dem Cookie,
+Zeitstempel, Test- und Varianten-ID, Pfad, Referrer, UTM-Parameter und
+Click-IDs, Gerätekategorie und Land.
+
+**Was nicht gespeichert wird:** keine IP-Adresse, kein roher User-Agent, kein
+Fingerprint – und keinerlei Formulardaten. Namen und E-Mail-Adressen der Leads
+sieht das Tool nie, die bleiben in Webflow. Gemessen wird ausschließlich
+„Besucher X hat Variante B gesehen und die Dankeseite erreicht".
+
+Weiteres:
 
 - First-Party-Cookie, 90 Tage, Zweck A/B-Test; Aufnahme in die
   Datenschutzerklärung der jeweiligen Marke erforderlich
-- keine IP-Speicherung, kein Fingerprinting, keine Third-Party-Cookies
 - Besucher-ID ist eine Zufalls-UUID ohne Personenbezug
-- Datenhaltung in der EU (D1 mit EEA-Location-Hint), AV-Vertrag mit Cloudflare
 - offener Punkt für die Rechtsprüfung: Nach strenger TTDSG-Lesart ist ein
   A/B-Test-Cookie einwilligungspflichtig. Der Consent-Banner erscheint jedoch
   erst nach dem Redirect, der Splitter läuft also immer vor der Einwilligung.
   Ein cookieloser Session-Modus ist als Rückfallebene vorgesehen und kann pro
   Site aktiviert werden, falls die Prüfung das verlangt.
 
-## 10. Phasen
+## 11. Phasen
 
 **P1 – MVP**
 Worker mit `/s/`, `/e`, `/api/`; D1-Schema; Snippet mit Split, Stickiness,
@@ -264,13 +313,9 @@ Webflow-API-Anbindung: Varianten aus der echten Seitenliste per Dropdown statt
 getippter Pfade, Snippet automatisch installieren und publishen. Danach
 optional echte User-Accounts und Rechte je Marke.
 
-## 11. Offene Punkte
+## 12. Offene Punkte
 
-1. Zieldomain für das Tool: `ab.brandlift.de` – die Zone `brandlift.de` müsste
-   dafür bei Cloudflare liegen (nur DNS, die Webflow-Kundendomains bleiben
-   außen vor). Alternativ eine separate Domain.
-2. Mehrere Dankeseiten je Test sind vorgesehen (Abschnitt 4.4). Offen bleibt,
-   ob v1 schon **mehrere getrennt ausgewertete Ziele** braucht (Lead und Kauf
-   nebeneinander) oder ob ein Ziel je Test reicht – das Schema kann beides.
-3. Umsatzwert je Conversion mitschreiben – erst später relevant?
-4. Rechtsprüfung Cookie-Modus (siehe Abschnitt 9).
+1. Tool-Domain registrieren und bei Cloudflare aufsetzen (Abschnitt 9, Weg B) –
+   Name noch festzulegen.
+2. Umsatzwert je Conversion mitschreiben – erst später relevant?
+3. Rechtsprüfung Cookie-Modus (siehe Abschnitt 10).
