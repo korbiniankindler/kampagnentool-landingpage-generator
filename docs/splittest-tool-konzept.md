@@ -110,31 +110,82 @@ Gewichteter Zufall über kumulierte Gewichte gegen `Math.random()`.
 Gewichte müssen in Summe 100 ergeben, `0 %` pausiert eine Variante, ohne
 bereits zugewiesene Besucher zu verlieren.
 
-### 4.4 Sauberkeit der Daten
+### 4.4 Conversion-Ziel: Dankeseite im Tool hinterlegen
+
+Die Dankeseiten-URL wird **pro Test im Dashboard hinterlegt**, nicht im Code.
+Es muss auf der Dankeseite selbst nichts eingebaut werden – das site-weite
+Snippet läuft dort ohnehin mit.
+
+Konfiguration je Test:
+
+- **Regeltyp**: Pfad *ist genau* / *beginnt mit* / *enthält* / Regex
+- **Wert**: z. B. `/danke-webinar`
+- **mehrere Dankeseiten** je Test erlaubt (Liste, ODER-verknüpft), falls
+  Varianten eigene Dankeseiten haben
+- optionale Query-Bedingung (z. B. nur bei `?status=ok`)
+- Vorbelegung aus einer Site-Vorgabe
+
+Ablauf auf der Dankeseite: Für jeden Test mit gültigem Zuweisungs-Cookie prüft
+das Snippet, ob die aktuelle URL auf dessen Conversion-Regel passt. Trifft sie
+zu, geht ein Conversion-Event mit `testId` und `variantId` aus dem Cookie raus.
+
+Beim Speichern prüft das Dashboard die Regel gegen eine eingegebene Beispiel-URL
+und zeigt Treffer/kein Treffer an. Eine vertippte Dankeseite ist sonst der
+Fehler, der einen kompletten Test still auf 0 % CR laufen lässt.
+
+### 4.5 Keine Doppelzählung bei Reload
+
+Dreifach abgesichert, weil jede einzelne Ebene umgangen werden kann:
+
+1. **Client** – nach dem Senden wird `bl_c_<testId>_<goalId>` in Cookie und
+   localStorage gesetzt. Bei Reload sieht das Snippet das Flag und sendet nicht.
+2. **Server (die eigentliche Garantie)** – jedes Event trägt einen
+   Idempotenz-Schlüssel `hash(visitorId + testId + goalId)` mit
+   UNIQUE-Constraint in D1, geschrieben per `INSERT OR IGNORE`. Auch bei
+   gelöschten Cookies, Inkognito-Reload oder doppeltem Beacon entsteht kein
+   zweiter Zähler.
+3. **Transport** – jedes Event hat zusätzlich eine eigene Event-UUID, die
+   Retries und den bekannten `sendBeacon`-Doppelversand beim Tab-Wechsel abfängt.
+
+Analog bei den Aufrufen: **Besucher** wird pro Besucher/Test/Session einmal
+gezählt (Reload ändert nichts – das ist der Nenner der CR), **Aufrufe** zählt
+jeden View. Die Differenz zwischen beiden ist selbst eine nützliche Kennzahl.
+
+Bewusste Festlegung für v1: Wer zweimal echt konvertiert, wird einmal gezählt.
+Für CR-Vergleiche ist das korrekt. Sobald Umsatz je Variante gemessen werden
+soll, kommt ein Schalter „wiederholte Conversions zählen" dazu.
+
+### 4.6 Sauberkeit der Daten
 
 - `?bl_force=<variantId>` erzwingt eine Variante (QA)
 - `?bl_debug=1` setzt ein Flag, das Events dauerhaft aus der Statistik ausschließt
 - gefiltert werden: bekannte Bot-User-Agents, `navigator.webdriver`,
   Prefetch/Prerender (`document.prerendering`), Webflow-Editor und
   `*.webflow.io`-Staging (optional zuschaltbar für Tests)
-- Exposure wird pro Besucher, Test und Session einmal gezählt
-- Conversion wird pro Besucher, Test und Ziel einmal gezählt
 - Direktaufrufe einer Varianten-Seite ohne Zuweisung werden separat gezählt und
   fließen nicht in den Variantenvergleich ein
 
 ## 5. Datenmodell (D1)
 
 ```
-sites      (id, name, domain, snippet_key, settings_json, created_at)
-tests      (id, site_id, name, slug, splitter_path, status, goal_type,
-            goal_match, created_at, started_at, ended_at)
+sites      (id, name, domain, snippet_key, default_goal_json, settings_json,
+            created_at)
+tests      (id, site_id, name, slug, splitter_path, status,
+            created_at, started_at, ended_at)
+goals      (id, test_id, name, match_type, match_value, query_condition, sort)
 variants   (id, test_id, name, target_path, weight, is_control, sort)
-events     (id, ts, site_id, test_id, variant_id, visitor_id, session_id,
-            type, path, referrer, utm_source, utm_medium, utm_campaign,
-            utm_content, utm_term, click_id, device, country, excluded)
+events     (id, ts, site_id, test_id, variant_id, goal_id, visitor_id,
+            session_id, type, dedupe_key, path, referrer, utm_source,
+            utm_medium, utm_campaign, utm_content, utm_term, click_id,
+            device, country, excluded)
+             └── UNIQUE(dedupe_key)
 rollups    (site_id, test_id, variant_id, day, visitors, views, conversions)
 ```
 
+- `goals` als eigene Tabelle, damit ein Test mehrere Dankeseiten haben kann und
+  später mehrere Ziele nebeneinander möglich sind (Lead und Kauf getrennt)
+- `dedupe_key` ist der Idempotenz-Schlüssel aus 4.5 und trägt die
+  Doppelzählungs-Sperre auf Datenbankebene
 - `events` ist das Rohlog für Breakdowns und Nachrechnen
 - `rollups` wird fortgeschrieben und trägt das Dashboard (schnell, günstig)
 - gespeichert wird **keine IP**; das Land wird aus dem Cloudflare-Header
@@ -160,7 +211,9 @@ Control. Dazu:
 Als weiteres statisches Modul in diesem Repo (`splittest-dashboard.html`,
 Modul 3, Look der bestehenden Tools), spricht nur per `fetch` mit dem Worker.
 
-- Site auswählen, Test anlegen: Name, Splitter-Pfad, Conversion-Regel
+- Site auswählen, Test anlegen: Name, Splitter-Pfad
+- Conversion-Ziel: Dankeseiten-URL mit Regeltyp, mehrere möglich, inkl.
+  Live-Prüfung gegen eine Beispiel-URL beim Speichern
 - Varianten: Name, Zielpfad, Gewicht; Summenprüfung auf 100 %
 - Status: Entwurf / läuft / pausiert / beendet
 - Snippet zum Kopieren inkl. Einbau-Anleitung für Webflow
@@ -216,8 +269,8 @@ optional echte User-Accounts und Rechte je Marke.
 1. Zieldomain für das Tool: `ab.brandlift.de` – die Zone `brandlift.de` müsste
    dafür bei Cloudflare liegen (nur DNS, die Webflow-Kundendomains bleiben
    außen vor). Alternativ eine separate Domain.
-2. Conversion-Definition: reicht „Pfad enthält `/danke`" als einziges Ziel für
-   v1, oder werden von Anfang an mehrere Ziele je Test gebraucht
-   (z. B. Lead und Kauf getrennt)?
+2. Mehrere Dankeseiten je Test sind vorgesehen (Abschnitt 4.4). Offen bleibt,
+   ob v1 schon **mehrere getrennt ausgewertete Ziele** braucht (Lead und Kauf
+   nebeneinander) oder ob ein Ziel je Test reicht – das Schema kann beides.
 3. Umsatzwert je Conversion mitschreiben – erst später relevant?
 4. Rechtsprüfung Cookie-Modus (siehe Abschnitt 9).
