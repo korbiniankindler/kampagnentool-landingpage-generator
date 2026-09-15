@@ -147,6 +147,7 @@
     </div>
     <input type="file" id="lp-ctx-file" accept=".pdf,application/pdf" style="display:none" onchange="addCtxFile(this)">
     <div id="lp-ctx-chips"></div>
+    <div id="lp-ctx-digest"></div>
     <div id="lp-ctx-err"></div>
   </div>
   <div id="import-err"></div>
@@ -420,6 +421,7 @@
 <script src="shared/section-schemas.js"></script>
 <script src="shared/prompt-builder.js"></script>
 <script src="shared/validators.js"></script>
+<script src="shared/digest.js"></script>
 <script src="shared/copywriter-presets.js"></script>
 <script>
 var PROXY_URL = 'https://claude.korbinian.workers.dev/';
@@ -696,9 +698,13 @@ async function addCtxFile(input) {
   var b64;
   try { b64 = await toBase64(f); }
   catch(e) { ctxError('"' + ex(f.name) + '" konnte nicht gelesen werden.'); return; }
-  ctxFiles.push({name: f.name, b64: b64}); renderCtxChips();
+  /* Seitenzahl mitführen: sie ist die einzige Größe, an der sich eine vom
+     Modell genannte Fundstelle deterministisch prüfen lässt. */
+  ctxFiles.push({name: f.name, b64: b64, seiten: pages || null});
+  renderCtxChips();
+  ensureDigest();
 }
-function removeCtxFile(i) { ctxFiles.splice(i,1); renderCtxChips(); }
+function removeCtxFile(i) { ctxFiles.splice(i,1); renderCtxChips(); ensureDigest(); }
 function renderCtxChips() {
   document.getElementById('lp-ctx-chips').innerHTML = ctxFiles.map(function(f,i){
     return '<span class="file-chip">' +
@@ -721,12 +727,183 @@ function lpContext() {
   return el ? el.value.trim() : '';
 }
 
+/* ===== DOKUMENT-DIGEST (1.3) =====
+   Vorher hingen die PDFs als document-Blöcke an JEDEM Request: Content-Plan,
+   drei bis vier Chunks, dazu jede Regenerierung. Zwanzig Seiten sind grob
+   40.000 Input-Tokens - und das Modell musste die relevanten Stellen darin
+   SUCHEN, während es gleichzeitig Copy schrieb.
+
+   Jetzt liest EIN Extraktions-Call die Dokumente und liefert Fakten mit
+   wörtlichem Beleg und Seitenangabe (shared/digest.js). Die Generierung
+   bekommt nur noch diesen kompakten Block.
+
+   Der Digest wird angezeigt, nicht versteckt: Das Tool kann die Zitate nicht
+   selbst gegen das PDF prüfen (es liest PDFs nicht, es reicht sie weiter) -
+   ein erfundenes Zitat fällt also nur einem Menschen auf. Und ein Termin, der
+   im Dokument anders steht als in den bestätigten Hardfacts, muss VOR der
+   Generierung sichtbar sein, nicht danach.
+
+   Die PDFs lassen sich weiterhin mitschicken (Checkbox). Der Digest ist eine
+   Verdichtung, und jede Verdichtung kann etwas verlieren - ohne Rückweg wäre
+   das eine Einbahnstraße. */
+var ctxDigest = { status: 'leer', data: null, befunde: [], fehler: null, signatur: null };
+var ctxDigestPdfsMitschicken = false;
+
+/* Ändert sich die Signatur, ist der vorhandene Digest ungültig: andere
+   Dateien oder andere bestätigte Daten bedeuten andere Fakten und andere
+   Konflikte. */
+function digestSignatur() {
+  /* HF ist null, solange nichts importiert wurde - Dateien lassen sich aber
+     vorher ablegen. Ohne diese Absicherung wirft schon das Hochladen. */
+  var hf = HF || {};
+  var hfTeil = Digest.KONFLIKT_FELDER.map(function(f){ return hf[f.key] || ''; }).join('|');
+  return ctxFiles.map(function(f){ return f.name + ':' + f.b64.length; }).join('|') + '||' + hfTeil;
+}
+
+function digestVerwendbar() {
+  return ctxDigest.status === 'fertig' && ctxDigest.data &&
+         (ctxDigest.data.fakten || []).length > 0 &&
+         ctxDigest.signatur === digestSignatur();
+}
+
+/* Baut den Digest, sobald Dateien UND bestätigte Hardfacts vorliegen. Beides
+   ist nötig: ohne Hardfacts lässt sich kein Widerspruch erkennen, und ein
+   Digest ohne Konfliktprüfung wäre die halbe Leistung. */
+async function ensureDigest() {
+  if (!ctxFiles.length) {
+    ctxDigest = { status: 'leer', data: null, befunde: [], fehler: null, signatur: null };
+    renderDigest();
+    return;
+  }
+  /* Ohne bestätigte Hardfacts wird nicht extrahiert: dann ließe sich kein
+     Widerspruch zum Briefing erkennen, und genau der ist der teuerste Fall.
+     Der Digest entsteht, sobald der Import durch ist (siehe renderHF). */
+  if (!HF) {
+    ctxDigest = { status: 'leer', data: null, befunde: [], fehler: null, signatur: null };
+    renderDigest();
+    return;
+  }
+  var sig = digestSignatur();
+  if (ctxDigest.signatur === sig && ctxDigest.status !== 'fehler') { renderDigest(); return; }
+  if (ctxDigest.status === 'laeuft') return;
+
+  ctxDigest = { status: 'laeuft', data: null, befunde: [], fehler: null, signatur: sig };
+  renderDigest();
+  try {
+    var content = ctxFiles.map(function(f) {
+      return {type:'document', source:{type:'base64', media_type:'application/pdf', data:f.b64}};
+    });
+    content.push({type:'text', text: Digest.buildUser({
+      hf: HF, zielgruppe: HardfactsIO.audience(HF),
+      dateien: ctxFiles.map(function(f){ return f.name; })
+    })});
+    var body = Digest.buildRequest({ content: content }, ToolVersions.MODEL);
+    var resp = await callClaude(body, null, Digest.outputConfig());
+    if (ClaudeAPI.isTruncated(resp)) throw new Error('Die Antwort wurde abgeschnitten - der Digest wäre unvollständig.');
+    var data = extractJSON(ClaudeAPI.textOf(resp));
+    /* Signaturwechsel während des Calls: der Nutzer hat inzwischen eine Datei
+       getauscht. Das Ergebnis gehört zu den alten Dateien - verwerfen. */
+    if (digestSignatur() !== sig) { await ensureDigest(); return; }
+    ctxDigest = {
+      status: 'fertig', data: data, signatur: sig, fehler: null,
+      befunde: Digest.pruefe(data, { hf: HF, seitenGesamt: ctxSeitenGesamt() })
+    };
+  } catch (e) {
+    ctxDigest = { status: 'fehler', data: null, befunde: [], fehler: e.message, signatur: sig };
+  }
+  renderDigest();
+}
+
+/* Summe der Seitenzahlen, soweit beim Upload ermittelbar. Bei komprimierten
+   PDFs liefert countPdfPages null - dann entfällt die Plausibilitätsprüfung
+   der Fundstellen, statt falsch Alarm zu schlagen. */
+function ctxSeitenGesamt() {
+  var summe = 0;
+  for (var i = 0; i < ctxFiles.length; i++) {
+    if (!ctxFiles[i].seiten) return null;
+    summe += ctxFiles[i].seiten;
+  }
+  return summe || null;
+}
+
+function renderDigest() {
+  var el = document.getElementById('lp-ctx-digest');
+  if (!el) return;
+  if (!ctxFiles.length) { el.innerHTML = ''; return; }
+
+  if (ctxDigest.status === 'laeuft') {
+    el.innerHTML = '<div class="notice-banner">Die Dokumente werden gelesen&hellip; ' +
+      'Fakten und Belegstellen werden extrahiert.</div>';
+    return;
+  }
+  if (ctxDigest.status === 'fehler') {
+    el.innerHTML = '<div class="error-box" style="margin-top:8px">Die Dokumente konnten nicht ausgewertet werden: ' +
+      ex(ctxDigest.fehler) + '<br>Die PDFs werden stattdessen wie bisher an jeden Request angehängt. ' +
+      '<button class="btn-ghost" style="margin-top:6px" onclick="retryDigest()">Erneut versuchen</button></div>';
+    return;
+  }
+  if (ctxDigest.status !== 'fertig') {
+    el.innerHTML = '<div class="notice-banner">Die Dokumente werden ausgewertet, sobald die Hardfacts übernommen sind.</div>';
+    return;
+  }
+
+  var z = Digest.zusammenfassung(ctxDigest.data, ctxDigest.befunde);
+  var kat = Object.keys(z.proKategorie).map(function(k){ return z.proKategorie[k] + '\u00d7 ' + ex(k); }).join(', ');
+  var krit = ctxDigest.befunde.filter(function(b){ return b.schwere === 'kritisch'; });
+  var hinw = ctxDigest.befunde.filter(function(b){ return b.schwere !== 'kritisch'; });
+
+  var html = '<div class="notice-banner"><strong>' + z.fakten + ' Fakten aus den Dokumenten</strong>' +
+    (kat ? ' (' + kat + ')' : '') +
+    '<br>Die Generierung bekommt diese Fakten statt der vollständigen PDFs.</div>';
+
+  if (krit.length) {
+    html += '<div class="error-box" style="margin-top:8px"><strong>Bitte vor der Generierung prüfen:</strong><ul style="margin:6px 0 0 16px">' +
+      krit.map(function(b){ return '<li>' + ex(b.text) + '</li>'; }).join('') + '</ul></div>';
+  }
+  if (hinw.length) {
+    html += '<div class="notice-banner"><strong>Hinweise:</strong><ul style="margin:6px 0 0 16px">' +
+      hinw.map(function(b){ return '<li>' + ex(b.text) + '</li>'; }).join('') + '</ul></div>';
+  }
+
+  html += '<details style="margin-top:8px"><summary style="cursor:pointer;font-size:12px;color:var(--text-tertiary)">' +
+    'Extrahierte Fakten mit Belegstelle anzeigen</summary>' +
+    '<div style="font-size:12px;margin-top:8px">' +
+    (ctxDigest.data.kernaussagen || []).map(function(k){ return '<p>' + ex(k) + '</p>'; }).join('') +
+    '<ul style="margin-left:16px">' + (ctxDigest.data.fakten || []).map(function(f){
+      return '<li style="margin-bottom:6px">' + ex(f.aussage) +
+        '<br><span style="color:var(--text-tertiary)">&bdquo;' + ex(f.zitat) + '&ldquo; &mdash; Seite ' + ex(String(f.seite)) + '</span></li>';
+    }).join('') + '</ul></div></details>';
+
+  html += '<label style="display:flex;align-items:center;gap:6px;font-size:12px;margin-top:8px;color:var(--text-tertiary)">' +
+    '<input type="checkbox" ' + (ctxDigestPdfsMitschicken ? 'checked ' : '') +
+    'onchange="ctxDigestPdfsMitschicken=this.checked">' +
+    'PDFs zusätzlich an jeden Request anhängen (teurer und langsamer &ndash; nur nötig, wenn im Digest etwas Wichtiges fehlt)</label>';
+
+  el.innerHTML = html;
+}
+
+function retryDigest() {
+  ctxDigest.signatur = null;
+  ctxDigest.status = 'leer';
+  ensureDigest();
+}
+
 /* Prompt-Block für den Kampagnen-Kontext; leerer String wenn nichts angegeben. */
 function ctxPromptBlock() {
   var parts = [];
   var t = lpContext();
   if (t) parts.push('Zusätzlicher Kontext (Kampagne & gewünschte Landingpage):\n' + t);
-  if (ctxFiles.length) parts.push('Angehängte PDF(s) sind zusätzliches Kampagnen-Briefing - nutze deren Inhalte als Fakten- und Kontextquelle.');
+  if (digestVerwendbar()) {
+    /* Die Befunde gehören mit in den Prompt: ein Widerspruch, den das Tool
+       selbst gefunden hat (und der Nutzer oben angezeigt bekommt), muss auch
+       das Modell erreichen - sonst schreibt es den falschen Termin. */
+    parts.push(Digest.renderForPrompt(ctxDigest.data, HF, ctxDigest.befunde).trim());
+    if (ctxDigestPdfsMitschicken) {
+      parts.push('Die vollständigen PDFs hängen zusätzlich an - bei Abweichungen gilt die obige Faktenliste.');
+    }
+  } else if (ctxFiles.length) {
+    parts.push('Angehängte PDF(s) sind zusätzliches Kampagnen-Briefing - nutze deren Inhalte als Fakten- und Kontextquelle.');
+  }
   return parts.length ? parts.join('\n') + '\n' : '';
 }
 
@@ -757,6 +934,11 @@ function ctxPreviewHTML() {
    1h + Dateien 1h erfüllt das.) */
 function buildUserContent(usr) {
   if (!ctxFiles.length) return usr;
+  /* Mit verwendbarem Digest ersetzt die Faktenliste die Dokumente - das ist
+     der eigentliche Gewinn von 1.3: die zwanzig Seiten hängen nicht mehr an
+     jedem Chunk und an jeder Regenerierung. Die Checkbox holt sie zurück,
+     falls im Digest etwas Wichtiges fehlt. */
+  if (digestVerwendbar() && !ctxDigestPdfsMitschicken) return usr;
   var content = ctxFiles.map(function(f) {
     return {type:'document', source:{type:'base64', media_type:'application/pdf', data:f.b64}};
   });
@@ -844,6 +1026,9 @@ function renderHF() {
   document.getElementById('import-banner').style.display = 'none';
   document.getElementById('hf-display').style.display = 'block';
   document.getElementById('hf-preview').innerHTML = hfPreviewHTML();
+  /* Erst jetzt sind die bestätigten Daten bekannt - vorher könnte der Digest
+     keinen Widerspruch zum Briefing erkennen. */
+  ensureDigest();
 }
 
 var PRESETS = {
@@ -2001,7 +2186,19 @@ function buildSessionExport() {
       hardfactsSchema: (HF && HF.versions && HF.versions.schemaVersion) || null
     }),
     hardfacts: HF,
-    kontext: { text: lpContext(), dateien: ctxFiles.map(function(f){ return f.name; }) },
+    kontext: {
+      text: lpContext(),
+      dateien: ctxFiles.map(function(f){ return f.name; }),
+      /* Ohne den Digest im Export ist ein Lauf mit PDF-Kontext nicht
+         nachvollziehbar: die PDFs selbst liegen nicht im Export, und die
+         Generierung sah nur noch den Digest. */
+      digest: digestVerwendbar() ? {
+        version: Digest.DIGEST_VERSION,
+        verwendet: !ctxDigestPdfsMitschicken,
+        data: ctxDigest.data,
+        befunde: ctxDigest.befunde
+      } : null
+    },
     sections: sections,
     sectionData: sectionData,
     sectionIssues: sectionIssues,
