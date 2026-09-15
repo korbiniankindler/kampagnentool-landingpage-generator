@@ -1,0 +1,4 @@
+{
+  "strategie": "Erster Absatz.\n\nZweiter Absatz.",
+  "titel": [{"pre": "A", "titel": "B", "sub": "C"}]
+}

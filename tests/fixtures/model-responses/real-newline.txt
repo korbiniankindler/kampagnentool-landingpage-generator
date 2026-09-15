@@ -1,0 +1,5 @@
+{
+  "strategie": "Erster Gedanke zur Zielgruppe.
+Zweiter Gedanke zum Winkel.",
+  "titel": [{"pre": "A", "titel": "B", "sub": "C"}]
+}

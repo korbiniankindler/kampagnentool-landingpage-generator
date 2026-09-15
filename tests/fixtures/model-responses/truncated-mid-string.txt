@@ -1,0 +1,2 @@
+{
+  "strategie": "Dieser Satz bricht mitten im Wort ab, weil das Token-Limit erre

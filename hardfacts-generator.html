@@ -73,6 +73,7 @@ body{background:#fff;padding:0}
 .strategy-section-label{font-size:10px;font-weight:600;color:#0a0a0a;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
 .strategy-section-text{font-size:11px;color:#3d3d38;line-height:1.6}
 }
+.title-kept-badge{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;background:var(--accent,#FEFD4B);color:#0a0a0a;padding:2px 7px;border-radius:20px;margin-bottom:6px}
 </style>
 </head>
 <body>
@@ -83,7 +84,7 @@ body{background:#fff;padding:0}
     <img class="brand-logo" src="https://cdn.prod.website-files.com/61dc3b2d623c7b5d59599bc8/62d50d7649ba53fbe3ebf994_220715_BL_Logo_Bildmarke_black.svg" alt="BRANDLIFT" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'brand-logo-fallback',textContent:'BL'}))">
     <div>
       <span class="brand-title">BRANDLIFT Kampagnen-Tool</span>
-      <span class="brand-version">Version 0.8</span>
+      <span class="brand-version">Version 0.9</span>
     </div>
   </div>
   <nav class="module-nav">
@@ -130,8 +131,11 @@ body{background:#fff;padding:0}
 
  <div class="step-card">
  <div class="step-header"><div class="step-num">3</div><span class="step-label">Kampagnenbeschreibung</span></div>
- <label class="field-label">Thema, Zielgruppe, Experte / Host, Besonderheiten</label>
- <textarea id="f-desc" placeholder="Thema, Host, Zielgruppe, Besonderheiten…"></textarea>
+ <label class="field-label">Thema, Experte / Host, Besonderheiten</label>
+ <textarea id="f-desc" placeholder="Thema, Host, Besonderheiten…"></textarea>
+ <label class="field-label" style="margin-top:12px">Zielgruppe <span style="font-weight:400;color:var(--text-tertiary)">(wird 1:1 an Modul 2 übergeben)</span></label>
+ <textarea id="f-audience" style="min-height:64px" placeholder="z.B. Frauen 45-65, gesundheitsbewusst, erste Wechseljahresbeschwerden, suchen ganzheitliche Lösungen statt Medikamenten"></textarea>
+ <p class="field-hint">Bleibt das Feld leer, generiert Modul 2 ohne Zielgruppen-Angabe. Das ist besser als eine falsche Angabe – aber schlechter als eine echte.</p>
  <p class="field-hint">Achtung: Uploads erhöhen die Ladezeit und werden nur für sehr wichtige Referenzen oder Kontext benötigt.</p>
  <div class="upload-zone" onclick="document.getElementById('f-file').click()">
  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -212,10 +216,13 @@ body{background:#fff;padding:0}
 
 </div>
 
+<script src="shared/versions.js"></script>
 <script src="shared/json-extract.js"></script>
+<script src="shared/api-client.js"></script>
 <script src="shared/copywriter-presets.js"></script>
 <script>
 var PROXY_URL = 'https://claude.korbinian.workers.dev/';
+ClaudeAPI.configure({ proxyUrl: PROXY_URL });
 
 const IC = {
  check: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 12 11 14 15 10"/></svg>',
@@ -235,7 +242,13 @@ const IC = {
 let uploadedFiles = [];
 let campaignCtx = '';
 let generatedTitles = [];
-let selectedTitleIdx = null;
+/* PHASE 0: Auswahl haengt an einer stabilen ID, nicht mehr an der Position.
+   Vorher war es ein Index in ein Array, das bei jeder Feedback-Runde komplett
+   ersetzt wurde - der Haken blieb auf Position 3 stehen und markierte danach
+   einen voellig anderen Titel als "ausgewaehlt". Der Nutzer hat still einen
+   Titel bestaetigt, den er nie gewaehlt hat, und dieser ging als h1 in die
+   Landingpage. */
+let selectedTitleId = null;
 let strategyTitles = '';
 let generatedBullets = [];
 let strategyBullets = '';
@@ -243,6 +256,21 @@ let selectedCopyPreset = CopyPresets.getSelected();
 let currentStep = 1;
 let maxStep = 1;
 let isGenerating = false;
+/* Laufende Generierung. Eine verspaetete Antwort eines abgebrochenen oder
+   ueberholten Laufs darf neueren Stand nicht ueberschreiben - Buttons zu
+   deaktivieren reicht dagegen nicht (der erste Lauf laeuft ja weiter). */
+let currentRunId = 0;
+
+function newLocalId(prefix) {
+ return prefix + Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-3);
+}
+function selectedTitle() {
+ if (selectedTitleId === null) return null;
+ return generatedTitles.find(function(t){ return t.id === selectedTitleId; }) || null;
+}
+/* Platzhalter, wenn kein Titel gewaehlt wurde. */
+const NO_TITLE = {pre:'', titel:'(kein Titel gewählt)', sub:''};
+function selectedTitleOrPlaceholder() { return selectedTitle() || NO_TITLE; }
 
 const TITLE_MSGS = ['Generiere Titel...','Formuliere Hooks...','Schärfe Varianten...'];
 const BULLET_MSGS = ['Generiere Inhalte...','Strukturiere Bullets...','Fast fertig...'];
@@ -282,7 +310,7 @@ window.addEventListener('DOMContentLoaded', function() {
    liegt in sessionStorage und ist nicht betroffen.) */
 function hasUnsavedWork() {
  if (uploadedFiles.length || generatedTitles.length || generatedBullets.length) return true;
- return ['f-name','f-desc','f-start','f-live','f-product','f-price'].some(function(id) {
+ return ['f-name','f-desc','f-audience','f-start','f-live','f-product','f-price'].some(function(id) {
  return document.getElementById(id).value.trim() !== '';
  });
 }
@@ -430,91 +458,87 @@ function goToStep(n) {
  }
 }
 
-/* ===== CLAUDE API CALL (über Cloudflare-Proxy, wie Modul 2) =====
-   Kein API-Key im Frontend. Rate-Limit-Pacing (4/min Sicherheitsmarge
-   unter dem Org-Limit von 5) + automatischer Retry bei 429. */
-var RATE_LIMIT_MAX_PER_MIN = 4;
-var RATE_LIMIT_WINDOW_MS = 61000;
-var _claudeRequestTimestamps = [];
+/* ===== CLAUDE API CALL =====
+   Die gesamte Transportlogik (HTTP-Status, Timeout, Retry, Retry-After,
+   Backoff, request-id, Rate-Limit-Pacing) liegt in shared/api-client.js und
+   wird mit Modul 2 geteilt. Vorher existierte sie hier und dort wortgleich,
+   mit denselben Luecken in beiden Kopien.
 
-function sleepMs(ms) { return new Promise(function(resolve){ setTimeout(resolve, ms); }); }
-
-async function throttleClaudeRequest() {
- var now = Date.now();
- _claudeRequestTimestamps = _claudeRequestTimestamps.filter(function(t){ return now - t < RATE_LIMIT_WINDOW_MS; });
- if (_claudeRequestTimestamps.length >= RATE_LIMIT_MAX_PER_MIN) {
- var oldest = _claudeRequestTimestamps[0];
- await sleepMs(RATE_LIMIT_WINDOW_MS - (now - oldest) + 250);
- return throttleClaudeRequest();
- }
- _claudeRequestTimestamps.push(Date.now());
-}
-
-function isRateLimitError(err) {
- if (!err) return false;
- var s = ((err.type||'') + ' ' + (err.message||'')).toLowerCase();
- return s.indexOf('rate limit') !== -1 || s.indexOf('rate_limit') !== -1;
-}
-
-/* Prompt Caching: Der System-Prompt wird über CopyPresets.systemBlocks()
+   Prompt Caching: Der System-Prompt wird über CopyPresets.systemBlocks()
    gebaut - das Preset ist dort ein eigener, modulübergreifend identischer
    Cache-Block. Titel, Bullets, Feedback-Runden UND Modul 2 teilen sich so
    einen einzigen Prompt-Cache (Write 1x pro Stunde, danach ~10% Lesekosten). */
-async function callClaude(body, attempt) {
- attempt = attempt || 1;
- await throttleClaudeRequest();
+function sleepMs(ms) { return new Promise(function(resolve){ setTimeout(resolve, ms); }); }
+
+async function callClaude(body, opts) {
  /* Thinking wird zentral abgeschaltet, nicht an den einzelnen Call-Stellen:
     Sonnet 5 denkt adaptiv, sobald das Feld fehlt - ein neuer Call ohne
     dieses Flag wuerde also still Thinking aktivieren, sich das Budget mit
     dem sichtbaren Text teilen und die Wartezeit erhoehen. Hier steht es
     genau einmal und gilt fuer alle Requests. */
  if (!('thinking' in body)) body.thinking = { type: 'disabled' };
- var resp = await fetch(PROXY_URL, {
- method: 'POST',
- headers: { 'Content-Type': 'application/json' },
- body: JSON.stringify(body)
- });
- var d = await resp.json();
- if (d.error) {
- if (isRateLimitError(d.error) && attempt < 6) {
- await sleepMs(14000 + Math.random() * 3000);
- return callClaude(body, attempt + 1);
- }
- throw new Error(d.error.message);
- }
- if (d.usage) console.log('Claude usage:', JSON.stringify(d.usage));
- return d;
+ return ClaudeAPI.send(body, opts);
 }
 
-async function callAPI(systemP, userP) {
+/* Ein JSON-Call fuer Titel bzw. Bullets.
+
+   PHASE 0: Vorher stand hier `extractJSON(raw, {salvage: true})` OHNE jeden
+   stop_reason-Check und ohne Retry. Eine am Token-Limit abgeschnittene Antwort
+   wurde damit stillschweigend zu einem plausibel aussehenden Teilergebnis -
+   aus 10 angeforderten Bullets wurden kommentarlos 7, ohne jeden Hinweis.
+   (Der Kommentar an dieser Stelle behauptete sogar das Gegenteil des Codes.)
+
+   Jetzt: stop_reason wird geprueft, bis zu 3 Versuche, KEIN Salvage. Ein
+   Teilergebnis ist hier wertlos - Titel und Bullets sind Listen fester Laenge,
+   aus denen der Nutzer auswaehlt. Lieber ein sichtbarer Fehler als eine
+   unvollstaendige Auswahl, die wie eine vollstaendige aussieht. */
+async function callAPI(systemP, userP, opts) {
+ opts = opts || {};
+ const maxAttempts = 3;
+
  /* PDFs als document-Blöcke VOR dem variablen Prompt-Text, mit Cache-
     Breakpoint auf dem letzten Datei-Block: System-Prompt + PDFs bilden so
     einen gemeinsamen Cache-Prefix über Titel, Bullets und alle Feedback-
     Runden - nur der erste Request zahlt voll, Folge-Requests lesen für
     ~10% der Input-Kosten. TTL 1h wie beim Preset (bleibt über die ganze
-    Arbeitssession warm; 1h-Breakpoints müssen vor kürzeren stehen). */
+    Arbeitssession warm; 1h-Breakpoints müssen vor kürzeren stehen).
+    Wird EINMAL gebaut und ueber alle Versuche wiederverwendet, damit der
+    Cache-Prefix byte-identisch bleibt. */
  const userContent = uploadedFiles.map(f =>
  ({type:'document', source:{type:'base64',media_type:'application/pdf',data:f.b64}}));
  if (userContent.length) userContent[userContent.length-1].cache_control = {type:'ephemeral', ttl:'1h'};
  userContent.push({type:'text', text:userP});
 
+ let lastReason = '';
+ for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+ if (attempt > 1 && opts.onStatus) opts.onStatus(lastReason + ' - neuer Versuch (' + attempt + '/' + maxAttempts + ')...');
+
  const data = await callClaude({
- model: 'claude-sonnet-5',
+ model: ToolVersions.MODEL,
  /* 6000 statt 4000: Sonnet 5 tokenisiert denselben deutschen Text rund 30%
-    feiner als Sonnet 4.6, die alte Reserve schrumpft entsprechend. Dieser
-    Pfad hat als einziger keine Salvage-Logik - eine abgeschnittene Antwort
-    ist hier ein harter Fehler fuer den Nutzer. Kostet nichts: abgerechnet
-    werden nur tatsaechlich erzeugte Tokens. */
+    feiner als Sonnet 4.6, die alte Reserve schrumpft entsprechend. Kostet
+    nichts: abgerechnet werden nur tatsaechlich erzeugte Tokens. */
  max_tokens: 6000,
  system: systemP,
  messages: [{role:'user', content:userContent}]
- });
- const raw = data.content.map(b=>b.text||'').join('');
- /* extractJSON aus shared/json-extract.js statt JSON.parse: die KI zitiert in
-    der Strategie-Begruendung regelmaessig den Kampagnentitel und laesst die
-    inneren Anfuehrungszeichen unescaped - reines JSON.parse scheitert daran
-    hart, weil dieser Pfad keine Retry- oder Salvage-Logik hat. */
- return extractJSON(raw, {salvage: true});
+ }, { label: opts.label, onRetry: function(n){ if (opts.onStatus) opts.onStatus('Verbindungsproblem - Versuch ' + n + '...'); } });
+
+ if (ClaudeAPI.isTruncated(data)) {
+ lastReason = 'Antwort war am Token-Limit abgeschnitten';
+ continue;
+ }
+ try {
+ /* extractJSON statt JSON.parse: die KI zitiert in der Strategie-
+    Begruendung regelmaessig den Kampagnentitel und laesst die inneren
+    Anfuehrungszeichen unescaped - reines JSON.parse scheitert daran hart.
+    Ohne {salvage} - eine unvollstaendige Struktur wirft hier. */
+ return extractJSON(ClaudeAPI.textOf(data));
+ } catch(e) {
+ lastReason = 'Ungueltiges JSON erhalten';
+ if (attempt === maxAttempts) throw new Error(lastReason + ' nach ' + maxAttempts + ' Versuchen: ' + e.message);
+ }
+ }
+ throw new Error(lastReason + ' nach ' + maxAttempts + ' Versuchen. Bitte die Eingaben kuerzen oder es erneut versuchen.');
 }
 
 function baseSystemPrompt() {
@@ -576,22 +600,24 @@ async function generateTitles(feedback) {
  if(el) el.textContent=TITLE_MSGS[Math.min(++mi,TITLE_MSGS.length-1)];
  },1800);
 
- const selectedInfo = (feedback && selectedTitleIdx !== null && generatedTitles[selectedTitleIdx])
- ? `\nAktuell ausgewählter Titel (beibehalten und als positiven Anhaltspunkt verwenden):\nPre: ${generatedTitles[selectedTitleIdx].pre||''}\nTitel: ${generatedTitles[selectedTitleIdx].titel}\nSub: ${generatedTitles[selectedTitleIdx].sub}`
+ /* Der gewaehlte Titel wird bei einer Feedback-Runde im CODE beibehalten
+    (siehe unten), nicht vom Modell zurueckerwartet. Er steht hier nur noch
+    als inhaltlicher Anhaltspunkt - deshalb werden auch nur 4 neue Varianten
+    angefordert: beibehaltener Titel + 4 neue = wieder 5 Optionen. */
+ const keptTitle = feedback ? selectedTitle() : null;
+ const wanted = keptTitle ? 4 : 5;
+ const selectedInfo = keptTitle
+ ? `\nDieser Titel bleibt erhalten und wird dem Nutzer weiterhin angeboten - NICHT erneut ausgeben, sondern als positiven Anhaltspunkt fuer die neuen Varianten verwenden:\nPre: ${keptTitle.pre||''}\nTitel: ${keptTitle.titel}\nSub: ${keptTitle.sub}`
  : '';
 
  const userP = `Kampagne:\n${campaignCtx}${selectedInfo}
 ${feedback ? `\nFeedback des Nutzers (unbedingt berücksichtigen):\n${feedback}` : ''}
 
-Generiere 5 Webinar-Titel-Varianten als JSON:
+Generiere ${wanted} Webinar-Titel-Varianten als JSON:
 {
  "strategie": "3-4 Sätze: Warum diese Titelwinkel für diese Zielgruppe funktionieren, welche psychologischen Trigger eingesetzt werden, welche Zeitgeschehen-Bezüge relevant sind.",
  "titel": [
- {"pre":"...","titel":"...","sub":"..."},
- {"pre":"...","titel":"...","sub":"..."},
- {"pre":"...","titel":"...","sub":"..."},
- {"pre":"...","titel":"...","sub":"..."},
- {"pre":"...","titel":"...","sub":"..."}
+${Array.from({length: wanted}, () => ' {"pre":"...","titel":"...","sub":"..."}').join(',\n')}
  ]
 }
 
@@ -606,7 +632,7 @@ LAENGEN (aus echten BrandLift-Landingpages abgeleitet, verbindlich):
 - "titel": 4-10 Woerter. Kurz und tragend, keine Nebensaetze.
 - "sub": 20-35 Woerter, ein bis zwei Saetze. Die Sub-Headline traegt den Nutzenrahmen und darf ausformuliert sein - sie ist KEIN verkuerzter Zweitaufschlag des Titels. Bleib nicht unter 20 Woertern.
 
-5 Varianten mit je eigenem Winkel: Curiosity Gap, Zeitgeschehen, Versprechen, Frage-Format, Faktencheck.
+${wanted} Varianten mit je eigenem Winkel: Curiosity Gap, Zeitgeschehen, Versprechen, Frage-Format, Faktencheck.
 
 ORIGINALITÄT (kritisch wichtig):
 - Alle Pre-Headlines, Titel und Sublines müssen NEU und spezifisch für diese Kampagne geschrieben sein
@@ -615,19 +641,38 @@ ORIGINALITÄT (kritisch wichtig):
 
 Nur JSON.`;
 
+ const runId = ++currentRunId;
+ const setMsg = (txt) => { const el = document.getElementById('titles-loading-msg'); if (el) { clearInterval(msgInt); el.textContent = txt; } };
+
  try {
  const sysP = await buildSystemPrompt();
- const parsed = await callAPI(sysP, userP);
- generatedTitles = parsed.titel || [];
+ const parsed = await callAPI(sysP, userP, {label: 'Titel', onStatus: setMsg});
+ /* Verspaetete Antwort eines ueberholten Laufs verwerfen, statt neueren
+    Stand zu ueberschreiben. */
+ if (runId !== currentRunId) return;
+
+ const incoming = (parsed.titel || []).map(t => Object.assign({}, t, {id: newLocalId('t')}));
+
+ if (keptTitle) {
+ /* CODE-GARANTIE: Der gewaehlte Titel bleibt derselbe - identisches Objekt,
+    identische ID. Er steht vorn und bleibt ausgewaehlt, egal was das Modell
+    zurueckgibt. Vorher hing die Auswahl an einer Array-Position und zeigte
+    nach dieser Zeile auf einen fremden Titel. */
+ keptTitle.kept = true;
+ generatedTitles = [keptTitle].concat(incoming);
+ } else {
+ generatedTitles = incoming;
+ selectedTitleId = null;
+ }
  strategyTitles = parsed.strategie || '';
 
- if (!feedback) selectedTitleIdx = null;
  clearInterval(msgInt);
  setBusy(false);
  restoreBtn();
  loadEl.style.display = 'none';
  renderTitles();
  } catch(e) {
+ if (runId !== currentRunId) return;
  clearInterval(msgInt);
  setBusy(false);
  restoreBtn();
@@ -644,15 +689,20 @@ function renderTitles() {
  <div class="strategy-text">${esc(strategyTitles)}</div>
  </div>` : '';
 
- const titlesHtml = generatedTitles.map((t,i) => `
- <div class="title-option${selectedTitleIdx===i?' selected':''}" id="topt-${i}" onclick="pickTitle(${i})">
- <div class="title-radio" id="tradio-${i}">${selectedTitleIdx===i ? IC.circleCheck : IC.circle}</div>
- <div class="title-body" id="tbody-${i}">
- <div class="title-pre m1-editable" contenteditable="true" data-kind="title" data-idx="${i}" data-field="pre" data-ph="Pre-Headline ergänzen..." onclick="event.stopPropagation()">${esc(t.pre||'')}</div>
- <div class="title-main m1-editable" contenteditable="true" data-kind="title" data-idx="${i}" data-field="titel" onclick="event.stopPropagation()">${esc(t.titel)}</div>
- <div class="title-sub m1-editable" contenteditable="true" data-kind="title" data-idx="${i}" data-field="sub" onclick="event.stopPropagation()">${esc(t.sub)}</div>
+ const titlesHtml = generatedTitles.map((t) => {
+ const sel = t.id === selectedTitleId;
+ const keptBadge = t.kept ? '<span class="title-kept-badge">Deine Auswahl - beibehalten</span>' : '';
+ return `
+ <div class="title-option${sel?' selected':''}" id="topt-${t.id}" onclick="pickTitle('${t.id}')">
+ <div class="title-radio" id="tradio-${t.id}">${sel ? IC.circleCheck : IC.circle}</div>
+ <div class="title-body" id="tbody-${t.id}">
+ ${keptBadge}
+ <div class="title-pre m1-editable" contenteditable="true" data-kind="title" data-id="${t.id}" data-field="pre" data-ph="Pre-Headline ergänzen..." onclick="event.stopPropagation()">${esc(t.pre||'')}</div>
+ <div class="title-main m1-editable" contenteditable="true" data-kind="title" data-id="${t.id}" data-field="titel" onclick="event.stopPropagation()">${esc(t.titel)}</div>
+ <div class="title-sub m1-editable" contenteditable="true" data-kind="title" data-id="${t.id}" data-field="sub" onclick="event.stopPropagation()">${esc(t.sub)}</div>
  </div>
- </div>`).join('');
+ </div>`;
+ }).join('');
 
  document.getElementById('titles-content').innerHTML = `
  <hr class="output-divider" style="margin-top:0">
@@ -664,7 +714,7 @@ function renderTitles() {
  <div class="section-label" style="margin-top:0;margin-bottom:.625rem">Feedback für neue Varianten</div>
  <textarea id="title-fb" placeholder="z.B. Provokanter formulieren, Zeitgeschehen stärker einbauen, mehr auf Einsteiger ausrichten..."></textarea>
  <div class="feedback-actions">
- <button class="secondary-btn" onclick="regenTitles()">${IC.refresh} Mit Feedback neu generieren</button>
+ <button class="secondary-btn" id="btn-regen-titles" onclick="regenTitles()">${IC.refresh} Mit Feedback neu generieren</button>
  </div>
  </div>
 
@@ -674,23 +724,15 @@ function renderTitles() {
  if (prevFb) document.getElementById('title-fb').value = prevFb;
 }
 
-function pickTitle(i) {
-
- if (selectedTitleIdx === i) {
- selectedTitleIdx = null;
- document.querySelectorAll('.title-option').forEach((el,j) => {
- el.classList.remove('selected');
- const radio = document.getElementById(`tradio-${j}`);
- if (radio) radio.innerHTML = IC.circle;
- });
- return;
- }
- selectedTitleIdx = i;
- document.querySelectorAll('.title-option').forEach((el,j) => {
- const radio = document.getElementById(`tradio-${j}`);
- if (!radio) return;
- if (j===i) { el.classList.add('selected'); radio.innerHTML=IC.circleCheck; }
- else { el.classList.remove('selected'); radio.innerHTML=IC.circle; }
+function pickTitle(id) {
+ selectedTitleId = (selectedTitleId === id) ? null : id;
+ generatedTitles.forEach((t) => {
+ const opt = document.getElementById(`topt-${t.id}`);
+ const radio = document.getElementById(`tradio-${t.id}`);
+ if (!opt || !radio) return;
+ const sel = t.id === selectedTitleId;
+ opt.classList.toggle('selected', sel);
+ radio.innerHTML = sel ? IC.circleCheck : IC.circle;
  });
 }
 
@@ -704,23 +746,39 @@ document.addEventListener('blur', function(ev) {
  const val = (el.textContent || '').trim();
 
  if (kind === 'title' || kind === 'summary') {
- const idx = kind === 'title' ? parseInt(el.dataset.idx) : selectedTitleIdx;
- if (idx === null || isNaN(idx) || !generatedTitles[idx]) return;
+ /* Ueber die stabile ID statt ueber die Position - sonst schreibt ein Edit
+    nach einer Feedback-Runde in den falschen Titel. */
+ const t = kind === 'title'
+ ? generatedTitles.find(x => x.id === el.dataset.id)
+ : selectedTitle();
+ if (!t) return;
  const field = el.dataset.field;
  // Haupttitel und Subline dürfen nicht leer werden - alten Wert wiederherstellen
- if (field !== 'pre' && !val) { el.textContent = generatedTitles[idx][field] || ''; return; }
- generatedTitles[idx][field] = val;
+ if (field !== 'pre' && !val) { el.textContent = t[field] || ''; return; }
+ t[field] = val;
  } else if (kind === 'bull') {
- const idx = parseInt(el.dataset.idx);
- if (isNaN(idx) || !generatedBullets[idx]) return;
- if (!val) { el.textContent = generatedBullets[idx].text; return; }
- generatedBullets[idx].text = val;
+ const b = generatedBullets.find(x => x.id === el.dataset.id);
+ if (!b) return;
+ if (!val) { el.textContent = b.text; return; }
+ b.text = val;
  }
 }, true);
 
 async function regenTitles() {
- const fb = (document.getElementById('title-fb')||{}).value||'';
- await generateTitles(fb.trim());
+ const fb = (document.getElementById('title-fb')||{}).value.trim()||'';
+ /* Ohne Feedback wuerde die komplette Titelliste ersetzt - inklusive
+    eigener Edits am gewaehlten Titel. Mit Feedback bleibt die Auswahl
+    per Code erhalten (siehe generateTitles). */
+ if (!fb) {
+ const ta = document.getElementById('title-fb');
+ if (ta) ta.focus();
+ alert('Bitte zuerst Feedback eingeben - sonst waere nicht klar, was an den Titeln anders werden soll.\n\nDer ausgewaehlte Titel bleibt dabei erhalten.');
+ return;
+ }
+ const btn = document.getElementById('btn-regen-titles');
+ if (btn) btn.disabled = true;
+ try { await generateTitles(fb); }
+ finally { if (btn) btn.disabled = false; }
 }
 
 function proceedToBullets() {
@@ -731,15 +789,16 @@ function proceedToBullets() {
  goToStep(3);
  return;
  }
- if (selectedTitleIdx === null) {
+ if (!selectedTitle()) {
  if (!confirm('Kein Titel ausgewählt - trotzdem fortfahren und Inhalte generieren?')) return;
  }
  generateBullets();
 }
 
 function renderTitleSummary() {
- const editable = selectedTitleIdx !== null && !!generatedTitles[selectedTitleIdx];
- const t = editable ? generatedTitles[selectedTitleIdx] : {pre:'',titel:'(kein Titel gewählt)',sub:''};
+ const sel = selectedTitle();
+ const editable = !!sel;
+ const t = sel || NO_TITLE;
  const field = (cls, f, val, ph) => editable
  ? `<div class="${cls} m1-editable" contenteditable="true" data-kind="summary" data-field="${f}"${ph ? ` data-ph="${ph}"` : ''}>${esc(val||'')}</div>`
  : (val ? `<div class="${cls}">${esc(val)}</div>` : '');
@@ -751,7 +810,7 @@ function renderTitleSummary() {
 }
 
 async function generateBullets(feedback) {
- const t = selectedTitleIdx !== null ? generatedTitles[selectedTitleIdx] : {pre:'',titel:'(kein Titel gewählt)',sub:''};
+ const t = selectedTitleOrPlaceholder();
 
  document.getElementById('phase-titles').style.display = 'none';
  document.getElementById('phase-bullets').style.display = 'block';
@@ -800,16 +859,25 @@ FORM (wichtig):
 
 Nur JSON.`;
 
+ const runId = ++currentRunId;
+ const setMsg = (txt) => { const el = document.getElementById('bullets-loading-msg'); if (el) { clearInterval(msgInt); el.textContent = txt; } };
+
  try {
  const sysP = await buildSystemPrompt();
- const parsed = await callAPI(sysP, userP);
- if (!feedback) {
- generatedBullets = (parsed.bulletpoints||[]).map(b=>({text:b,on:false}));
- } else {
+ const parsed = await callAPI(sysP, userP, {label: 'Inhalte', onStatus: setMsg});
+ if (runId !== currentRunId) return;
 
- const checkedTexts = generatedBullets.filter(b=>b.on).map(b=>b.text);
- const newBullets = (parsed.bulletpoints||[]).filter(b=>!checkedTexts.includes(b)).map(b=>({text:b,on:false}));
- generatedBullets = [...generatedBullets.filter(b=>b.on), ...newBullets];
+ const incoming = (parsed.bulletpoints||[]).map(b => ({id: newLocalId('b'), text: b, on: false}));
+ if (!feedback) {
+ generatedBullets = incoming;
+ } else {
+ /* Gesperrte Bullets bleiben als DIESELBEN Objekte erhalten (inkl. ID und
+    etwaiger Nutzer-Edits). Dublettenfilter ueber den Text ist nur eine
+    Bequemlichkeit - die Identitaet haengt an der ID, nicht am Wortlaut. */
+ const kept = generatedBullets.filter(b => b.on);
+ const keptTexts = kept.map(b => b.text.trim().toLowerCase());
+ const fresh = incoming.filter(b => !keptTexts.includes(String(b.text).trim().toLowerCase()));
+ generatedBullets = kept.concat(fresh);
  }
  strategyBullets = parsed.strategie || '';
  clearInterval(msgInt);
@@ -817,6 +885,7 @@ Nur JSON.`;
  loadEl.style.display = 'none';
  renderBullets();
  } catch(e) {
+ if (runId !== currentRunId) return;
  clearInterval(msgInt);
  setBusy(false);
  loadEl.style.display = 'none';
@@ -844,7 +913,7 @@ function renderBullets() {
  <div class="section-label" style="margin-top:0;margin-bottom:.625rem">Feedback für neue Varianten</div>
  <textarea id="bull-fb" placeholder="z.B. Mehr Fokus auf Einsteiger, Praxis-Beispiele einbauen, weniger wissenschaftlich..."></textarea>
  <div class="feedback-actions">
- <button class="secondary-btn" onclick="regenBullets()">${IC.refresh} Mit Feedback neu generieren</button>
+ <button class="secondary-btn" id="btn-regen-bullets" onclick="regenBullets()">${IC.refresh} Mit Feedback neu generieren</button>
  </div>
  </div>
 
@@ -854,34 +923,39 @@ function renderBullets() {
  if (prevFb) document.getElementById('bull-fb').value = prevFb;
 }
 
-function bulletLockHintHTML(i) {
- return `<div class="bullet-lock-hint" id="bhint-${i}">${IC.lockSmall} Gesperrt </div>`;
+function bulletLockHintHTML(id) {
+ return `<div class="bullet-lock-hint" id="bhint-${id}">${IC.lockSmall} Gesperrt </div>`;
 }
 
-function bulletItemHTML(b, i) {
+/* Alles ueber die stabile b.id statt ueber die Position: Loeschen eines
+   Bullets verschiebt sonst alle Indizes darunter, und ein Edit landet im
+   falschen Eintrag. */
+function bulletItemHTML(b) {
  return `
- <div class="bullet-item${b.on?' checked':''}" id="bull-${i}">
- <div class="bullet-cb" onclick="toggleBull(${i})" id="bcb-${i}" title="${b.on?'Gesperrt - klicken zum Entsperren':'Klicken zum Auswählen und Sperren'}">${b.on?IC.lock:IC.square}</div>
+ <div class="bullet-item${b.on?' checked':''}" id="bull-${b.id}">
+ <div class="bullet-cb" onclick="toggleBull('${b.id}')" id="bcb-${b.id}" title="${b.on?'Gesperrt - klicken zum Entsperren':'Klicken zum Auswählen und Sperren'}">${b.on?IC.lock:IC.square}</div>
  <div class="bullet-main">
- <div class="bullet-text m1-editable" contenteditable="true" data-kind="bull" data-idx="${i}" id="btext-${i}">${esc(b.text)}</div>
- ${b.on ? bulletLockHintHTML(i) : ''}
+ <div class="bullet-text m1-editable" contenteditable="true" data-kind="bull" data-id="${b.id}" id="btext-${b.id}">${esc(b.text)}</div>
+ ${b.on ? bulletLockHintHTML(b.id) : ''}
  </div>
  <div class="bullet-acts">
- <button class="icon-btn" onclick="removeBull(${i})">${IC.trash}</button>
+ <button class="icon-btn" onclick="removeBull('${b.id}')">${IC.trash}</button>
  </div>
  </div>`;
 }
 
-function toggleBull(i) {
- generatedBullets[i].on = !generatedBullets[i].on;
- const item = document.getElementById(`bull-${i}`);
- const cb = document.getElementById(`bcb-${i}`);
- const hint = document.getElementById(`bhint-${i}`);
- if (generatedBullets[i].on) {
+function toggleBull(id) {
+ const b = generatedBullets.find(x => x.id === id);
+ if (!b) return;
+ b.on = !b.on;
+ const item = document.getElementById(`bull-${id}`);
+ const cb = document.getElementById(`bcb-${id}`);
+ const hint = document.getElementById(`bhint-${id}`);
+ if (b.on) {
  item.classList.add('checked');
  cb.innerHTML = IC.lock;
  cb.title = 'Gesperrt - klicken zum Entsperren';
- if (!hint) document.getElementById(`btext-${i}`).insertAdjacentHTML('afterend', bulletLockHintHTML(i));
+ if (!hint) document.getElementById(`btext-${id}`).insertAdjacentHTML('afterend', bulletLockHintHTML(id));
  } else {
  item.classList.remove('checked');
  cb.innerHTML = IC.square;
@@ -890,8 +964,8 @@ function toggleBull(i) {
  }
 }
 
-function removeBull(i) {
- generatedBullets.splice(i,1);
+function removeBull(id) {
+ generatedBullets = generatedBullets.filter(b => b.id !== id);
  refreshBullets();
 }
 
@@ -900,8 +974,21 @@ function refreshBullets() {
 }
 
 async function regenBullets() {
- const fb = (document.getElementById('bull-fb')||{}).value||'';
- await generateBullets(fb.trim());
+ const fb = (document.getElementById('bull-fb')||{}).value.trim()||'';
+ /* PHASE 0: Vorher lief ein leeres Feedback in den !feedback-Zweig von
+    generateBullets und hat generatedBullets KOMPLETT ersetzt - alle
+    gesperrten Bullets weg, obwohl die UI daneben "angehakte Inhalte sind
+    gesperrt und bleiben bei Neu-Generierung erhalten" verspricht. */
+ if (!fb) {
+ const err = document.getElementById('bull-fb');
+ if (err) { err.focus(); }
+ alert('Bitte zuerst Feedback eingeben - sonst waere nicht klar, was an den Inhalten anders werden soll.\n\nGesperrte Inhalte bleiben bei jeder Neu-Generierung erhalten.');
+ return;
+ }
+ const btn = document.getElementById('btn-regen-bullets');
+ if (btn) btn.disabled = true;
+ try { await generateBullets(fb); }
+ finally { if (btn) btn.disabled = false; }
 }
 
 function backToTitles() {
@@ -912,19 +999,48 @@ function confirmHardfacts() {
  const active = generatedBullets.filter(b=>b.on);
  if (!active.length) { alert('Bitte behalte mindestens einen Inhaltspunkt.'); return; }
 
- const t = selectedTitleIdx !== null ? generatedTitles[selectedTitleIdx] : {pre:'',titel:'(kein Titel gewählt)',sub:''};
+ const t = selectedTitleOrPlaceholder();
+ const produkt = document.getElementById('f-product').value.trim();
+ const preis = document.getElementById('f-price').value.trim();
+ const zielgruppe = document.getElementById('f-audience').value.trim();
+
  window._hardfacts = {
  kampagnenname: document.getElementById('f-name').value,
  beschreibung: document.getElementById('f-desc').value.trim(),
+ akquise_start: document.getElementById('f-start').value.trim(),
  live_termin: document.getElementById('f-live').value,
- offer: `${document.getElementById('f-product').value} · ${document.getElementById('f-price').value}`,
+
+ /* PHASE 0: `offer` war ein zusammengesetzter String `produkt · preis`.
+    Produkt und Preis waren danach nicht mehr trennbar - relevant, weil das
+    Hellinger-Regelwerk Preisnennung in der Copy verbietet. Ausserdem war
+    " · " bei zwei leeren Feldern truthy, weshalb der Fallback in Modul 2
+    ("Kostenfreies Webinar") nie griff. Jetzt getrennt; `offer` bleibt als
+    Anzeige-/Kompatibilitaetsfeld erhalten, ist aber leer wenn beides leer ist. */
+ angebot: { produkt: produkt, preis: preis },
+ offer: [produkt, preis].filter(Boolean).join(' · '),
+
  pre_headline: t.pre||'',
  titel: t.titel,
  sub_headline: t.sub,
  bulletpoints: active.map(b=>b.text),
+
+ /* PHASE 0: `zielgruppe` enthielt bis hierher `strategyTitles` - die
+    Begruendung des Modells, WARUM die Titel-Winkel funktionieren. Modul 2
+    hat diesen Meta-Text als Zielgruppendefinition in JEDEN Prompt injiziert
+    (und ein zweites Mal als "Strategie / Positionierung"). Jetzt kommt die
+    Zielgruppe aus einem eigenen Eingabefeld; leer ist zulaessig und
+    ehrlicher als falsch. */
+ zielgruppe: zielgruppe,
+ /* Bleibt unter seinem bisherigen Namen - er war immer korrekt ("Strategie
+    zu den Titeln"). Falsch war allein, dass `zielgruppe` denselben Wert
+    bekam. Eine Umbenennung braechte alte Exporte ohne Gegenwert. */
  strategie_titel: strategyTitles,
  strategie_bullets: strategyBullets,
- zielgruppe: strategyTitles
+
+ versions: ToolVersions.stamp({
+ preset: selectedCopyPreset || null,
+ presetRef: (selectedCopyPreset && CopyPresets.autoRef(selectedCopyPreset, campaignCtx) || {}).id || null
+ })
  };
 
  // Write to sessionStorage for Modul 2
@@ -948,9 +1064,15 @@ function confirmHardfacts() {
  <div class="result-value-sub">${esc(t.sub)}</div>
  </div>
  <div class="result-field">
- <div class="result-label">Zielgruppen-Analyse</div>
+ <div class="result-label">Zielgruppe</div>
+ ${window._hardfacts.zielgruppe
+ ? '<div class="result-value">' + esc(window._hardfacts.zielgruppe) + '</div>'
+ : '<div class="result-value" style="color:var(--text-tertiary)">Nicht angegeben &mdash; Modul 2 generiert ohne Zielgruppen-Angabe. <a href="#" onclick="goToStep(1);return false;">In Schritt 1 ergänzen</a></div>'}
+ </div>
+ <div class="result-field">
+ <div class="result-label">Strategie-Begründung zu den Titeln</div>
  <div class="strategy-section" style="margin-top:6px">
- <div class="strategy-section-label">Strategie & Zielgruppe</div>
+ <div class="strategy-section-label">Warum diese Titel-Winkel</div>
  <div class="strategy-section-text">${esc(strategyTitles)}</div>
  </div>
  </div>
@@ -965,7 +1087,7 @@ function confirmHardfacts() {
  </button>
  <button class="export-btn" onclick="exportDocx()">
  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
- Google Docs
+ Als Word-Datei (.doc)
  </button>
  <button class="export-btn" onclick="exportJSON()">
  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -1039,8 +1161,8 @@ function exportDocx() {
  + TA('p','style="font-size:10pt;color:#666;margin-bottom:3pt"') + T('strong') + 'LIVE-TERMIN:' + TC('strong') + ' ' + h_esc(h.live_termin || '-') + TC('p')
  + TA('p','style="font-size:10pt;color:#666;margin-bottom:3pt"') + T('strong') + 'OFFER:' + TC('strong') + ' ' + h_esc(h.offer) + TC('p')
  + T('hr')
- + TA('p','style="font-size:9pt;font-weight:bold;color:#3b6d11;letter-spacing:1px;text-transform:uppercase;margin:0 0 4pt 0"') + 'ZIELGRUPPEN-ANALYSE' + TC('p')
- + TA('p','style="font-size:10pt;color:#27500a;line-height:1.65;margin-bottom:16pt;background:#f5f9ee;padding:8pt 10pt;border-left:3px solid #8bc34a"') + h_esc(h.zielgruppe||h.strategie_titel||'') + TC('p')
+ + TA('p','style="font-size:9pt;font-weight:bold;color:#3b6d11;letter-spacing:1px;text-transform:uppercase;margin:0 0 4pt 0"') + 'ZIELGRUPPE' + TC('p')
+ + TA('p','style="font-size:10pt;color:#27500a;line-height:1.65;margin-bottom:16pt;background:#f5f9ee;padding:8pt 10pt;border-left:3px solid #8bc34a"') + h_esc(h.zielgruppe || '(nicht angegeben)') + TC('p')
  + T('hr')
  + preHtml
  + T('h1') + h_esc(h.titel) + TC('h1')

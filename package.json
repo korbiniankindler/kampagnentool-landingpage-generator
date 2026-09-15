@@ -1,0 +1,10 @@
+{
+  "name": "kampagnentool",
+  "version": "0.9.0",
+  "private": true,
+  "description": "BRANDLIFT Kampagnen-Tool - statische Web-App ohne Build. package.json existiert ausschliesslich fuer die Tests (node --test, keine Dependencies).",
+  "scripts": {
+    "test": "node --test \"tests/**/*.test.js\"",
+    "check:presets": "node sync-presets.js --check"
+  }
+}

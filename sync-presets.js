@@ -6,7 +6,13 @@
 
    Nach jeder Änderung an den Preset-Dateien ausführen:
      node sync-presets.js
-   und alles (presets/ + beide Modul-HTMLs) committen. */
+   und alles (presets/ + beide Modul-HTMLs) committen.
+
+   --check schreibt nichts und meldet per Exit-Code 1, ob die eingebetteten
+   Snapshots noch zu presets/ passen. Laeuft in der CI: driften sie
+   auseinander, generiert das Tool still mit veraltetem Markenwissen, sobald
+   der Fallback greift (file:// oder presets/ nicht mit deployt) - und genau
+   das soll der Fallback ja verhindern. */
 'use strict';
 const fs = require('fs');
 const path = require('path');
@@ -39,6 +45,9 @@ const blocks = files.map((f) => {
   return '<script type="text/plain" data-preset-file="' + rel + '">\n' + text + '\n</script>';
 });
 
+const checkOnly = process.argv.includes('--check');
+const stale = [];
+
 for (const htmlFile of HTML_FILES) {
   const html = fs.readFileSync(htmlFile, 'utf8');
   const startIdx = html.indexOf(START);
@@ -47,8 +56,26 @@ for (const htmlFile of HTML_FILES) {
     throw new Error('PRESET-DATA-Marker nicht in ' + htmlFile + ' gefunden');
   }
   const updated = html.slice(0, startIdx + START.length) + '\n' + blocks.join('\n') + '\n' + html.slice(endIdx);
-  fs.writeFileSync(htmlFile, updated);
-  console.log(path.basename(htmlFile) + ' aktualisiert.');
+  if (checkOnly) {
+    if (updated !== html) stale.push(path.basename(htmlFile));
+    continue;
+  }
+  if (updated === html) {
+    console.log(path.basename(htmlFile) + ' war bereits aktuell.');
+  } else {
+    fs.writeFileSync(htmlFile, updated);
+    console.log(path.basename(htmlFile) + ' aktualisiert.');
+  }
+}
+
+if (checkOnly) {
+  if (stale.length) {
+    console.error('Eingebettete Preset-Snapshots sind veraltet in: ' + stale.join(', '));
+    console.error('Bitte "node sync-presets.js" ausfuehren und die HTMLs mitcommitten.');
+    process.exit(1);
+  }
+  console.log('Preset-Snapshots sind aktuell (' + files.length + ' Dateien).');
+  process.exit(0);
 }
 
 const kb = Math.round(blocks.join('\n').length / 1024);

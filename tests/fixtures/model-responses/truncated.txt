@@ -1,0 +1,6 @@
+{
+  "strategie": "Fuenf Winkel fuer diese Kampagne.",
+  "titel": [
+    {"pre": "A", "titel": "B", "sub": "C"},
+    {"pre": "D", "titel": "E", "sub": "F"},
+    {"pre": "G", "titel": "H", "sub":

@@ -1,0 +1,6 @@
+{
+  "strategie": "Drei Winkel, die auf die Zielgruppe einzahlen.",
+  "titel": [
+    {"pre": "WAS NIEMAND ERKLAERT", "titel": "Der Platz, der zu Dir gehoert", "sub": "Im kostenfreien Live-Seminar wird sichtbar, welche Ordnung hinter wiederkehrenden Themen wirkt."}
+  ]
+}

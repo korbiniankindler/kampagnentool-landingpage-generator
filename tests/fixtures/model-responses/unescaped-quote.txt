@@ -1,0 +1,4 @@
+{
+  "strategie": "Der Titel "Alte Muster loesen" funktioniert, weil er die Zielgruppe in ihrer eigenen Erfahrung abholt.",
+  "titel": [{"pre": "A", "titel": "B", "sub": "C"}]
+}

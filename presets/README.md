@@ -49,4 +49,4 @@ Reihenfolge = Prompt-Reihenfolge: Regeln zuerst, dann Fakten, dann die eine auto
 
 ## Token-Budget
 
-Der gesamte Preset-Inhalt wird per Prompt Caching nur einmal pro 5-Minuten-Fenster voll bezahlt; Folge-Requests lesen ihn für ~10 % des Preises. Richtwert: 40-80 KB Gesamtumfang pro Preset sind unkritisch. Kuratieren statt kippen: lieber wenige, starke Referenzen pro LP-Typ als das ganze Archiv.
+Der gesamte Preset-Inhalt wird per Prompt Caching nur einmal pro Stunde voll bezahlt (die Tools setzen `ttl: '1h'`, siehe `shared/copywriter-presets.js`); Folge-Requests lesen ihn für ~10 % des Preises. Richtwert: 40-80 KB Gesamtumfang pro Preset sind unkritisch. Kuratieren statt kippen: lieber wenige, starke Referenzen pro LP-Typ als das ganze Archiv.

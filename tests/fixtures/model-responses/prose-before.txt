@@ -1,0 +1,6 @@
+Gerne! Hier sind die Titel-Varianten:
+
+{
+  "strategie": "Kurz und knapp.",
+  "titel": [{"pre": "A", "titel": "B", "sub": "C"}]
+}

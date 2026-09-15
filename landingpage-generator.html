@@ -76,6 +76,9 @@
 .ai-suggest-box{border:1px solid var(--border-light);border-radius:var(--radius-md);padding:14px;background:var(--bg-secondary);margin-bottom:1rem}
 .ai-suggest-loading{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text-secondary);padding:8px 0}
 .sec-mode-hint{font-size:12px;color:var(--text-tertiary);margin-bottom:10px}
+.incomplete-banner,.notice-banner{background:#fff8e1;border:1px solid #f0c674;border-left:3px solid #e0a800;border-radius:8px;padding:10px 12px;margin:0 0 10px;font-size:12.5px;line-height:1.55;color:#5c4400}
+.review-card.incomplete{border-color:#f0c674}
+#export-gate-hint:empty{display:none}
 </style>
 </head>
 <body>
@@ -86,7 +89,7 @@
     <img class="brand-logo" src="https://cdn.prod.website-files.com/61dc3b2d623c7b5d59599bc8/62d50d7649ba53fbe3ebf994_220715_BL_Logo_Bildmarke_black.svg" alt="BRANDLIFT" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'brand-logo-fallback',textContent:'BL'}))">
     <div>
       <span class="brand-title">BRANDLIFT Kampagnen-Tool</span>
-      <span class="brand-version">Version 0.8</span>
+      <span class="brand-version">Version 0.9</span>
     </div>
   </div>
   <nav class="module-nav">
@@ -157,7 +160,7 @@
     </div>
     <div id="hf-display" style="display:none">
       <div class="hf-box" id="hf-preview"></div>
-      <button class="primary-btn" onclick="goSections()">
+      <button class="primary-btn" id="btn-go-sections" onclick="goSections()">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
         Bestätigt - weiter zu Sections
       </button>
@@ -288,7 +291,7 @@
         <p style="font-size:13px;color:var(--text-secondary);margin-bottom:10px">Die KI analysiert deine Kampagnen-Infos und schlägt eine maßgeschneiderte Section-Struktur vor. Du kannst den Vorschlag danach noch anpassen.</p>
         <label class="field-label">Zusätzliche Hinweise für die KI (optional)</label>
         <textarea id="ai-sec-hint" placeholder="z.B. Seite soll sehr kurz sein, nur 5-6 Sections. Oder: FAQ-Section erwünscht. Oder: Kein Trust Bar, wir haben keine Presselogos." style="min-height:72px;margin-bottom:10px"></textarea>
-        <button class="primary-btn" style="margin-top:0" onclick="suggestSectionsAI()">
+        <button class="primary-btn" id="btn-suggest-sections" style="margin-top:0" onclick="suggestSectionsAI()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
           Sections von KI vorschlagen lassen
         </button>
@@ -329,7 +332,7 @@
     </div>
     <div id="sec-error"></div>
     <div id="copy-preset-hint" style="font-size:12px;color:var(--text-tertiary);margin-top:10px"></div>
-    <button class="primary-btn" onclick="startGeneration()">
+    <button class="primary-btn" id="btn-start-generation" onclick="startGeneration()">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
       Landingpage generieren
     </button>
@@ -365,7 +368,7 @@
     <div class="section-label" style="margin-top:0">Strukturiertes Briefing für Claude Design</div>
     <div class="export-box" id="export-text"></div>
     <div class="export-btns">
-      <button class="export-btn primary" onclick="copyExport()">
+      <button class="export-btn primary" onclick="copyExport(event)">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
         In Zwischenablage kopieren
       </button>
@@ -376,6 +379,10 @@
       <button class="export-btn" onclick="downloadPdf()">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         Als PDF herunterladen
+      </button>
+      <button class="export-btn" onclick="downloadSession()" title="Kompletter Arbeitsstand als JSON - fuer Fehlerberichte und zum Wiederherstellen">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Session (JSON)
       </button>
       <button class="export-btn" onclick="downloadDoc()">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -390,13 +397,30 @@
 </div>
 
 </div>
+<script src="shared/versions.js"></script>
 <script src="shared/json-extract.js"></script>
+<script src="shared/api-client.js"></script>
+<script src="shared/hardfacts.js"></script>
 <script src="shared/copywriter-presets.js"></script>
 <script>
 var PROXY_URL = 'https://claude.korbinian.workers.dev/';
+ClaudeAPI.configure({ proxyUrl: PROXY_URL });
 var HF = null;
 var sections = [];
 var sectionData = {};
+/* Sections, deren Generierung nur teilweise gelungen ist (abgeschnittene oder
+   ungueltige Antwort). Sie bleiben sichtbar und editierbar, sind im Review
+   aber als unvollstaendig markiert und sperren den Export, bis sie neu
+   generiert oder bewusst freigegeben wurden. */
+var sectionIssues = {};
+/* Laufende Generierung: eine verspaetete Antwort eines ueberholten Laufs darf
+   neueren Stand nicht ueberschreiben. Buttons zu deaktivieren reicht dagegen
+   nicht - der erste Lauf laeuft ja weiter. */
+var currentRunId = 0;
+/* Der Content-Plan darf ausfallen (die Generierung laeuft dann ohne ihn), aber
+   nicht unbemerkt: der Review weist darauf hin, weil Sections ohne Plan
+   staerker zur inhaltlichen Dopplung neigen. */
+var planFailed = false;
 var customCounter = 0;
 var dragSrcIdx = null;
 var currentStep = 1;
@@ -405,64 +429,33 @@ var isGenerating = false;
 
 var GMSG = ['Landingpage wird generiert...','Sections werden geschrieben...','Tonalität wird abgestimmt...','Fast fertig...'];
 
-/* ===== CLAUDE API CALL (zentral: Rate-Limit-Pacing + Retry) =====
-   Das Org-Limit liegt bei 5 Requests/Minute für dieses Modell. Alle
-   Aufrufer müssen über diese Funktion laufen, damit parallele Section-
-   Generierungen (Promise.all) sich nicht gegenseitig aus dem Limit werfen. */
-var RATE_LIMIT_MAX_PER_MIN = 4; // Sicherheitsmarge unter dem Org-Limit von 5
-var RATE_LIMIT_WINDOW_MS = 61000;
-var _claudeRequestTimestamps = [];
+/* ===== CLAUDE API CALL =====
+   Transportlogik (HTTP-Status, Timeout je Call, Retry mit Retry-After und
+   Backoff, request-id, Rate-Limit-Pacing) liegt in shared/api-client.js und
+   wird mit Modul 1 geteilt. Vorher stand sie hier und dort wortgleich, mit
+   denselben Luecken in beiden Kopien - insbesondere ohne resp.ok-Check, was
+   jede Cloudflare-Fehlerseite in ein "Unexpected token '<'" verwandelt hat.
 
-function sleepMs(ms) { return new Promise(function(resolve){ setTimeout(resolve, ms); }); }
+   Rate-Limit: Der Throttle im api-client ist eine Hoeflichkeitsbremse pro
+   Browser-Tab, keine organisationsweite Garantie (siehe
+   docs/proxy-capabilities.md). Er haelt parallele Section-Generierungen
+   (Promise.all) trotzdem zuverlaessig auseinander.
 
-async function throttleClaudeRequest() {
-  var now = Date.now();
-  _claudeRequestTimestamps = _claudeRequestTimestamps.filter(function(t){ return now - t < RATE_LIMIT_WINDOW_MS; });
-  if (_claudeRequestTimestamps.length >= RATE_LIMIT_MAX_PER_MIN) {
-    var oldest = _claudeRequestTimestamps[0];
-    await sleepMs(RATE_LIMIT_WINDOW_MS - (now - oldest) + 250);
-    return throttleClaudeRequest();
-  }
-  _claudeRequestTimestamps.push(Date.now());
-}
-
-function isRateLimitError(err) {
-  if (!err) return false;
-  var s = ((err.type||'') + ' ' + (err.message||'')).toLowerCase();
-  return s.indexOf('rate limit') !== -1 || s.indexOf('rate_limit') !== -1;
-}
-
-/* Prompt Caching: System-Prompts werden über CopyPresets.systemBlocks()
+   Prompt Caching: System-Prompts werden über CopyPresets.systemBlocks()
    gebaut - das Preset ist dort ein eigener, modulübergreifend identischer
    Cache-Block (TTL 1h). Landingpage-Generierung, Section-Regenerierungen
    UND Modul 1 teilen sich so einen einzigen Prompt-Cache: Write 1x pro
    Stunde, alle Folge-Requests zahlen nur ~10% der Input-Tokens. */
-async function callClaude(body, onRetry, attempt) {
-  attempt = attempt || 1;
-  await throttleClaudeRequest();
+function sleepMs(ms) { return new Promise(function(resolve){ setTimeout(resolve, ms); }); }
+
+async function callClaude(body, onRetry) {
   /* Thinking wird zentral abgeschaltet, nicht an den einzelnen Call-Stellen:
      Sonnet 5 denkt adaptiv, sobald das Feld fehlt - ein neuer Call ohne
      dieses Flag wuerde also still Thinking aktivieren, sich das Budget mit
      dem sichtbaren Text teilen und die Wartezeit erhoehen. Hier steht es
      genau einmal und gilt fuer alle Requests. */
   if (!('thinking' in body)) body.thinking = { type: 'disabled' };
-  var resp = await fetch(PROXY_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  });
-  var d = await resp.json();
-  if (d.error) {
-    if (isRateLimitError(d.error) && attempt < 6) {
-      if (onRetry) onRetry(attempt, d.error);
-      await sleepMs(14000 + Math.random() * 3000);
-      return callClaude(body, onRetry, attempt + 1);
-    }
-    throw new Error(d.error.message);
-  }
-  // Diagnose: cache_read_input_tokens > 0 heisst, Prompt Caching greift.
-  if (d.usage) console.log('Claude usage:', JSON.stringify(d.usage));
-  return d;
+  return ClaudeAPI.send(body, { onRetry: onRetry });
 }
 
 /* ===== COPYWRITER PRESETS (Schritt 1) =====
@@ -524,7 +517,7 @@ window.addEventListener('DOMContentLoaded', function() {
   if (selectedCopyPreset) CopyPresets.load(selectedCopyPreset).catch(function(e){ console.warn(e); });
   try {
     var raw = sessionStorage.getItem('wkt_hardfacts');
-    if (raw) { HF = JSON.parse(raw); renderHF(); return; }
+    if (raw) { acceptHF(JSON.parse(raw)); renderHF(); return; }
   } catch(e) {}
   // No session data – show JSON tab (already visible by default)
 });
@@ -704,7 +697,7 @@ function loadJSON(inp) {
   var f = inp.files[0]; if (!f) return;
   var r = new FileReader();
   r.onload = function(e) {
-    try { HF = JSON.parse(e.target.result); renderHF(); }
+    try { acceptHF(JSON.parse(e.target.result)); renderHF(); }
     catch(err) { document.getElementById('import-err').innerHTML = '<div class="error-box">Ungültige JSON-Datei.</div>'; }
   };
   r.readAsText(f);
@@ -716,7 +709,7 @@ function submitFreitext() {
   document.getElementById('ft-err').innerHTML = '';
   var rawBullets = document.getElementById('ft-bullets').value.trim();
   var bullets = rawBullets ? rawBullets.split('\n').map(function(l){return l.trim();}).filter(Boolean) : [];
-  HF = {
+  acceptHF({
     kampagnenname: titel,
     beschreibung: document.getElementById('ft-beschreibung').value.trim(),
     titel: document.getElementById('ft-h1').value.trim() || titel,
@@ -727,8 +720,20 @@ function submitFreitext() {
     bulletpoints: bullets,
     zielgruppe: document.getElementById('ft-zielgruppe').value.trim(),
     strategie_titel: document.getElementById('ft-strategie').value.trim()
-  };
+  });
   goSections();
+}
+
+/* Jede Uebernahme von Hardfacts laeuft hierueber - Session, JSON-Upload und
+   Freitext. Alte Dateien werden migriert (siehe shared/hardfacts.js) und die
+   Korrekturen gemerkt, damit sie im Vorschau-Kasten sichtbar werden statt
+   still zu passieren. */
+var hfMigrationNotes = [];
+function acceptHF(raw) {
+  var res = HardfactsIO.migrate(raw);
+  HF = res.hf;
+  hfMigrationNotes = res.migrated;
+  return HF;
 }
 
 function hfPreviewHTML() {
@@ -737,10 +742,15 @@ function hfPreviewHTML() {
     ? '<ul class="hf-bullets">' + bullets.map(function(b){return '<li>'+ex(b)+'</li>';}).join('') + '</ul>'
     : '<span style="color:var(--text-tertiary);font-size:12px">Keine Bulletpoints im JSON</span>';
 
-  var zielgruppe = HF.zielgruppe || '';
-  var strategie = HF.strategie || HF.strategie_titel || '';
+  var zielgruppe = HardfactsIO.audience(HF);
+  /* PHASE 0: hier stand `HF.strategie || HF.strategie_titel` - bei Daten aus
+     Modul 1 war das derselbe Text, der oben schon als Zielgruppe stand. */
+  var strategie = HF.strategie || '';
+  var notes = hfMigrationNotes.length
+    ? '<div class="notice-banner">' + hfMigrationNotes.map(ex).join('<br>') + '</div>'
+    : '';
 
-  return '<div class="hf-label">Kampagne aus Modul 1</div>' +
+  return notes + '<div class="hf-label">Kampagne aus Modul 1</div>' +
     (HF.pre_headline ? '<div class="hf-pre">'+ex(HF.pre_headline)+'</div>' : '') +
     '<div class="hf-title">'+ex(HF.titel||HF.kampagnenname)+'</div>' +
     '<div class="hf-sub">'+ex(HF.sub_headline||'')+'</div>' +
@@ -750,7 +760,11 @@ function hfPreviewHTML() {
       bulletHTML +
     '</div>' +
     (HF.beschreibung ? '<div class="hf-detail"><div class="hf-detail-label">Beschreibung / Referent</div><div class="hf-detail-val">'+ex(HF.beschreibung)+'</div></div>' : '') +
-    (zielgruppe ? '<div class="hf-detail"><div class="hf-detail-label">Zielgruppe</div><div class="hf-detail-val">'+ex(zielgruppe)+'</div></div>' : '') +
+    '<div class="hf-detail"><div class="hf-detail-label">Zielgruppe</div><div class="hf-detail-val">' +
+      (zielgruppe ? ex(zielgruppe)
+        : '<span style="color:var(--text-tertiary)">Nicht angegeben &ndash; die Landingpage wird ohne Zielgruppen-Angabe generiert. ' +
+          'Im Feld &bdquo;Kampagnen-Kontext&ldquo; oben nachtragen.</span>') +
+      '</div></div>' +
     (strategie ? '<div class="hf-detail"><div class="hf-detail-label">Strategie</div><div class="hf-detail-val">'+ex(strategie)+'</div></div>' : '');
 }
 
@@ -821,7 +835,7 @@ async function suggestSectionsAI() {
   var errEl = document.getElementById('ai-sec-error');
   errEl.innerHTML = '';
   loadEl.style.display = 'flex';
-  document.querySelector('#secmode-ai .primary-btn').disabled = true;
+  setGenerateButtonsDisabled(true);
 
   try {
     var usr = 'Du bist ein Conversion-Optimierungsspezialist für Webinar-Landingpages.\n\n' +
@@ -829,7 +843,7 @@ async function suggestSectionsAI() {
       'Pre-Headline: ' + (HF.pre_headline||'') + '\n' +
       'Sub-Headline: ' + (HF.sub_headline||'') + '\n' +
       (HF.beschreibung ? 'Beschreibung: ' + HF.beschreibung + '\n' : '') +
-      'Zielgruppe: ' + (HF.zielgruppe||HF.strategie_titel||'') + '\n' +
+      'Zielgruppe: ' + (HardfactsIO.audience(HF) || '(keine Angabe)') + '\n' +
       'Angebot: ' + (HF.offer||'Kostenfreies Webinar') + '\n' +
       (hint ? 'Zusätzliche Hinweise: ' + hint + '\n' : '') +
       ctxPromptBlock() + '\n' +
@@ -844,7 +858,7 @@ async function suggestSectionsAI() {
       'NUR das JSON-Array, kein anderer Text, keine Backticks.';
 
     var d = await callClaude({
-      model: 'claude-sonnet-5',
+      model: ToolVersions.MODEL,
       max_tokens: 1000,
       messages: [{ role: 'user', content: buildUserContent(usr) }]
     }, function(attempt){ loadEl.innerHTML = '<div class="spinner"></div> Rate-Limit erreicht, versuche erneut (' + attempt + ')...'; });
@@ -872,10 +886,19 @@ async function suggestSectionsAI() {
   }
 
   loadEl.style.display = 'none';
-  document.querySelector('#secmode-ai .primary-btn').disabled = false;
+  setGenerateButtonsDisabled(false);
 }
 
 function goExport() {
+  /* Zweite Sperre neben dem deaktivierten Button: goToStep(4) und ein
+     direkter Aufruf sollen genauso wenig ein halbes Briefing exportieren. */
+  var open = incompleteSectionIds();
+  if (open.length) {
+    updateExportGate();
+    alert('Export noch nicht moeglich: ' + open.length + ' Section' + (open.length === 1 ? ' wurde' : 's wurden') +
+      ' unvollstaendig generiert.\n\nBitte im Review neu generieren oder ausdruecklich freigeben.');
+    return;
+  }
   currentStep = 4; maxStep = Math.max(maxStep, 4); updateProgClickability();
   hide('phase-review'); show('phase-export'); setP(4); buildExport();
 }
@@ -985,11 +1008,16 @@ var COPY_LENGTH_RULES = [
 
 /* ===== GENERATION (Phase 3) ===== */
 async function startGeneration() {
+  /* Guard am Funktionsanfang: ein deaktivierter Button allein verhindert
+     keinen zweiten Lauf (Enter-Taste, doppelter Klick vor dem Re-Render,
+     Aufruf aus der Konsole). Zwei parallele Laeufe wuerden sich sectionData
+     gegenseitig ueberschreiben. */
+  if (isGenerating) return;
   var active = sections.filter(function(s){return s.active;});
   if (!active.length) { document.getElementById('sec-error').innerHTML = '<div class="error-box">Bitte mindestens eine Section auswählen.</div>'; return; }
   document.getElementById('sec-error').innerHTML = '';
 
-  currentStep = 3; maxStep = Math.max(maxStep, 3); updateProgClickability();
+  currentStep = 3; updateProgClickability();
   hide('phase-sections'); show('phase-review'); setP(3);
   var loadEl = document.getElementById('review-loading');
   loadEl.style.display = 'flex';
@@ -999,20 +1027,55 @@ async function startGeneration() {
   var mi=0;
   var mt = setInterval(function(){ var el=document.getElementById('review-loading-msg'); if(el) el.textContent=GMSG[Math.min(++mi,GMSG.length-1)]; },2200);
 
+  var runId = ++currentRunId;
+  sectionIssues = {};
+  planFailed = false;
   isGenerating = true;
+  setGenerateButtonsDisabled(true);
   document.getElementById('progress-bar').classList.add('nav-locked');
   try {
     var data = await generateAll(active);
+    if (runId !== currentRunId) return;
     sectionData = data;
+    /* maxStep erst JETZT erhoehen. Vorher stand es am Funktionsanfang - nach
+       einem Fehlschlag galt Schritt 3 damit als erreicht, Schritt 2 war
+       dadurch nicht mehr "frontier" und wurde read-only gerendert. Der
+       Generieren-Button verschwand, Schritt 4 war unerreichbar, und die
+       einzige Rettung war "Komplett neu erstellen" - inklusive Verlust aller
+       Eingaben, des Kontexts und der Uploads. */
+    maxStep = Math.max(maxStep, 3);
+    updateProgClickability();
     clearInterval(mt); loadEl.style.display='none';
     renderReview(active);
   } catch(e) {
+    if (runId !== currentRunId) return;
     clearInterval(mt); loadEl.style.display='none';
-    document.getElementById('review-list').innerHTML = '<div class="error-box">Fehler: '+ex(e.message)+'</div>';
+    document.getElementById('review-list').innerHTML =
+      '<div class="error-box">Fehler: '+ex(e.message)+'</div>' +
+      '<button class="primary-btn" style="margin-top:12px" onclick="retryGeneration()">' +
+      '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> Erneut generieren</button>' +
+      '<button class="secondary-btn" style="margin-top:8px;width:100%;justify-content:center" onclick="goToStep(2)">Zurück zu den Sections</button>';
   } finally {
     isGenerating = false;
+    setGenerateButtonsDisabled(false);
     document.getElementById('progress-bar').classList.remove('nav-locked');
   }
+}
+
+/* Wiederholt die Generierung nach einem Fehlschlag, ohne dass der Nutzer
+   Eingaben, Kontext, Uploads oder die Section-Auswahl erneut aufbauen muss. */
+function retryGeneration() {
+  startGeneration();
+}
+
+/* Alle Buttons, die eine Generierung ausloesen. Zentral, damit keiner
+   vergessen wird - Doppelklick auf "Landingpage generieren" hat vorher zwei
+   parallele Laeufe gestartet. */
+function setGenerateButtonsDisabled(disabled) {
+  ['btn-start-generation', 'btn-suggest-sections', 'btn-go-sections'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.disabled = disabled;
+  });
 }
 
 /* 4 Sections pro Request: bei 10 Sections entstehen so nur 3 Requests
@@ -1042,14 +1105,14 @@ async function generateContentPlan(active, sysBlocks) {
       'Titel: ' + (HF.titel||HF.kampagnenname||'') + '\n' +
       'Offer: ' + (HF.offer||'') + '\n' +
       (HF.beschreibung ? 'Kampagnen-Beschreibung: ' + HF.beschreibung + '\n' : '') +
-      'Zielgruppe: ' + (HF.zielgruppe||HF.strategie_titel||'(keine Angabe)') + '\n' +
+      'Zielgruppe: ' + (HardfactsIO.audience(HF) || '(keine Angabe)') + '\n' +
       (HF.strategie ? 'Strategie / Positionierung: ' + HF.strategie + '\n' : '') +
       ctxPromptBlock() + '\n' +
       'Aufbau der Landingpage:\n' + buildPageMap(active) + '\n\n' +
       'Erstelle einen Content-Plan für diese Landingpage: Lege für jede Section EINE Kernbotschaft mit eigenem Blickwinkel fest - je genau EIN prägnanter Satz (max 20 Wörter), keine Ausschmückung. Die Kernbotschaften müssen klar voneinander abgegrenzt sein - kein Argument, Beispiel oder Narrativ darf in zwei Sections vorkommen. Zusammen ergeben sie eine schlüssige Dramaturgie von der ersten bis zur letzten Section.\n\n' +
       'Antworte NUR mit einem JSON-Objekt mit exakt diesen Keys:\n{ ' + active.map(function(s){return '"'+s.id+'": "..."';}).join(', ') + ' }';
     var d = await callClaude({
-      model: 'claude-sonnet-5',
+      model: ToolVersions.MODEL,
       // Skaliert mit der Section-Zahl (~120 Tokens je Kernbotschaft + Puffer),
       // damit der Plan bei grossen Seiten nicht am Token-Limit abgeschnitten
       // wird. max_tokens ist nur eine Obergrenze - abgerechnet werden immer
@@ -1058,16 +1121,25 @@ async function generateContentPlan(active, sysBlocks) {
       system: sysBlocks,
       messages: [{role:'user', content: buildUserContent(usr)}]
     });
-    var plan = extractJSON(d.content.map(function(b){return b.text||'';}).join(''), {salvage:true});
+    /* Ohne salvage: ein abgeschnittener Plan ist kein Plan. Lieber ohne Plan
+       generieren (mit sichtbarem Hinweis) als mit einem halben. */
+    if (ClaudeAPI.isTruncated(d)) throw new Error('Content-Plan wurde am Token-Limit abgeschnitten');
+    var plan = extractJSON(ClaudeAPI.textOf(d));
     // Nur brauchbare String-Werte übernehmen; leerer/unbrauchbarer Plan wird verworfen
     var clean = {};
     active.forEach(function(s) { if (typeof plan[s.id] === 'string' && plan[s.id].trim()) clean[s.id] = plan[s.id].trim(); });
     return Object.keys(clean).length ? clean : null;
   } catch(e) {
-    console.warn('Content-Plan fehlgeschlagen (unkritisch, Generierung läuft ohne Plan weiter):', e);
+    /* PHASE 0: vorher nur console.warn - der Plan konnte still ausfallen und
+       niemand erfuhr davon, obwohl die Chunks ohne ihn nachweislich staerker
+       zur Dopplung neigen. Jetzt im Ladehinweis sichtbar. */
+    console.warn('Content-Plan fehlgeschlagen:', e);
+    planFailed = true;
+    updateReviewLoadingMsg('Roter Faden konnte nicht geplant werden - Sections werden einzeln generiert...');
+    await sleepMs(1800);
     return null;
   } finally {
-    updateReviewLoadingMsg(GMSG[0]);
+    if (!planFailed) updateReviewLoadingMsg(GMSG[0]);
   }
 }
 
@@ -1133,8 +1205,12 @@ async function generateChunk(chunk, sysBlocks, ctx, attempt) {
   }).join(',\n  ');
 
   var bpList = (HF.bulletpoints||[]).map(function(b,i){return (i+1)+'. '+b;}).join('\n');
-  var zielgruppe = HF.zielgruppe || HF.strategie_titel || '';
-  var strategie = HF.strategie || HF.strategie_titel || '';
+  /* PHASE 0: beide Zeilen fielen auf HF.strategie_titel zurueck. Aus Modul 1
+     war das derselbe Text - die Strategie-Begruendung zu den TITELN. Sie ging
+     damit doppelt in jeden Prompt: einmal als "Zielgruppe" (falsch beschriftet)
+     und einmal als "Strategie / Positionierung". */
+  var zielgruppe = HardfactsIO.audience(HF) || '';
+  var strategie = HF.strategie || '';
   var usr = 'Kampagne:\n' +
     'Titel: ' + (HF.titel||HF.kampagnenname||'') + '\n' +
     'Pre-Headline: ' + (HF.pre_headline||'') + '\n' +
@@ -1168,7 +1244,7 @@ async function generateChunk(chunk, sysBlocks, ctx, attempt) {
     '- NUR das JSON-Objekt, absolut kein anderer Text';
 
   var d = await callClaude({
-    model: 'claude-sonnet-5',
+    model: ToolVersions.MODEL,
     /* 16000 statt 12000: groesster Output im Tool und schon vorher der
        einzige Call, der regelmaessig ans Limit lief (daher Retry/Salvage
        unten). Sonnet 5 tokenisiert denselben deutschen Text rund 30% feiner,
@@ -1180,24 +1256,57 @@ async function generateChunk(chunk, sysBlocks, ctx, attempt) {
     messages: [{role:'user', content: buildUserContent(usr)}]
   }, function(){ updateReviewLoadingMsg('Rate-Limit erreicht, warte kurz und versuche erneut...'); });
 
-  var raw = d.content.map(function(b){return b.text||'';}).join('');
-  var truncated = d.stop_reason === 'max_tokens';
+  var raw = ClaudeAPI.textOf(d);
+  var truncated = ClaudeAPI.isTruncated(d);
+  var label = chunk.map(function(s){return s.name;}).join(', ');
 
-  try {
-    if (truncated) throw new Error('__TRUNCATED__');
-    return extractJSON(raw);
-  } catch(e) {
-    if (attempt < maxAttempts) {
-      updateReviewLoadingMsg((truncated ? 'Antwort abgeschnitten' : 'Ungültiges JSON erhalten') + ' - generiere "'+chunk.map(function(s){return s.name;}).join(', ')+'" erneut...');
-      return generateChunk(chunk, sysBlocks, ctx, attempt + 1);
-    }
-    // Letzter Versuch: so viel wie möglich aus der Antwort retten statt komplett zu scheitern
-    try { return extractJSON(raw, {salvage:true}); }
-    catch(e2) {
-      var label = chunk.map(function(s){return s.name;}).join(', ');
-      throw new Error('Generierung für "'+label+'" fehlgeschlagen nach '+maxAttempts+' Versuchen' + (truncated ? ' (Antwort wurde wiederholt am Token-Limit abgeschnitten).' : ': ' + e.message));
+  if (!truncated) {
+    try {
+      /* Ohne salvage: eine unvollstaendige Struktur wirft hier und loest
+         einen Retry aus, statt still als Erfolg durchzugehen. */
+      return extractJSON(raw);
+    } catch(e) {
+      if (attempt < maxAttempts) {
+        updateReviewLoadingMsg('Ungültiges JSON erhalten - generiere "' + label + '" erneut...');
+        return generateChunk(chunk, sysBlocks, ctx, attempt + 1);
+      }
+      return quarantineChunk(chunk, raw, 'Die Antwort war nach ' + maxAttempts + ' Versuchen kein gültiges JSON (' + e.message + ').');
     }
   }
+
+  if (attempt < maxAttempts) {
+    updateReviewLoadingMsg('Antwort abgeschnitten - generiere "' + label + '" erneut...');
+    return generateChunk(chunk, sysBlocks, ctx, attempt + 1);
+  }
+
+  /* PHASE 0: Hier stand `extractJSON(raw, {salvage:true})` und das Ergebnis
+     ging als regulaerer Output in den Review. Eine dreifach am Token-Limit
+     abgeschnittene Antwort sah danach aus wie eine fertige Section - nur mit
+     fehlenden Feldern, die niemandem auffielen.
+
+     Jetzt wird geborgen, was da ist, aber als UNVOLLSTAENDIG markiert: der
+     Review zeigt einen Warnhinweis, und der Export ist gesperrt, bis die
+     Section neu generiert oder bewusst freigegeben wurde. Der geborgene Text
+     bleibt sichtbar, weil er zeigt, wie weit das Modell gekommen ist. */
+  return quarantineChunk(chunk, raw, 'Die Antwort wurde ' + maxAttempts + '-mal am Token-Limit abgeschnitten.');
+}
+
+/* Markiert alle Sections eines gescheiterten Chunks als unvollstaendig und
+   liefert - soweit moeglich - den geborgenen Teilinhalt. Wirft nicht, damit
+   ein einzelner kaputter Chunk nicht die ganze Seite mitnimmt. */
+function quarantineChunk(chunk, raw, reason) {
+  var recovered = {};
+  try { recovered = extractJSON(raw, {salvage: true}) || {}; } catch (e) { recovered = {}; }
+  var out = {};
+  chunk.forEach(function(s) {
+    out[s.id] = recovered[s.id] || {};
+    sectionIssues[s.id] = {
+      incomplete: true,
+      reason: reason,
+      hadContent: !!recovered[s.id]
+    };
+  });
+  return out;
 }
 
 function updateReviewLoadingMsg(text) {
@@ -1214,9 +1323,31 @@ function renderReview(active, opts) {
     if (el && el.value) prevFb[s.id] = el.value;
   });
   var html = '';
+  if (planFailed) {
+    html += '<div class="incomplete-banner" style="margin-bottom:12px">' +
+      '<strong>Ohne Content-Plan generiert.</strong> Der Planungs-Schritt ist fehlgeschlagen, ' +
+      'die Sections wurden einzeln geschrieben. Bitte besonders auf inhaltliche Dopplungen zwischen den Sections achten.' +
+      '</div>';
+  }
   active.forEach(function(s, idx) {
-    html += '<div class="review-card" id="rc-'+s.id+'">' +
+    var issue = sectionIssues[s.id];
+    var issueHtml = issue && issue.incomplete
+      ? '<div class="incomplete-banner">' +
+          '<strong>Unvollständig generiert.</strong> ' + ex(issue.reason) + ' ' +
+          (issue.hadContent
+            ? 'Der gerettete Text steht unten, ihm fehlen aber Felder.'
+            : 'Es konnte kein Inhalt gerettet werden.') +
+          ' Der Export ist gesperrt, bis die Section neu generiert oder freigegeben wurde.' +
+          (ro ? '' :
+            '<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">' +
+            '<button class="mini-btn" onclick="regenSection(\'' + s.id + '\')">Jetzt neu generieren</button>' +
+            '<button class="mini-btn" onclick="acceptIncomplete(\'' + s.id + '\')">Trotzdem freigeben</button>' +
+            '</div>') +
+        '</div>'
+      : '';
+    html += '<div class="review-card' + (issue && issue.incomplete ? ' incomplete' : '') + '" id="rc-'+s.id+'">' +
       '<div class="review-head"><span class="review-title">'+(idx+1)+'. '+ex(s.name)+'</span><span class="review-status" id="rs-'+s.id+'"></span></div>' +
+      issueHtml +
       '<div class="review-body" id="rb-'+s.id+'">' + renderSectionFields(s) + '</div>' +
       (ro ? '' :
       '<div class="review-feedback">' +
@@ -1246,6 +1377,51 @@ function renderReview(active, opts) {
     });
   }
   document.getElementById('to-export-btn').style.display = ro ? 'none' : 'flex';
+  updateExportGate();
+}
+
+/* Sections, die unvollstaendig generiert und noch nicht freigegeben wurden. */
+function incompleteSectionIds() {
+  return sections.filter(function(s){ return s.active; })
+    .map(function(s){ return s.id; })
+    .filter(function(id){ return sectionIssues[id] && sectionIssues[id].incomplete; });
+}
+
+/* Sperrt den Weg zum Export, solange unvollstaendige Sections offen sind.
+   Der Nutzer kann jede einzeln neu generieren oder bewusst freigeben - aber
+   nicht versehentlich ein halbes Briefing exportieren. */
+function updateExportGate() {
+  var btn = document.getElementById('to-export-btn');
+  if (!btn) return;
+  var open = incompleteSectionIds();
+  var hint = document.getElementById('export-gate-hint');
+  if (!hint) {
+    hint = document.createElement('div');
+    hint.id = 'export-gate-hint';
+    btn.parentNode.insertBefore(hint, btn);
+  }
+  if (open.length) {
+    btn.disabled = true;
+    var names = open.map(function(id){
+      var s = sections.find(function(x){ return x.id === id; });
+      return s ? s.name : id;
+    });
+    hint.innerHTML = '<div class="error-box">Export gesperrt: ' + open.length +
+      ' Section' + (open.length === 1 ? '' : 's') + ' unvollständig generiert (' + ex(names.join(', ')) +
+      '). Bitte oben neu generieren oder ausdrücklich freigeben.</div>';
+  } else {
+    btn.disabled = false;
+    hint.innerHTML = '';
+  }
+}
+
+/* Bewusste Freigabe einer unvollstaendigen Section durch den Nutzer. */
+function acceptIncomplete(secId) {
+  var s = sections.find(function(x){ return x.id === secId; });
+  if (!confirm('Section "' + (s ? s.name : secId) + '" wurde unvollständig generiert.\n\n' +
+      'Trotzdem für den Export freigeben? Fehlende Felder musst Du dann von Hand ergänzen.')) return;
+  delete sectionIssues[secId];
+  renderReview(sections.filter(function(x){ return x.active; }), {readOnly: false});
 }
 
 /* ===== FELD-LOCKS =====
@@ -1458,7 +1634,29 @@ function setByPath(obj, path, value) {
 }
 
 /* ===== SECTION REGENERATION ===== */
+/* Stellt die gesperrten Felder nach einer Regenerierung wieder her.
+   Code-Garantie statt Prompt-Bitte: ein Lock haelt, egal was das Modell
+   zurueckgibt.
+   Ein Pfad, den es in der neuen Antwort nicht mehr gibt (Modell liefert 3
+   statt 5 Checklist-Items), kann nicht wiederhergestellt werden. Das wird
+   protokolliert; die sichtbare Meldung dafuer kommt mit Stufe 3. */
+function restoreLocks(secId, lockedSnap) {
+  var lost = [];
+  lockedSnap.forEach(function(l) {
+    var before = getByPath(sectionData[secId], l.path);
+    try { setByPathValue(sectionData[secId], l.path, l.value); } catch(e) {}
+    var after = getByPath(sectionData[secId], l.path);
+    if (after !== l.value) lost.push(l.path);
+  });
+  if (lost.length) {
+    console.warn('Lock konnte nicht wiederhergestellt werden (Pfad existiert in der neuen Antwort nicht): ' +
+      lost.join(', ') + ' in Section "' + secId + '"');
+  }
+  return lost;
+}
+
 async function regenSection(secId) {
+  if (isGenerating) return;
   var s = sections.find(function(x){return x.id===secId;});
   if (!s) return;
   var fb = (document.getElementById('fb-'+secId)||{}).value || '';
@@ -1471,6 +1669,8 @@ async function regenSection(secId) {
   btn.disabled = true; btn.innerHTML = '<div class="spinner-sm"></div> Wird generiert...';
   document.getElementById('rs-'+secId).textContent = 'wird aktualisiert...';
 
+  var runId = ++currentRunId;
+  var lastRaw = '';
   isGenerating = true;
   document.getElementById('progress-bar').classList.add('nav-locked');
   try {
@@ -1492,7 +1692,7 @@ async function regenSection(secId) {
     var sysBlocks = CopyPresets.systemBlocks(presetText, instr);
 
     var usr = 'Gesamtkontext (zur Konsistenz, NICHT neu generieren):\n' + JSON.stringify(sectionData) + '\n\n' +
-      'Kampagne: ' + (HF.titel||HF.kampagnenname||'') + ' | Zielgruppe: ' + (HF.zielgruppe||HF.strategie_titel||'') + '\n' +
+      'Kampagne: ' + (HF.titel||HF.kampagnenname||'') + ' | Zielgruppe: ' + (HardfactsIO.audience(HF) || '(keine Angabe)') + '\n' +
       (HF.beschreibung ? 'Kampagnen-Beschreibung (Thema, Host/Referent, Zielgruppe, Besonderheiten): ' + HF.beschreibung + '\n' : '') +
       ctxPromptBlock() + '\n' +
       'Überarbeite NUR die Section "'+s.name+'" ('+s.id+'). Erwartetes Schema:\n' + sectionSchemaHint(s) + '\n\n' +
@@ -1508,39 +1708,60 @@ async function regenSection(secId) {
       'Gib NUR das JSON-Objekt für diese Section zurück - kein Wrapper, kein Markdown, kein Text drumherum.';
 
     var userContent = buildUserContent(usr);
-    var maxAttempts = 3, parsed = null, lastErr = null;
+    var maxAttempts = 3, parsed = null, lastReason = '';
     for (var attempt = 1; attempt <= maxAttempts && !parsed; attempt++) {
-      if (attempt > 1) document.getElementById('rs-'+secId).textContent = 'erneuter Versuch ('+attempt+')...';
+      if (attempt > 1) document.getElementById('rs-'+secId).textContent = lastReason + ' - Versuch ' + attempt + '...';
       var d = await callClaude({
-        model: 'claude-sonnet-5',
+        model: ToolVersions.MODEL,
         max_tokens: 4000,
         system: sysBlocks,
         messages: [{role:'user', content:userContent}]
       }, function(){ document.getElementById('rs-'+secId).textContent = 'Rate-Limit, warte...'; });
+      if (runId !== currentRunId) return;
 
-      var raw = d.content.map(function(b){return b.text||'';}).join('');
-      var truncated = d.stop_reason === 'max_tokens';
+      var raw = ClaudeAPI.textOf(d);
+      if (ClaudeAPI.isTruncated(d)) { lastReason = 'Antwort abgeschnitten'; lastRaw = raw; continue; }
+      lastRaw = raw;
       try {
-        if (truncated) throw new Error('__TRUNCATED__');
+        /* Ohne salvage - siehe generateChunk. Ein geborgenes Ergebnis darf
+           nicht als regulaere Ueberarbeitung durchgehen. */
         parsed = extractJSON(raw);
       } catch(e) {
-        lastErr = e;
-        if (attempt === maxAttempts) {
-          try { parsed = extractJSON(raw, {salvage:true}); }
-          catch(e2) { throw new Error('Fehlgeschlagen nach '+maxAttempts+' Versuchen' + (truncated ? ' (Antwort wiederholt abgeschnitten).' : ': ' + lastErr.message)); }
-        }
+        lastReason = 'Ungültiges JSON';
       }
+    }
+
+    if (!parsed) {
+      /* PHASE 0: Vorher wurde hier still `extractJSON(raw, {salvage:true})`
+         uebernommen und als "aktualisiert" gemeldet. Jetzt geht die Section in
+         Quarantaene: sichtbar markiert, Export gesperrt. */
+      var recovered = {};
+      try { recovered = extractJSON(lastRaw, {salvage: true}) || {}; } catch (e2) {}
+      var hadContent = Object.keys(recovered).length > 0;
+      if (hadContent) sectionData[secId] = recovered;
+      sectionIssues[secId] = {
+        incomplete: true,
+        reason: lastReason + ' nach ' + maxAttempts + ' Versuchen.',
+        hadContent: hadContent
+      };
+      /* Locks auch hier wiederherstellen - der Nutzer soll seine fixierten
+         Felder nicht wegen eines Generierungsfehlers verlieren. */
+      restoreLocks(secId, lockedSnap);
+      renderReview(sections.filter(function(x){ return x.active; }), {readOnly: false});
+      document.getElementById('rs-'+secId).textContent = 'unvollständig';
+      return;
     }
 
     sectionData[secId] = parsed;
     // Code-Garantie: gesperrte Felder wieder mit den Originalwerten überschreiben,
     // egal was das Modell zurückgegeben hat (wie bei den Bullets in Modul 1)
-    lockedSnap.forEach(function(l) {
-      try { setByPathValue(sectionData[secId], l.path, l.value); } catch(e) {}
-    });
+    restoreLocks(secId, lockedSnap);
+    delete sectionIssues[secId];
     document.getElementById('rb-'+secId).innerHTML = renderSectionFields(s);
     document.getElementById('rs-'+secId).textContent = 'aktualisiert';
+    updateExportGate();
   } catch(e) {
+    if (runId !== currentRunId) return;
     document.getElementById('rs-'+secId).textContent = 'Fehler';
     alert('Fehler bei Regeneration: ' + e.message);
   } finally {
@@ -1556,7 +1777,7 @@ function buildExport() {
   var active = sections.filter(function(s){return s.active;});
   var lines = ['# LANDINGPAGE BRIEFING', '## Kampagne: ' + (HF.kampagnenname||''), ''];
   active.forEach(function(s, idx) {
-    lines.push('SECTION ' + idx + ' --- ' + s.name.toUpperCase());
+    lines.push('SECTION ' + (idx + 1) + ' --- ' + s.name.toUpperCase());
     var d = sectionData[s.id];
     if (d) lines = lines.concat(flattenSection(d));
     lines.push('');
@@ -1588,10 +1809,11 @@ function flattenSection(d) {
   return out;
 }
 
-function copyExport() {
+function copyExport(ev) {
   var text = document.getElementById('export-text').textContent;
+  var btn = ev && ev.target ? ev.target.closest('.export-btn') : null;
   navigator.clipboard.writeText(text).then(function(){
-    var btn = event.target.closest('.export-btn');
+    if (!btn) return;
     var orig = btn.innerHTML;
     btn.innerHTML = 'Kopiert!';
     setTimeout(function(){ btn.innerHTML = orig; }, 1500);
@@ -1608,6 +1830,32 @@ function triggerDownload(blob, filename) {
   a.download = filename;
   document.body.appendChild(a); a.click();
   setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+
+/* Kompletter, reproduzierbarer Arbeitsstand: Eingaben, Sections, generierte
+   Copy, Locks und die Versionsstempel. Zweck ist nicht Archivierung, sondern
+   Nachvollziehbarkeit - ohne promptVersion und Modell ist kein Fehlerbericht
+   und kein Eval-Lauf belastbar. */
+function buildSessionExport() {
+  return {
+    versions: ToolVersions.stamp({
+      preset: selectedCopyPreset || null,
+      presetRef: (selectedCopyPreset && CopyPresets.autoRef(selectedCopyPreset, presetBriefing()) || {}).id || null,
+      hardfactsSchema: (HF && HF.versions && HF.versions.schemaVersion) || null
+    }),
+    hardfacts: HF,
+    kontext: { text: lpContext(), dateien: ctxFiles.map(function(f){ return f.name; }) },
+    sections: sections,
+    sectionData: sectionData,
+    sectionIssues: sectionIssues,
+    lockedFields: lockedFields,
+    planFailed: planFailed
+  };
+}
+
+function downloadSession() {
+  var blob = new Blob([JSON.stringify(buildSessionExport(), null, 2)], {type: 'application/json'});
+  triggerDownload(blob, 'session_' + (HF && HF.kampagnenname || 'kampagne').replace(/\s+/g,'-').toLowerCase() + '.json');
 }
 
 function downloadMd() {
@@ -1907,7 +2155,11 @@ function goToStep(n) {
     }
     show('phase-import');
   } else if (n === 2) {
-    if (isFrontier) {
+    /* Editierbar, solange noch keine Landingpage existiert. Nach einem
+       fehlgeschlagenen Generierungsversuch war Schritt 2 vorher read-only und
+       der Generieren-Button damit unerreichbar - die Session war verloren. */
+    var noPageYet = Object.keys(sectionData).length === 0;
+    if (isFrontier || noPageYet) {
       hide('sections-view'); show('sections-edit');
     } else {
       hide('sections-edit'); show('sections-view');
@@ -1921,6 +2173,14 @@ function goToStep(n) {
     renderReview(sections.filter(function(s){return s.active;}), {readOnly: false});
     show('phase-review');
   } else if (n === 4) {
+    if (incompleteSectionIds().length) {
+      currentStep = 3;
+      document.getElementById('review-loading').style.display = 'none';
+      renderReview(sections.filter(function(s){return s.active;}), {readOnly: false});
+      show('phase-review');
+      setP(3);
+      return;
+    }
     buildExport();
     show('phase-export');
   }
@@ -1939,6 +2199,7 @@ function renderSecListView() {
 
 function restartAll() {
   HF = null; sections = []; sectionData = {}; lockedFields = {}; activePreset = 'webinar'; customCounter = 0;
+  sectionIssues = {}; planFailed = false; hfMigrationNotes = []; currentRunId++;
   currentStep = 1; maxStep = 1;
   // Copywriter-Preset bewusst BEHALTEN: es ist eine Marken-Einstellung, keine
   // Kampagnen-Eingabe. Ein stiller Reset führte dazu, dass nach "Komplett neu

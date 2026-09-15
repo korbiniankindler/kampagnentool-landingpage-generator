@@ -1,0 +1,4 @@
+{
+  "strategie": "Kurz und knapp.",
+  "titel": [{"pre": "A", "titel": "B", "sub": "C"}],
+}
