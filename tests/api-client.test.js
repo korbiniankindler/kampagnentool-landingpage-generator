@@ -187,3 +187,55 @@ test('onRetry meldet jeden Wiederholversuch an die UI', async () => {
   assert.equal(seen[0].n, 2);
   assert.equal(seen[0].status, 503);
 });
+
+/* ---- Verhalten des konkret eingesetzten Cloudflare Workers ----
+   Er gibt JEDE Antwort mit HTTP 200 zurueck und verwirft die
+   Anthropic-Header (siehe docs/proxy-capabilities.md). Der Body-Fehler-Zweig
+   ist damit der einzige, der API-Fehler ueberhaupt sieht. */
+
+test('Worker-Verhalten: 429 als HTTP 200 im Body wird wiederholt', () => {
+  // Deckt ab, was der Worker aus einem echten 429 macht
+  const { calls } = setup([
+    mockResponse({ body: JSON.stringify({ type: 'error', error: { type: 'rate_limit_error', message: 'Number of requests has exceeded your rate limit' } }) }),
+    mockResponse({ body: OK_BODY })
+  ]);
+  return ClaudeAPI.send({ model: 'm', max_tokens: 100 }).then(() => {
+    assert.equal(calls.length, 2);
+  });
+});
+
+test('Worker-Verhalten: overloaded (529) wird wiederholt', async () => {
+  const { calls } = setup([
+    mockResponse({ body: JSON.stringify({ type: 'error', error: { type: 'overloaded_error', message: 'Overloaded' } }) }),
+    mockResponse({ body: OK_BODY })
+  ]);
+  await ClaudeAPI.send({ model: 'm', max_tokens: 100 });
+  assert.equal(calls.length, 2);
+});
+
+test('Worker-Verhalten: api_error (5xx) wird wiederholt', async () => {
+  const { calls } = setup([
+    mockResponse({ body: JSON.stringify({ type: 'error', error: { type: 'api_error', message: 'Internal server error' } }) }),
+    mockResponse({ body: OK_BODY })
+  ]);
+  await ClaudeAPI.send({ model: 'm', max_tokens: 100 });
+  assert.equal(calls.length, 2, 'ein serverseitiger Fehler ist vorruebergehend');
+});
+
+test('Worker-Verhalten: invalid_request wird NICHT wiederholt', async () => {
+  const { calls } = setup([mockResponse({
+    body: JSON.stringify({ type: 'error', error: { type: 'invalid_request_error', message: 'max_tokens: must be <= 64000' } })
+  })]);
+  await assert.rejects(() => ClaudeAPI.send({ model: 'm', max_tokens: 100 }), /max_tokens/);
+  assert.equal(calls.length, 1, 'ein Schemafehler aendert sich durch Wiederholung nicht');
+});
+
+test('Worker-Verhalten: fehlendes retry-after faellt auf das Fenster zurueck', async () => {
+  // Der Worker verwirft die Anthropic-Header - retry-after gibt es nie.
+  const { sleeps } = setup([
+    mockResponse({ body: JSON.stringify({ error: { type: 'rate_limit_error', message: 'rate limit' } }) }),
+    mockResponse({ body: OK_BODY })
+  ]);
+  await ClaudeAPI.send({ model: 'm', max_tokens: 100 });
+  assert.ok(sleeps[0] >= 10000, 'berechnetes Rate-Limit-Fenster statt 2s-Backoff, war: ' + sleeps[0]);
+});

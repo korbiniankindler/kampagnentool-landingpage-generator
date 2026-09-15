@@ -9,6 +9,14 @@
    - feste 14s Wartezeit, kein Retry-After, kein Backoff
    - keine request-id in der Fehlermeldung
 
+   Zum konkret eingesetzten Proxy (docs/proxy-capabilities.md): Er antwortet
+   IMMER mit HTTP 200 und verwirft die Anthropic-Header. Deshalb ist der
+   Body-Fehler-Zweig weiter unten der entscheidende, `retry-after` steht nie
+   zur Verfuegung (es greift das berechnete Fenster), und eine `request-id`
+   gibt es nur, wenn der Worker sie kuenftig durchreicht. Der resp.ok-Check
+   bleibt trotzdem: er faengt Worker-Ausfaelle und einen spaeter korrigierten
+   Worker ab.
+
    WICHTIG zum Rate-Limiting: Der Throttle unten ist eine HOEFLICHKEITSBREMSE
    pro Browser-Tab, keine organisationsweite Garantie. Ein Reload, ein zweiter
    Tab oder ein zweiter Mitarbeiter umgeht ihn vollstaendig. Echtes
@@ -184,14 +192,26 @@ var ClaudeAPI = (function () {
           rawText.replace(/\s+/g, ' ').trim().slice(0, 200), requestId), { status: resp.status, requestId: requestId, attempts: attempt });
       }
 
-      /* Manche Proxys liefern Anthropic-Fehler mit HTTP 200 im Body. */
+      /* WICHTIG: Der eingesetzte Cloudflare Worker gibt JEDE Antwort mit
+         HTTP 200 zurueck - er reicht den Status von Anthropic nicht weiter
+         (siehe docs/proxy-capabilities.md). Ein 429, 500 oder 529 kommt hier
+         also als 200 mit Fehler-Body an. Dieser Zweig ist damit der EINZIGE,
+         der API-Fehler ueberhaupt sieht; der resp.ok-Check oben faengt nur
+         Worker-Ausfaelle. Die Retry-Erkennung muss hier entsprechend
+         vollstaendig sein. */
       if (data && data.error) {
+        var errText = JSON.stringify(data.error);
         var bodyMsg = (data.error.message || data.error.type || 'Unbekannter API-Fehler') + label;
-        var looksRateLimited = /rate.?limit|overloaded|529/i.test(JSON.stringify(data.error));
+        /* Voruebergehend und damit wiederholbar: Rate-Limit, Ueberlastung
+           (529 overloaded_error) und serverseitige Fehler (api_error, 5xx).
+           NICHT wiederholbar: invalid_request_error, authentication_error,
+           permission_error - die aendern sich durch einen zweiten Versuch nicht. */
+        var retrybar = /rate.?limit|overloaded|529|\bapi_error\b|timeout|\b5\d\d\b/i.test(errText);
         lastErr = apiError(withRequestId(bodyMsg, requestId), {
-          status: looksRateLimited ? 429 : 400, requestId: requestId, retryAfter: retryAfter
+          status: /rate.?limit|overloaded|529/i.test(errText) ? 429 : (retrybar ? 503 : 400),
+          requestId: requestId, retryAfter: retryAfter
         });
-        if (!looksRateLimited || attempt === maxAttempts) {
+        if (!retrybar || attempt === maxAttempts) {
           throw apiError(withRequestId(bodyMsg, requestId) + (attempt > 1 ? ' (nach ' + attempt + ' Versuchen)' : ''),
             { status: lastErr.status, requestId: requestId, attempts: attempt });
         }

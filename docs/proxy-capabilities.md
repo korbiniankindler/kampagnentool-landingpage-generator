@@ -1,102 +1,108 @@
-# Proxy-Faehigkeiten (offener Punkt aus Phase 0.3)
+# Proxy-Faehigkeiten (Phase 0.3) — GEKLAERT
 
 Zwischen Browser und Claude-API sitzt ein Cloudflare Worker unter
-`https://claude.korbinian.workers.dev/`. **Dieser Worker liegt nicht in diesem
-Repository.** Mehrere geplante Massnahmen haengen davon ab, was er
-durchreicht - solange das ungeklaert ist, sind sie Annahmen, keine Optionen.
+`https://claude.korbinian.workers.dev/`. Der Worker-Code wurde bereitgestellt;
+die Fragen sind damit **aus dem Code beantwortet**, ohne Testrequests.
 
-## Was zu pruefen ist
+Der Worker in Kurzform:
 
-Jede Zeile mit einem einzelnen Request klaerbar, Aufwand insgesamt ~15 Minuten.
-
-| # | Frage | Warum sie zaehlt | Ergebnis |
-|---|---|---|---|
-| P1 | Reicht der Proxy `output_config` im Body durch? | Voraussetzung fuer Structured Outputs (Titel, Bullets, Content-Plan, feste Sections) | **offen** |
-| P2 | Akzeptiert er `output_config.effort`? | Voraussetzung fuer aufgabenspezifische Denktiefe | **offen** |
-| P3 | Was liefert er bei einem Upstream-Fehler - JSON oder HTML? | Der api-client behandelt beides, aber die Fehlermeldung wird nur mit JSON praezise | **offen** |
-| P4 | Gibt er `retry-after` und `request-id` als Header weiter? | Ohne `retry-after` faellt der Client auf ein berechnetes Fenster zurueck; ohne `request-id` ist kein Fehler nachverfolgbar | **offen** |
-| P5 | Traegt er einen ungestreamten Request mit ~30.000 Output-Tokens? | Entscheidet, ob eine Landingpage in EINEM Call generiert werden kann | **offen** |
-
-## Warum das nicht in der Claude-Code-Sitzung geklaert werden kann
-
-Die Egress-Policy der Umgebung laesst `claude.korbinian.workers.dev` nicht zu:
-
-    curl: (56) CONNECT tunnel failed, response 403
-
-Das ist eine Richtlinie der Session, kein Problem des Workers. Sie laesst sich
-von innen nicht umgehen und soll es auch nicht. Zwei Wege:
-
-1. **Lokal ausfuehren** (empfohlen, ~2 Minuten):
-   `bash docs/check-proxy.sh` - klaert P1-P4 ohne nennenswerte Kosten.
-   `bash docs/check-proxy.sh --with-p5` ergaenzt den langen Request (~0,30 EUR).
-   Ein API-Key wird nicht gebraucht, den haelt der Worker.
-2. **Domain fuer die Umgebung freischalten**, falls die Netzwerkrichtlinie das
-   hergibt: https://code.claude.com/docs/en/claude-code-on-the-web
-
-## Wie pruefen
-
-```bash
-# P1/P2 - wird der Body durchgereicht?
-curl -sS -X POST https://claude.korbinian.workers.dev/ \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "model": "claude-sonnet-5",
-    "max_tokens": 200,
-    "output_config": { "effort": "low" },
-    "messages": [{"role":"user","content":"Antworte nur mit OK."}]
-  }' | head -c 600
-# 200 mit content -> durchgereicht. 400 mit "unexpected parameter" -> der
-# Proxy filtert. Fehler von Anthropic selbst -> Parametername pruefen.
-
-# P3/P4 - Header und Fehlerformat
-curl -sS -D - -o /tmp/body.txt -X POST https://claude.korbinian.workers.dev/ \
-  -H 'Content-Type: application/json' \
-  -d '{"model":"claude-sonnet-5","max_tokens":999999,"messages":[{"role":"user","content":"x"}]}'
-head -c 400 /tmp/body.txt
-# Interessant: HTTP-Status, request-id / x-request-id, retry-after,
-# und ob der Body JSON ist oder eine HTML-Fehlerseite.
-
-# P5 - traegt ein langer ungestreamter Request?
-time curl -sS -X POST https://claude.korbinian.workers.dev/ \
-  -H 'Content-Type: application/json' \
-  -d '{"model":"claude-sonnet-5","max_tokens":30000,
-       "messages":[{"role":"user","content":"Schreibe einen zusammenhaengenden deutschen Text von etwa 12000 Woertern ueber Ablaufplanung."}]}' \
-  -o /tmp/long.json -w '\nHTTP %{http_code}, %{size_download} Bytes, %{time_total}s\n'
-# Timeout / 524 / abgeschnittener Body -> Ein-Call-Generierung faellt aus.
+```js
+const body = await request.json();
+const response = await fetch('https://api.anthropic.com/v1/messages', {
+  method: 'POST',
+  headers: { 'Content-Type': ..., 'x-api-key': env.ANTHROPIC_KEY,
+             'anthropic-version': '2023-06-01' },
+  body: JSON.stringify(body)          // Body 1:1 weitergereicht
+});
+const data = await response.json();   // puffert vollstaendig, kein Streaming
+return new Response(JSON.stringify(data), {
+  headers: { 'Content-Type': 'application/json', ...corsHeaders }
+});                                    // IMMER Status 200, Header verworfen
 ```
 
-## Was dranhaengt
+## Ergebnisse
 
-- **P1 negativ** -> Structured Outputs sind nicht machbar. Die bestehende
-  Reparatur- und Retry-Logik in `shared/json-extract.js` bleibt der einzige
-  Schutz. Kein Ersatz noetig, aber die Erwartung muss angepasst werden.
-- **P2 negativ** -> aufgabenspezifische Denktiefe entfaellt. Kein Verlust,
-  solange der Nutzen ohnehin unbelegt ist.
-- **P4 negativ** -> `shared/api-client.js` faellt auf das berechnete
-  Rate-Limit-Fenster zurueck (bereits implementiert), Fehlermeldungen tragen
-  keine `request-id`.
-- **P5 negativ** -> die Ein-Call-Variante scheidet im Benchmark aus. Nicht aus
-  Prinzip, sondern aus Infrastruktur.
+| # | Frage | Antwort | Beleg |
+|---|---|---|---|
+| P1 | `output_config` durchgereicht? | **Ja** | `JSON.stringify(body)` ohne Filterung |
+| P2 | `output_config.effort` durchgereicht? | **Ja** | dito |
+| P3 | Fehlerformat bei Upstream-Fehlern | **JSON, aber mit HTTP 200** | Status wird nicht weitergereicht |
+| P4 | `retry-after` / `request-id` weitergereicht? | **Nein** | Response-Header werden komplett neu gebaut |
+| P5 | Langer ungestreamter Request? | **offen, aber riskant** | `response.json()` puffert; Wall-Clock-Grenze des Workers ungetestet |
 
-## Nebenbefund: der Endpunkt ist unauthentifiziert
+## Drei Befunde mit Konsequenzen für den Code
 
-Der Worker nimmt Requests ohne Authentifizierung entgegen - der API-Key liegt
-bei ihm. Das ist fuer ein internes Tool eine bewusste Vereinfachung, hat aber
-eine Auswirkung auf die **Zuverlaessigkeit**, nicht nur auf die Sicherheit:
-Wer die URL kennt, kann das Org-Rate-Limit von 5 Requests/Minute aufbrauchen.
-Das Tool wuerde dann ohne erkennbaren Grund in 429-Retries laufen.
+### 1. Jede Antwort kommt mit HTTP 200 an
 
-Kein Handlungsbedarf fuer Phase 0. Erwaehnenswert, sobald ohnehin am Worker
-gearbeitet wird (siehe naechster Abschnitt).
+`return new Response(...)` setzt keinen Status. Ein 429, ein 500 oder ein 529
+von Anthropic erreicht den Browser als **200 mit Fehler-Body**. Nur
+Worker-interne Fehler (`catch`) liefern 500.
+
+Konsequenz für `shared/api-client.js`: Der `resp.ok`-Check greift bei
+API-Fehlern faktisch nie. Der relevante Pfad ist die Auswertung von
+`data.error` — dort muss die Retry-Erkennung vollstaendig sein. Der
+`resp.ok`-Check bleibt trotzdem: er faengt Worker-Ausfaelle, Cloudflare-
+Fehlerseiten und einen spaeter korrigierten Worker ab.
+
+### 2. `retry-after` ist nicht verfuegbar
+
+Die Anthropic-Header werden verworfen. Der Client faellt deshalb immer auf das
+berechnete Rate-Limit-Fenster zurueck — das ist implementiert und funktioniert,
+aber es ist eine Schaetzung statt der Angabe des Servers.
+
+Ebenso fehlt die `request-id`. Ein Fehler laesst sich damit gegenueber
+Anthropic nicht nachverfolgen. **Zwei Zeilen im Worker wuerden das loesen:**
+
+```js
+return new Response(JSON.stringify(data), {
+  status: response.status,                                    // (1)
+  headers: { 'Content-Type': 'application/json', ...corsHeaders,
+             'request-id': response.headers.get('request-id') || '',
+             'retry-after': response.headers.get('retry-after') || '' }  // (2)
+});
+```
+Dazu gehoert `Access-Control-Expose-Headers: request-id, retry-after` in
+`corsHeaders`, sonst sieht der Browser sie trotz allem nicht.
+
+### 3. Streaming ist mit diesem Worker nicht moeglich
+
+`await response.json()` puffert die vollstaendige Antwort. Ein Request mit
+`stream: true` wuerde eine SSE-Antwort liefern, die `response.json()` nicht
+parsen kann.
+
+Konsequenz: Die **Ein-Call-Generierung einer kompletten Landingpage**
+(~25-35k Output-Tokens) ist mit diesem Worker nicht sinnvoll machbar. Sie
+braucht Streaming, und Streaming braucht einen geaenderten Worker
+(`return new Response(response.body, ...)`). Im Benchmark faellt dieser Arm
+damit aus — nicht aus Prinzip, sondern aus Infrastruktur.
+
+## Was damit entblockt ist
+
+**Structured Outputs (1.7) sind machbar.** Der Body wird unveraendert
+weitergereicht, und `output_config` ist GA ohne Beta-Header.
+
+Eine Einschraenkung bleibt: Der Worker setzt **keinen** `anthropic-beta`-Header
+und reicht auch keinen aus dem Request weiter. Jedes Feature, das einen
+Beta-Header braucht, ist mit diesem Worker nicht nutzbar.
 
 ## Bekannte Grenze: organisationsweites Rate-Limiting
 
 `shared/api-client.js` enthaelt eine Anfragebremse (4/Minute). Sie ist eine
 **Hoeflichkeitsbremse pro Browser-Tab**, keine Garantie: ein Reload, ein
-zweiter Tab oder ein zweiter Mitarbeiter umgeht sie vollstaendig, weil der
-Zaehler nur im Speicher der Seite lebt.
+zweiter Tab oder ein zweiter Mitarbeiter umgeht sie vollstaendig.
 
-Echtes organisationsweites Limiting laesst sich im Frontend nicht herstellen.
-Es gehoert in den Proxy (z.B. Cloudflare Durable Object oder KV als
-gemeinsamer Zaehler). **Das ist ein offener Blocker, kein geloestes Problem** -
-Frontend-Code darf hier nicht als vollstaendige Loesung dargestellt werden.
+Der Worker haelt keinen Zaehler. Echtes organisationsweites Limiting gehoert
+dorthin (Durable Object oder KV als gemeinsamer Zaehler). **Offener Blocker**,
+kein geloestes Problem.
+
+## Nebenbefund: der Endpunkt ist unauthentifiziert
+
+Der Worker prueft nichts ausser der HTTP-Methode. Wer die URL kennt, kann auf
+Kosten des Kontos Anthropic-Tokens verbrauchen. Das ist fuer ein internes Tool
+eine bewusste Vereinfachung, hat aber eine Auswirkung auf die
+**Zuverlaessigkeit**: Ein Fremdzugriff wuerde das Org-Limit von 5
+Requests/Minute aufbrauchen, und das Tool liefe ohne erkennbaren Grund in
+429-Retries.
+
+Ein geteiltes Geheimnis im Header waere ein Dreizeiler — sinnvoll, sobald
+ohnehin am Worker gearbeitet wird (siehe Punkt 2).
