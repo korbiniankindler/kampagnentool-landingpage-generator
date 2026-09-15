@@ -473,15 +473,20 @@ var GMSG = ['Landingpage wird generiert...','Sections werden geschrieben...','To
    Stunde, alle Folge-Requests zahlen nur ~10% der Input-Tokens. */
 function sleepMs(ms) { return new Promise(function(resolve){ setTimeout(resolve, ms); }); }
 
-async function callClaude(body, onRetry) {
+async function callClaude(body, onRetry, outputConfig) {
   /* Thinking wird zentral abgeschaltet, nicht an den einzelnen Call-Stellen:
      Sonnet 5 denkt adaptiv, sobald das Feld fehlt - ein neuer Call ohne
      dieses Flag wuerde also still Thinking aktivieren, sich das Budget mit
      dem sichtbaren Text teilen und die Wartezeit erhoehen. Hier steht es
      genau einmal und gilt fuer alle Requests. */
   if (!('thinking' in body)) body.thinking = { type: 'disabled' };
-  return ClaudeAPI.send(body, { onRetry: onRetry });
+  var opts = { onRetry: onRetry, onFallback: function(){ schemaFallbackGemeldet = true; } };
+  return outputConfig ? ClaudeAPI.sendMitSchema(body, outputConfig, opts) : ClaudeAPI.send(body, opts);
 }
+
+/* Wird gesetzt, wenn der Proxy Structured Outputs ablehnt. Der Review weist
+   dann darauf hin - es soll nicht still passieren. */
+var schemaFallbackGemeldet = false;
 
 /* ===== COPYWRITER PRESETS (Schritt 1) =====
    Katalog + Ladelogik liegen in shared/copywriter-presets.js und werden
@@ -1265,6 +1270,13 @@ async function generateChunk(chunk, sysBlocks, ctx, attempt) {
     lpVorlage: lpVorlage
   });
 
+  /* Structured Outputs: garantiert Feldnamen, Typen und Struktur. NICHT die
+     Anzahl der Eintraege - Array-Constraints unterstuetzt die API nicht - und
+     auch keine Vollstaendigkeit bei Token-Limit. Beides bleibt Aufgabe des
+     Prompts und der Validatoren. Eigene Sections haben bewusst kein festes
+     Schema; enthaelt der Chunk eine, liefert outputConfig() null und der
+     Request laeuft wie bisher. */
+  var schemaCfg = SectionSchemas.outputConfig(chunk);
   var d = await callClaude({
     model: ToolVersions.MODEL,
     /* 16000 statt 12000: groesster Output im Tool und schon vorher der
@@ -1276,7 +1288,7 @@ async function generateChunk(chunk, sysBlocks, ctx, attempt) {
     max_tokens: 16000,
     system: sysBlocks,
     messages: [{role:'user', content: buildUserContent(usr)}]
-  }, function(){ updateReviewLoadingMsg('Rate-Limit erreicht, warte kurz und versuche erneut...'); });
+  }, function(){ updateReviewLoadingMsg('Rate-Limit erreicht, warte kurz und versuche erneut...'); }, schemaCfg);
 
   var raw = ClaudeAPI.textOf(d);
   var truncated = ClaudeAPI.isTruncated(d);
@@ -1403,6 +1415,12 @@ function renderReview(active, opts) {
     if (el && el.value) prevFb[s.id] = el.value;
   });
   var html = befundUebersichtHTML(active);
+  if (schemaFallbackGemeldet) {
+    html += '<div class="notice-banner">' +
+      '<strong>Ohne Schemabindung generiert.</strong> Der Proxy hat Structured Outputs abgelehnt, ' +
+      'die Generierung lief im bisherigen Modus weiter. Struktur- und Feldfehler sind dadurch ' +
+      'wahrscheinlicher &ndash; die Prüfung unten faengt sie ab.</div>';
+  }
   if (planFailed) {
     html += '<div class="incomplete-banner" style="margin-bottom:12px">' +
       '<strong>Ohne Content-Plan generiert.</strong> Der Planungs-Schritt ist fehlgeschlagen, ' +
@@ -1850,7 +1868,8 @@ async function regenSection(secId) {
         max_tokens: 4000,
         system: sysBlocks,
         messages: [{role:'user', content:userContent}]
-      }, function(){ document.getElementById('rs-'+secId).textContent = 'Rate-Limit, warte...'; });
+      }, function(){ document.getElementById('rs-'+secId).textContent = 'Rate-Limit, warte...'; },
+         s.custom ? null : SectionSchemas.outputConfig(s.id));
       if (runId !== currentRunId) return;
 
       var raw = ClaudeAPI.textOf(d);
@@ -2341,7 +2360,7 @@ function renderSecListView() {
 
 function restartAll() {
   HF = null; sections = []; sectionData = {}; lockedFields = {}; activePreset = 'webinar'; customCounter = 0;
-  sectionIssues = {}; qualityBefunde = []; heroMergeProtokoll = []; planFailed = false; lastPlanText = null; hfMigrationNotes = []; currentRunId++;
+  sectionIssues = {}; qualityBefunde = []; heroMergeProtokoll = []; planFailed = false; lastPlanText = null; schemaFallbackGemeldet = false; hfMigrationNotes = []; currentRunId++;
   currentStep = 1; maxStep = 1;
   // Copywriter-Preset bewusst BEHALTEN: es ist eine Marken-Einstellung, keine
   // Kampagnen-Eingabe. Ein stiller Reset führte dazu, dass nach "Komplett neu

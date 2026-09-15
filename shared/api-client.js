@@ -235,11 +235,43 @@ var ClaudeAPI = (function () {
     return !!(data && data.stop_reason === 'max_tokens');
   }
 
+  /* Erkennt, ob ein Fehler daher kommt, dass der Proxy oder die API
+     output_config nicht akzeptiert. Dann laesst sich derselbe Request ohne
+     Schemabindung wiederholen, statt den Nutzer scheitern zu lassen. */
+  function istSchemaAbgelehnt(err) {
+    if (!err || !err.message) return false;
+    return /output_config|json_schema|unexpected (parameter|keyword)|unrecognized (request )?(argument|field)/i.test(err.message);
+  }
+
+  /* Request mit Structured Outputs, mit automatischem Rueckfall.
+     `body.output_config` wird beim Rueckfall entfernt und der Request
+     unveraendert wiederholt; `onFallback` meldet das dem Aufrufer, damit es
+     nicht still passiert. */
+  async function sendMitSchema(body, outputConfig, opts) {
+    opts = opts || {};
+    if (!outputConfig) return send(body, opts);
+    var mitSchema = Object.assign({}, body, { output_config: outputConfig });
+    try {
+      var d = await send(mitSchema, opts);
+      d._schemaGenutzt = true;
+      return d;
+    } catch (e) {
+      if (!istSchemaAbgelehnt(e)) throw e;
+      if (opts.onFallback) opts.onFallback(e);
+      console.warn('Structured Outputs abgelehnt, Wiederholung ohne Schema:', e.message);
+      var d2 = await send(body, opts);
+      d2._schemaGenutzt = false;
+      return d2;
+    }
+  }
+
   function _resetThrottleForTests() { _timestamps = []; }
 
   return {
     configure: configure,
     send: send,
+    sendMitSchema: sendMitSchema,
+    istSchemaAbgelehnt: istSchemaAbgelehnt,
     textOf: textOf,
     isTruncated: isTruncated,
     timeoutForBody: timeoutForBody,

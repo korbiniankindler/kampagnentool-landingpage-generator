@@ -471,6 +471,39 @@ function goToStep(n) {
    einen einzigen Prompt-Cache (Write 1x pro Stunde, danach ~10% Lesekosten). */
 function sleepMs(ms) { return new Promise(function(resolve){ setTimeout(resolve, ms); }); }
 
+/* Structured Outputs fuer die beiden JSON-Calls von Modul 1. Beide haben ein
+   festes Schema, anders als die Section-Generierung in Modul 2.
+
+   Was das Schema garantiert: Feldnamen, Typen, Struktur.
+   Was es NICHT garantiert: die ANZAHL der Eintraege (Array-Constraints
+   unterstuetzt die API nicht) und Vollstaendigkeit bei Token-Limit. Deshalb
+   bleiben die Anzahl-Vorgaben im Prompt und der stop_reason-Check in callAPI. */
+const SCHEMA_TITEL = {
+ format: { type: 'json_schema', schema: {
+  type: 'object',
+  properties: {
+   strategie: { type: 'string' },
+   titel: { type: 'array', items: {
+    type: 'object',
+    properties: { pre: {type:'string'}, titel: {type:'string'}, sub: {type:'string'} },
+    required: ['pre','titel','sub'], additionalProperties: false } }
+  },
+  required: ['strategie','titel'], additionalProperties: false } }
+};
+
+const SCHEMA_BULLETS = {
+ format: { type: 'json_schema', schema: {
+  type: 'object',
+  properties: {
+   strategie: { type: 'string' },
+   bulletpoints: { type: 'array', items: { type: 'string' } }
+  },
+  required: ['strategie','bulletpoints'], additionalProperties: false } }
+};
+
+/* Wird gesetzt, wenn der Proxy Structured Outputs ablehnt. */
+var schemaFallbackGemeldet = false;
+
 async function callClaude(body, opts) {
  /* Thinking wird zentral abgeschaltet, nicht an den einzelnen Call-Stellen:
     Sonnet 5 denkt adaptiv, sobald das Feld fehlt - ein neuer Call ohne
@@ -478,7 +511,10 @@ async function callClaude(body, opts) {
     dem sichtbaren Text teilen und die Wartezeit erhoehen. Hier steht es
     genau einmal und gilt fuer alle Requests. */
  if (!('thinking' in body)) body.thinking = { type: 'disabled' };
- return ClaudeAPI.send(body, opts);
+ opts = Object.assign({ onFallback: function(){ schemaFallbackGemeldet = true; } }, opts || {});
+ return opts.outputConfig
+ ? ClaudeAPI.sendMitSchema(body, opts.outputConfig, opts)
+ : ClaudeAPI.send(body, opts);
 }
 
 /* Ein JSON-Call fuer Titel bzw. Bullets.
@@ -522,7 +558,8 @@ async function callAPI(systemP, userP, opts) {
  max_tokens: 6000,
  system: systemP,
  messages: [{role:'user', content:userContent}]
- }, { label: opts.label, onRetry: function(n){ if (opts.onStatus) opts.onStatus('Verbindungsproblem - Versuch ' + n + '...'); } });
+ }, { label: opts.label, outputConfig: opts.schema,
+ onRetry: function(n){ if (opts.onStatus) opts.onStatus('Verbindungsproblem - Versuch ' + n + '...'); } });
 
  if (ClaudeAPI.isTruncated(data)) {
  lastReason = 'Antwort war am Token-Limit abgeschnitten';
@@ -675,7 +712,7 @@ Nur JSON.`;
  const setMsg = (txt) => { const el = document.getElementById('titles-loading-msg'); if (el) { clearInterval(msgInt); el.textContent = txt; } };
 
  try {
- const parsed = await callAPI(sysP, userP, {label: 'Titel', onStatus: setMsg});
+ const parsed = await callAPI(sysP, userP, {label: 'Titel', onStatus: setMsg, schema: SCHEMA_TITEL});
  /* Verspaetete Antwort eines ueberholten Laufs verwerfen, statt neueren
     Stand zu ueberschreiben. */
  if (runId !== currentRunId) return;
@@ -893,7 +930,7 @@ Nur JSON.`;
 
  try {
  const sysP = await buildSystemPrompt();
- const parsed = await callAPI(sysP, userP, {label: 'Inhalte', onStatus: setMsg});
+ const parsed = await callAPI(sysP, userP, {label: 'Inhalte', onStatus: setMsg, schema: SCHEMA_BULLETS});
  if (runId !== currentRunId) return;
 
  const incoming = (parsed.bulletpoints||[]).map(b => ({id: newLocalId('b'), text: b, on: false}));
