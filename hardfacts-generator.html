@@ -219,6 +219,7 @@ body{background:#fff;padding:0}
 <script src="shared/versions.js"></script>
 <script src="shared/json-extract.js"></script>
 <script src="shared/api-client.js"></script>
+<script src="shared/brand-config.js"></script>
 <script src="shared/copywriter-presets.js"></script>
 <script>
 var PROXY_URL = 'https://claude.korbinian.workers.dev/';
@@ -542,9 +543,9 @@ async function callAPI(systemP, userP, opts) {
 }
 
 function baseSystemPrompt() {
- return `Du bist ein Senior Conversion-Copywriter für deutschsprachige Webinar-Kampagnen im Gesundheits-, Coaching- und Ausbildungsbereich. Du kennst BrandLift-Erfolgsformeln aus echten Kampagnen (Holistic House / Dr. Bauhofer, Doguniversity).
+ return `Du bist ein Senior Conversion-Copywriter für deutschsprachige Kampagnen im Gesundheits-, Coaching- und Ausbildungsbereich. Du kennst BrandLift-Erfolgsformeln aus echten Kampagnen (Holistic House / Dr. Bauhofer, Doguniversity).
 
-TITEL-STRUKTUREN: "Vom Chaos zum System", Zeitgeschehen-Hijacking, Faktencheck-Angle, Frage-Formate, Pre-Headline / Haupttitel / Sub-Headline (3 Ebenen immer).
+TITEL-AUFBAU: Pre-Headline / Haupttitel / Sub-Headline (3 Ebenen immer). Welche inhaltlichen Winkel zulaessig sind, steht weiter unten im Auftrag - sie haengen von der Marke ab.
 BULLETPOINTS: konkrete Zahlen, Neugier + Versprechen. Fragewörter (Warum/Wie/Welche/Was) sind ein Mittel von mehreren, kein Muss - eine reine Fragenliste wirkt monoton.
 TONALITÄT: direkt, klar, Experten-Kontext, Curiosity Gaps, bei Gesundheit formales "Sie".
 Nur gültiges JSON zurückgeben - kein Markdown, keine Backticks.
@@ -554,11 +555,24 @@ WICHTIG für gültiges JSON: Innerhalb von Textwerten NIEMALS gerade Anführungs
 /* System-Prompt als Blöcke: gemeinsamer Preset-Cache-Block (siehe
    CopyPresets.systemBlocks) + modulspezifische Instruktionen. Identisch für
    Titel UND Bullets, damit der Prompt-Cache über beide Schritte greift. */
+/* Die maschinenlesbare Marken-Konfiguration des aktuell gewaehlten Presets.
+   Wird beim Prompt-Bau gesetzt und von den Prompt-Bausteinen genutzt. */
+var brandCfg = BrandConfig.GENERIC;
+
+async function loadPresetText() {
+ if (!selectedCopyPreset) { brandCfg = BrandConfig.GENERIC; return ''; }
+ // campaignCtx steuert die automatische Referenz-Wahl (Register-Heuristik)
+ var raw = await CopyPresets.load(selectedCopyPreset, campaignCtx);
+ brandCfg = BrandConfig.forPreset(raw);
+ /* Der Konfigurationsblock gehoert nicht in den System-Prompt - er wiederholt
+    nur, was im Fliesstext daneben steht. Deterministisch entfernt, damit der
+    Cache-Prefix ueber alle Calls byte-identisch bleibt. */
+ return BrandConfig.stripFromPrompt(raw);
+}
+
 async function buildSystemPrompt() {
  var base = baseSystemPrompt();
- if (!selectedCopyPreset) return CopyPresets.systemBlocks('', base);
- // campaignCtx steuert die automatische Referenz-Wahl (Register-Heuristik)
- var presetText = await CopyPresets.load(selectedCopyPreset, campaignCtx);
+ var presetText = await loadPresetText();
  if (!presetText) return CopyPresets.systemBlocks('', base);
  var instr = base + '\n\nWICHTIG: Am Anfang dieses System-Prompts steht das Copywriter-Preset der Marke (Regelwerk, Wissensdatenbank, Referenz-Copys). Halte dich strikt an das Regelwerk für Tonalität, Sprache, Anrede und Stilregeln. Verwende nur Fakten, Zahlen und Zitate aus der Wissensdatenbank oder den Kampagnen-Angaben. Formuliere Titel und Bulletpoints so, wie die Referenz-Copys klingen (Satzrhythmus, Tonalität, Dramaturgie), aber übernimm deren im Kopf jeder Referenz gelistete Regelverstöße NICHT: bei Konflikt gilt immer das Regelwerk. Die Referenz-Copys sind reine Stil-Referenz, KEINE Textquelle: Übernimm daraus niemals Headlines, Pre-Headlines, Sublines oder ganze Sätze wörtlich oder nur leicht umformuliert - und auch nicht deren inhaltliche Aufhänger oder Zeitgeschehen-Bezüge als Standard (die Referenz zeigt, WIE erzählt wird, nicht WORÜBER). Jede Formulierung und jeder Aufhänger wird neu und spezifisch für DIESE Kampagne gewählt. Das Preset hat Vorrang vor den allgemeinen Stilvorgaben oben (z.B. bei der Anrede Du/Sie).';
  return CopyPresets.systemBlocks(presetText, instr);
@@ -604,6 +618,22 @@ async function generateTitles(feedback) {
     (siehe unten), nicht vom Modell zurueckerwartet. Er steht hier nur noch
     als inhaltlicher Anhaltspunkt - deshalb werden auch nur 4 neue Varianten
     angefordert: beibehaltener Titel + 4 neue = wieder 5 Optionen. */
+ /* System-Prompt ZUERST bauen: dabei wird brandCfg aus dem Regelwerk gesetzt,
+    und der User-Prompt unten braucht es fuer die Angle-Anweisung.
+    Im try, weil CopyPresets.load wirft, wenn ein Preset nicht ladbar ist -
+    ungeschuetzt bliebe der Spinner stehen, ohne dass ein Fehler erscheint. */
+ let sysP;
+ try {
+ sysP = await buildSystemPrompt();
+ } catch(e) {
+ clearInterval(msgInt);
+ setBusy(false);
+ restoreBtn();
+ loadEl.style.display = 'none';
+ document.getElementById('titles-content').innerHTML = `<div class="error-box">Preset konnte nicht geladen werden: ${esc(e.message)}</div>`;
+ return;
+ }
+
  const keptTitle = feedback ? selectedTitle() : null;
  const wanted = keptTitle ? 4 : 5;
  const selectedInfo = keptTitle
@@ -613,7 +643,7 @@ async function generateTitles(feedback) {
  const userP = `Kampagne:\n${campaignCtx}${selectedInfo}
 ${feedback ? `\nFeedback des Nutzers (unbedingt berücksichtigen):\n${feedback}` : ''}
 
-Generiere ${wanted} Webinar-Titel-Varianten als JSON:
+Generiere ${wanted} Titel-Varianten als JSON:
 {
  "strategie": "3-4 Sätze: Warum diese Titelwinkel für diese Zielgruppe funktionieren, welche psychologischen Trigger eingesetzt werden, welche Zeitgeschehen-Bezüge relevant sind.",
  "titel": [
@@ -632,7 +662,7 @@ LAENGEN (aus echten BrandLift-Landingpages abgeleitet, verbindlich):
 - "titel": 4-10 Woerter. Kurz und tragend, keine Nebensaetze.
 - "sub": 20-35 Woerter, ein bis zwei Saetze. Die Sub-Headline traegt den Nutzenrahmen und darf ausformuliert sein - sie ist KEIN verkuerzter Zweitaufschlag des Titels. Bleib nicht unter 20 Woertern.
 
-${wanted} Varianten mit je eigenem Winkel: Curiosity Gap, Zeitgeschehen, Versprechen, Frage-Format, Faktencheck.
+${BrandConfig.angleAnweisung(brandCfg, wanted)}
 
 ORIGINALITÄT (kritisch wichtig):
 - Alle Pre-Headlines, Titel und Sublines müssen NEU und spezifisch für diese Kampagne geschrieben sein
@@ -645,7 +675,6 @@ Nur JSON.`;
  const setMsg = (txt) => { const el = document.getElementById('titles-loading-msg'); if (el) { clearInterval(msgInt); el.textContent = txt; } };
 
  try {
- const sysP = await buildSystemPrompt();
  const parsed = await callAPI(sysP, userP, {label: 'Titel', onStatus: setMsg});
  /* Verspaetete Antwort eines ueberholten Laufs verwerfen, statt neueren
     Stand zu ueberschreiben. */
@@ -836,11 +865,11 @@ async function generateBullets(feedback) {
 
  const userP = `Kampagne:\n${campaignCtx}
 
-Gewählter Webinar-Titel:\nPre: ${t.pre||'-'}\nTitel: ${t.titel}\nSub: ${t.sub}
+Gewählter Titel:\nPre: ${t.pre||'-'}\nTitel: ${t.titel}\nSub: ${t.sub}
 ${checkedContext}
 ${feedback ? `\nFeedback des Nutzers:\n${feedback}` : ''}
 
-Generiere 10 Webinar-Inhalts-Bulletpoints als JSON:
+Generiere 10 Inhalts-Bulletpoints als JSON:
 {
  "strategie": "2-3 Sätze: Warum diese Inhalte für die Zielgruppe und den gewählten Titel passen.",
  "bulletpoints": ["...", "...", "...", "...", "...", "...", "...", "...", "...", "..."]
@@ -1740,6 +1769,79 @@ Was nicht geht, mit Falsch- und Besser-Beispielen. Vieles davon ist im Projektma
 10. Steht irgendwo "Webinar" statt "Live-Seminar" oder "Online-Seminar"?
 11. Steht irgendwo eine "nicht … sondern"-Konstruktion? Wenn ja, in eine fließende Perspektivverschiebung umbauen.
 12. Sind alle Verbote eingehalten? Kein Heilsversprechen, keine Esoterik, kein Gold, kein Gedankenstrich, kein "Schmerz zurückgeben", kein "blinde Liebe", keine Preise?
+
+## 8. Maschinenlesbare Konfiguration
+
+Dieser Block ist die **einzige** strukturierte Quelle für die Regeln oben. Das
+Tool liest ihn zur Laufzeit aus dieser Datei (siehe `shared/brand-config.js`) -
+es gibt keine zweite Konfigurationsdatei, die synchron gehalten werden müsste.
+Wird eine Regel oben geändert, gehört die Entsprechung hier dazu.
+
+Die vier Achsen sind bewusst getrennt: Eine Seite kann eine Salespage für eine
+Ausbildung sein, ein kostenloses Beratungsgespräch kann zu einem
+kostenpflichtigen Angebot führen. Ein einzelner „LP-Typ" könnte das nicht
+ausdrücken. `vorlagen` bündelt die üblichen Kombinationen als Bedienkomfort.
+
+```json brand-config
+{
+  "anrede": "du",
+  "eventBezeichnung": "Live-Seminar",
+  "vorlagen": {
+    "live_seminar": {
+      "name": "Kostenfreies Live-Seminar",
+      "offerType": "lead-event",
+      "conversionAction": "anmeldung",
+      "priceStatus": "kostenlos",
+      "eventFormat": "live-seminar",
+      "ctaText": "Jetzt kostenfrei anmelden",
+      "microcopy": "100% kostenfrei · Live am [Datum] um [Uhrzeit] Uhr"
+    },
+    "ausbildung": {
+      "name": "Ausbildung (Bewerbung)",
+      "offerType": "ausbildung",
+      "conversionAction": "bewerbung",
+      "priceStatus": "nicht-kommunizieren",
+      "eventFormat": "kein-event",
+      "ctaText": "Jetzt auf Platz bewerben",
+      "microcopy": "Unverbindlich · Wir klären gemeinsam, ob der Weg zu Dir passt"
+    },
+    "kennenlerngespraech": {
+      "name": "Kennenlerngespräch",
+      "offerType": "beratung",
+      "conversionAction": "terminbuchung",
+      "priceStatus": "kostenlos",
+      "eventFormat": "kein-event",
+      "ctaText": "Hier Kennenlerntermin reservieren",
+      "microcopy": "Persönlich · Unverbindlich"
+    }
+  },
+  "angleKatalog": ["curiosity", "versprechen", "perspektivwechsel", "muster", "tiefenkontrast"],
+  "angleVerboten": {
+    "frage": "Abschnitt 6: Keine Fragen im Seminartitel und in den Inhalts-Bullets.",
+    "zeitgeschehen": "Kommt im Regelwerk nicht vor; das Register ist innerlich/systemisch, nicht gesellschaftspolitisch.",
+    "faktencheck": "Abschnitt 6: Nur belegte Zahlen. Ein Faktencheck-Titel erzwingt sonst eine Erfindung."
+  },
+  "verbote": [
+    {"id": "webinar", "regex": "\\bWebinar\\w*", "hinweis": "Das Event heißt Live-Seminar oder Online-Seminar.", "quelle": "Abschnitt 6"},
+    {"id": "kostenlos", "regex": "\\bkostenlos(e[nmrs]?)?\\b", "hinweis": "Die belegte Formulierung ist kostenfrei.", "quelle": "Abschnitt 3.8"},
+    {"id": "gedankenstrich", "regex": "\\s[–—]\\s", "hinweis": "Keine Gedankenstriche im laufenden Text.", "quelle": "Abschnitt 6"},
+    {"id": "nicht-sondern", "regex": "\\bnicht\\b[^.!?]{1,60}\\bsondern\\b", "hinweis": "Perspektivverschiebung fließend formulieren.", "quelle": "Abschnitt 6"},
+    {"id": "familienkonstellation", "regex": "Familienkonstellation", "hinweis": "Der Terminus ist Familienstellen.", "quelle": "Abschnitt 6"},
+    {"id": "blinde-liebe", "regex": "blinde[nrs]? Liebe", "hinweis": "Begriff wird nicht verwendet.", "quelle": "Abschnitt 6"},
+    {"id": "preis", "regex": "\\d[\\d.,]*\\s?(€|EUR|Euro)", "hinweis": "Keine Preise in der Copy.", "quelle": "Abschnitt 6"},
+    {"id": "druck", "regex": "(Nur jetzt|Verpasse es nicht|zu spät)[!]?", "hinweis": "Keine Druck-Sprache.", "quelle": "Abschnitt 6"},
+    {"id": "sie-anrede", "regex": "\\b(Ihnen|Ihre[nmrs]?|Sie sich)\\b", "hinweis": "Durchgängig Du, großgeschrieben.", "quelle": "Abschnitt 2"}
+  ],
+  "verboteInFeldern": {
+    "frage": {
+      "regex": "\\?",
+      "felder": ["titel.pre", "titel.h1", "titel.h2", "bullets"],
+      "hinweis": "Seminartitel und Inhalts-Bullets enthalten keine Fragezeichen.",
+      "quelle": "Abschnitt 6"
+    }
+  }
+}
+```
 </script>
 <script type="text/plain" data-preset-file="presets/hellinger/wissensdatenbank.md">
 ---
@@ -2517,6 +2619,78 @@ Prüfe jeden Text vor der finalen Ausgabe:
 > **Altbestand-Hinweis:** Ältere veröffentlichte Seiten (und Teile der Referenz-Copys) nutzen noch Gedankenstriche, „ganzheitlich", „nicht X, sondern Y" und Versal-CTAs. Das ist überholt. Der aktuelle Standard entfernt diese Muster. Beispiel:
 > Original (Altbestand): „Das Ergebnis: tiefgreifende und spürbare Veränderungen, Beschwerden klingen ab, Sie fühlen sich leichter, frischer und energievoller – und das mit minimalem Zeitaufwand."
 > Aktueller Standard: „Das Ergebnis: Sie fühlen sich leichter, frischer und energievoller, und das mit wenig Zeitaufwand. Viele bemerken, dass Beschwerden nachlassen."
+
+## 9. Maschinenlesbare Konfiguration
+
+Dieser Block ist die **einzige** strukturierte Quelle für die Regeln oben. Das
+Tool liest ihn zur Laufzeit aus dieser Datei (siehe `shared/brand-config.js`) -
+es gibt keine zweite Konfigurationsdatei, die synchron gehalten werden müsste.
+Wird eine Regel oben geändert, gehört die Entsprechung hier dazu.
+
+Die `vorlagen` entsprechen der LP-Typ-Tabelle in Abschnitt 4. Die vier Achsen
+sind getrennt gespeichert, weil sie unabhängig variieren: Das Beratungsgespräch
+für die Ausbildung ist kostenlos, die Ausbildung selbst nicht.
+
+```json brand-config
+{
+  "anrede": "sie",
+  "eventBezeichnung": "Live-Seminar",
+  "vorlagen": {
+    "webinar": {
+      "name": "Kostenfreies Live-Seminar",
+      "offerType": "lead-event",
+      "conversionAction": "anmeldung",
+      "priceStatus": "kostenlos",
+      "eventFormat": "live-seminar",
+      "ctaText": "Jetzt Ihren Platz reservieren",
+      "microcopy": "Digital & 100 % kostenfrei: Am [Datum], um [Uhrzeit]"
+    },
+    "ausbildung": {
+      "name": "Ausbildung / Fach-Coach (Beratungsgespräch)",
+      "offerType": "ausbildung",
+      "conversionAction": "terminbuchung",
+      "priceStatus": "kostenlos",
+      "priceStatusAngebot": "kostenpflichtig",
+      "eventFormat": "kein-event",
+      "ctaText": "Jetzt kostenloses Beratungsgespräch vereinbaren",
+      "microcopy": "Unverbindlich · Persönlich · Wir klären gemeinsam, welcher Weg zu Ihnen passt"
+    },
+    "salespage": {
+      "name": "Salespage (Kurs/Plan)",
+      "offerType": "kurs",
+      "conversionAction": "kauf",
+      "priceStatus": "kostenpflichtig",
+      "eventFormat": "kein-event",
+      "ctaText": "Jetzt starten",
+      "microcopy": "Ruhiger Preishinweis, kein Versal-Druck"
+    },
+    "freebie": {
+      "name": "Freebie (Test / Ratgeber)",
+      "offerType": "lead-magnet",
+      "conversionAction": "download",
+      "priceStatus": "kostenlos",
+      "eventFormat": "kein-event",
+      "ctaText": "Ratgeber kostenlos sichern",
+      "microcopy": "In wenigen Minuten · Sofort per E-Mail",
+      "hinweis": "Abgeleitet, nicht wörtlich belegt (siehe Abschnitt 4)."
+    }
+  },
+  "angleKatalog": ["curiosity", "versprechen", "zeitgeschehen", "faktencheck", "frage", "reframe"],
+  "angleVerboten": {},
+  "verbote": [
+    {"id": "gedankenstrich", "regex": "\\s[–—]\\s", "hinweis": "Keine Gedankenstriche als Stilmittel.", "quelle": "Abschnitt 6.1"},
+    {"id": "nicht-sondern", "regex": "\\bnicht\\b[^.!?]{1,60}\\bsondern\\b", "hinweis": "Konstruktion wirkt künstlich.", "quelle": "Abschnitt 6.2"},
+    {"id": "mehr-als-nur", "regex": "\\bmehr als nur\\b", "hinweis": "Keine künstliche Aufwertung.", "quelle": "Abschnitt 6.4"},
+    {"id": "floskeln", "regex": "\\b(Transformation|Potenzial entfalten|nächste[s]? Level|Gamechanger|lebensverändernd|nachhaltig wachsen)\\w*", "hinweis": "Generische Transformationsfloskel.", "quelle": "Abschnitt 6.5"},
+    {"id": "ki-satzanfang", "regex": "(In einer Welt, in der|Gerade in der heutigen Zeit|Viele Menschen fragen sich|Vielleicht kennen Sie das|Stellen Sie sich vor|Was wäre, wenn)", "hinweis": "KI-typischer Satzanfang.", "quelle": "Abschnitt 6.9"},
+    {"id": "leere-adjektive", "regex": "\\b(ganzheitlich|tiefgehend|einzigartig|wirkungsvoll)\\w*", "hinweis": "Leeres Adjektiv ohne Beleg.", "quelle": "Abschnitt 6.8"},
+    {"id": "versal-cta", "regex": "\\b[A-ZÄÖÜ]{4,}\\b!", "hinweis": "Keine aggressiven Versal-CTAs.", "quelle": "Abschnitt 6.10"},
+    {"id": "vorsorge", "regex": "\\bVorsorge\\w*", "hinweis": "Das Markenthema heißt Prävention.", "quelle": "Abschnitt 6.10"},
+    {"id": "du-anrede", "regex": "\\b(Dein[enmrs]?|Dich|Dir)\\b", "hinweis": "Holistic House schreibt immer Sie.", "quelle": "Abschnitt 2"}
+  ],
+  "verboteInFeldern": {}
+}
+```
 </script>
 <script type="text/plain" data-preset-file="presets/holistic-house/wissensdatenbank.md">
 # Holistic House - Wissensdatenbank

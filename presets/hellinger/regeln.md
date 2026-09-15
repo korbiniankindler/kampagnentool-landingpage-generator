@@ -338,3 +338,76 @@ Was nicht geht, mit Falsch- und Besser-Beispielen. Vieles davon ist im Projektma
 10. Steht irgendwo "Webinar" statt "Live-Seminar" oder "Online-Seminar"?
 11. Steht irgendwo eine "nicht … sondern"-Konstruktion? Wenn ja, in eine fließende Perspektivverschiebung umbauen.
 12. Sind alle Verbote eingehalten? Kein Heilsversprechen, keine Esoterik, kein Gold, kein Gedankenstrich, kein "Schmerz zurückgeben", kein "blinde Liebe", keine Preise?
+
+## 8. Maschinenlesbare Konfiguration
+
+Dieser Block ist die **einzige** strukturierte Quelle für die Regeln oben. Das
+Tool liest ihn zur Laufzeit aus dieser Datei (siehe `shared/brand-config.js`) -
+es gibt keine zweite Konfigurationsdatei, die synchron gehalten werden müsste.
+Wird eine Regel oben geändert, gehört die Entsprechung hier dazu.
+
+Die vier Achsen sind bewusst getrennt: Eine Seite kann eine Salespage für eine
+Ausbildung sein, ein kostenloses Beratungsgespräch kann zu einem
+kostenpflichtigen Angebot führen. Ein einzelner „LP-Typ" könnte das nicht
+ausdrücken. `vorlagen` bündelt die üblichen Kombinationen als Bedienkomfort.
+
+```json brand-config
+{
+  "anrede": "du",
+  "eventBezeichnung": "Live-Seminar",
+  "vorlagen": {
+    "live_seminar": {
+      "name": "Kostenfreies Live-Seminar",
+      "offerType": "lead-event",
+      "conversionAction": "anmeldung",
+      "priceStatus": "kostenlos",
+      "eventFormat": "live-seminar",
+      "ctaText": "Jetzt kostenfrei anmelden",
+      "microcopy": "100% kostenfrei · Live am [Datum] um [Uhrzeit] Uhr"
+    },
+    "ausbildung": {
+      "name": "Ausbildung (Bewerbung)",
+      "offerType": "ausbildung",
+      "conversionAction": "bewerbung",
+      "priceStatus": "nicht-kommunizieren",
+      "eventFormat": "kein-event",
+      "ctaText": "Jetzt auf Platz bewerben",
+      "microcopy": "Unverbindlich · Wir klären gemeinsam, ob der Weg zu Dir passt"
+    },
+    "kennenlerngespraech": {
+      "name": "Kennenlerngespräch",
+      "offerType": "beratung",
+      "conversionAction": "terminbuchung",
+      "priceStatus": "kostenlos",
+      "eventFormat": "kein-event",
+      "ctaText": "Hier Kennenlerntermin reservieren",
+      "microcopy": "Persönlich · Unverbindlich"
+    }
+  },
+  "angleKatalog": ["curiosity", "versprechen", "perspektivwechsel", "muster", "tiefenkontrast"],
+  "angleVerboten": {
+    "frage": "Abschnitt 6: Keine Fragen im Seminartitel und in den Inhalts-Bullets.",
+    "zeitgeschehen": "Kommt im Regelwerk nicht vor; das Register ist innerlich/systemisch, nicht gesellschaftspolitisch.",
+    "faktencheck": "Abschnitt 6: Nur belegte Zahlen. Ein Faktencheck-Titel erzwingt sonst eine Erfindung."
+  },
+  "verbote": [
+    {"id": "webinar", "regex": "\\bWebinar\\w*", "hinweis": "Das Event heißt Live-Seminar oder Online-Seminar.", "quelle": "Abschnitt 6"},
+    {"id": "kostenlos", "regex": "\\bkostenlos(e[nmrs]?)?\\b", "hinweis": "Die belegte Formulierung ist kostenfrei.", "quelle": "Abschnitt 3.8"},
+    {"id": "gedankenstrich", "regex": "\\s[–—]\\s", "hinweis": "Keine Gedankenstriche im laufenden Text.", "quelle": "Abschnitt 6"},
+    {"id": "nicht-sondern", "regex": "\\bnicht\\b[^.!?]{1,60}\\bsondern\\b", "hinweis": "Perspektivverschiebung fließend formulieren.", "quelle": "Abschnitt 6"},
+    {"id": "familienkonstellation", "regex": "Familienkonstellation", "hinweis": "Der Terminus ist Familienstellen.", "quelle": "Abschnitt 6"},
+    {"id": "blinde-liebe", "regex": "blinde[nrs]? Liebe", "hinweis": "Begriff wird nicht verwendet.", "quelle": "Abschnitt 6"},
+    {"id": "preis", "regex": "\\d[\\d.,]*\\s?(€|EUR|Euro)", "hinweis": "Keine Preise in der Copy.", "quelle": "Abschnitt 6"},
+    {"id": "druck", "regex": "(Nur jetzt|Verpasse es nicht|zu spät)[!]?", "hinweis": "Keine Druck-Sprache.", "quelle": "Abschnitt 6"},
+    {"id": "sie-anrede", "regex": "\\b(Ihnen|Ihre[nmrs]?|Sie sich)\\b", "hinweis": "Durchgängig Du, großgeschrieben.", "quelle": "Abschnitt 2"}
+  ],
+  "verboteInFeldern": {
+    "frage": {
+      "regex": "\\?",
+      "felder": ["titel.pre", "titel.h1", "titel.h2", "bullets"],
+      "hinweis": "Seminartitel und Inhalts-Bullets enthalten keine Fragezeichen.",
+      "quelle": "Abschnitt 6"
+    }
+  }
+}
+```

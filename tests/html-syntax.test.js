@@ -146,3 +146,34 @@ test('implizites globales `event` wird nicht mehr benutzt', () => {
     });
   }
 });
+
+test('keine markenspezifischen Werte mehr hartcodiert im Prompt', () => {
+  /* Regressionsschutz fuer P0-2. Diese Literale standen HINTER dem Preset im
+     Prompt und waren konkreter formuliert - sie haben die Regelwerke faktisch
+     ueberstimmt und bei Hellinger woertliche Verstoesse erzeugt. */
+  const verboten = [
+    ['Jetzt kostenlos anmelden', 'CTA gehoert in die brand-config des Regelwerks'],
+    ['LIVE-Webinar am [Termin]', 'Event-Bezeichnung gehoert in die brand-config'],
+    ['kostenfreie Webinar-Anmeldung', 'Conversion-Aktion gehoert in die brand-config'],
+    ['Generiere 4 Bulletpoints', 'Anzahl richtet sich nach der Nutzerauswahl'],
+    ['Curiosity Gap, Zeitgeschehen, Versprechen, Frage-Format, Faktencheck',
+     'Angle-Katalog gehoert in die brand-config - die feste Quote erzwang bei Hellinger verbotene Typen']
+  ];
+  for (const file of ['hardfacts-generator.html', 'landingpage-generator.html']) {
+    const html = fs.readFileSync(path.join(ROOT, file), 'utf8');
+    const { lines, flags } = commentLineFlags(html);
+    lines.forEach((line, i) => {
+      if (flags[i]) return;   // Kommentare duerfen den alten Zustand zitieren
+      verboten.forEach(([literal, warum]) => {
+        assert.ok(!line.includes(literal), `${file}:${i + 1} enthaelt "${literal}" - ${warum}`);
+      });
+    });
+  }
+});
+
+test('beide Module laden die Marken-Konfiguration', () => {
+  for (const file of ['hardfacts-generator.html', 'landingpage-generator.html']) {
+    const html = fs.readFileSync(path.join(ROOT, file), 'utf8');
+    assert.ok(html.includes('src="shared/brand-config.js"'), `${file} bindet brand-config.js nicht ein`);
+  }
+});

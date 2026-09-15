@@ -146,3 +146,75 @@ Prüfe jeden Text vor der finalen Ausgabe:
 > **Altbestand-Hinweis:** Ältere veröffentlichte Seiten (und Teile der Referenz-Copys) nutzen noch Gedankenstriche, „ganzheitlich", „nicht X, sondern Y" und Versal-CTAs. Das ist überholt. Der aktuelle Standard entfernt diese Muster. Beispiel:
 > Original (Altbestand): „Das Ergebnis: tiefgreifende und spürbare Veränderungen, Beschwerden klingen ab, Sie fühlen sich leichter, frischer und energievoller – und das mit minimalem Zeitaufwand."
 > Aktueller Standard: „Das Ergebnis: Sie fühlen sich leichter, frischer und energievoller, und das mit wenig Zeitaufwand. Viele bemerken, dass Beschwerden nachlassen."
+
+## 9. Maschinenlesbare Konfiguration
+
+Dieser Block ist die **einzige** strukturierte Quelle für die Regeln oben. Das
+Tool liest ihn zur Laufzeit aus dieser Datei (siehe `shared/brand-config.js`) -
+es gibt keine zweite Konfigurationsdatei, die synchron gehalten werden müsste.
+Wird eine Regel oben geändert, gehört die Entsprechung hier dazu.
+
+Die `vorlagen` entsprechen der LP-Typ-Tabelle in Abschnitt 4. Die vier Achsen
+sind getrennt gespeichert, weil sie unabhängig variieren: Das Beratungsgespräch
+für die Ausbildung ist kostenlos, die Ausbildung selbst nicht.
+
+```json brand-config
+{
+  "anrede": "sie",
+  "eventBezeichnung": "Live-Seminar",
+  "vorlagen": {
+    "webinar": {
+      "name": "Kostenfreies Live-Seminar",
+      "offerType": "lead-event",
+      "conversionAction": "anmeldung",
+      "priceStatus": "kostenlos",
+      "eventFormat": "live-seminar",
+      "ctaText": "Jetzt Ihren Platz reservieren",
+      "microcopy": "Digital & 100 % kostenfrei: Am [Datum], um [Uhrzeit]"
+    },
+    "ausbildung": {
+      "name": "Ausbildung / Fach-Coach (Beratungsgespräch)",
+      "offerType": "ausbildung",
+      "conversionAction": "terminbuchung",
+      "priceStatus": "kostenlos",
+      "priceStatusAngebot": "kostenpflichtig",
+      "eventFormat": "kein-event",
+      "ctaText": "Jetzt kostenloses Beratungsgespräch vereinbaren",
+      "microcopy": "Unverbindlich · Persönlich · Wir klären gemeinsam, welcher Weg zu Ihnen passt"
+    },
+    "salespage": {
+      "name": "Salespage (Kurs/Plan)",
+      "offerType": "kurs",
+      "conversionAction": "kauf",
+      "priceStatus": "kostenpflichtig",
+      "eventFormat": "kein-event",
+      "ctaText": "Jetzt starten",
+      "microcopy": "Ruhiger Preishinweis, kein Versal-Druck"
+    },
+    "freebie": {
+      "name": "Freebie (Test / Ratgeber)",
+      "offerType": "lead-magnet",
+      "conversionAction": "download",
+      "priceStatus": "kostenlos",
+      "eventFormat": "kein-event",
+      "ctaText": "Ratgeber kostenlos sichern",
+      "microcopy": "In wenigen Minuten · Sofort per E-Mail",
+      "hinweis": "Abgeleitet, nicht wörtlich belegt (siehe Abschnitt 4)."
+    }
+  },
+  "angleKatalog": ["curiosity", "versprechen", "zeitgeschehen", "faktencheck", "frage", "reframe"],
+  "angleVerboten": {},
+  "verbote": [
+    {"id": "gedankenstrich", "regex": "\\s[–—]\\s", "hinweis": "Keine Gedankenstriche als Stilmittel.", "quelle": "Abschnitt 6.1"},
+    {"id": "nicht-sondern", "regex": "\\bnicht\\b[^.!?]{1,60}\\bsondern\\b", "hinweis": "Konstruktion wirkt künstlich.", "quelle": "Abschnitt 6.2"},
+    {"id": "mehr-als-nur", "regex": "\\bmehr als nur\\b", "hinweis": "Keine künstliche Aufwertung.", "quelle": "Abschnitt 6.4"},
+    {"id": "floskeln", "regex": "\\b(Transformation|Potenzial entfalten|nächste[s]? Level|Gamechanger|lebensverändernd|nachhaltig wachsen)\\w*", "hinweis": "Generische Transformationsfloskel.", "quelle": "Abschnitt 6.5"},
+    {"id": "ki-satzanfang", "regex": "(In einer Welt, in der|Gerade in der heutigen Zeit|Viele Menschen fragen sich|Vielleicht kennen Sie das|Stellen Sie sich vor|Was wäre, wenn)", "hinweis": "KI-typischer Satzanfang.", "quelle": "Abschnitt 6.9"},
+    {"id": "leere-adjektive", "regex": "\\b(ganzheitlich|tiefgehend|einzigartig|wirkungsvoll)\\w*", "hinweis": "Leeres Adjektiv ohne Beleg.", "quelle": "Abschnitt 6.8"},
+    {"id": "versal-cta", "regex": "\\b[A-ZÄÖÜ]{4,}\\b!", "hinweis": "Keine aggressiven Versal-CTAs.", "quelle": "Abschnitt 6.10"},
+    {"id": "vorsorge", "regex": "\\bVorsorge\\w*", "hinweis": "Das Markenthema heißt Prävention.", "quelle": "Abschnitt 6.10"},
+    {"id": "du-anrede", "regex": "\\b(Dein[enmrs]?|Dich|Dir)\\b", "hinweis": "Holistic House schreibt immer Sie.", "quelle": "Abschnitt 2"}
+  ],
+  "verboteInFeldern": {}
+}
+```

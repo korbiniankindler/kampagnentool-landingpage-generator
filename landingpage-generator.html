@@ -119,6 +119,11 @@
     <div class="section-label" style="margin-top:0">Copywriter-Preset <span style="font-weight:400;color:var(--text-tertiary)">(optional)</span></div>
     <p style="font-size:12px;color:var(--text-tertiary);margin-bottom:10px">Feste Stil- und Tonalitätsvorgabe einer Marke. Ohne Auswahl wird generisch anhand der Hardfacts generiert.</p>
     <div class="preset-grid" id="copy-preset-grid" style="margin-bottom:0;grid-template-columns:repeat(3,1fr)"></div>
+    <div id="lp-vorlage-wrap" style="display:none;margin-top:14px">
+      <label class="field-label">Seitentyp</label>
+      <select id="lp-vorlage" onchange="selectLpVorlage(this.value)" style="width:100%;padding:9px 11px;border:1px solid var(--border-light);border-radius:8px;font-size:13px;font-family:inherit;background:var(--bg-primary)"></select>
+      <p class="field-hint" id="lp-vorlage-hint" style="margin-top:6px"></p>
+    </div>
   </div>
 
   <div class="card">
@@ -401,6 +406,7 @@
 <script src="shared/json-extract.js"></script>
 <script src="shared/api-client.js"></script>
 <script src="shared/hardfacts.js"></script>
+<script src="shared/brand-config.js"></script>
 <script src="shared/copywriter-presets.js"></script>
 <script>
 var PROXY_URL = 'https://claude.korbinian.workers.dev/';
@@ -464,6 +470,45 @@ async function callClaude(body, onRetry) {
    Startseite) getroffene Auswahl kommt über sessionStorage automatisch an.
    Siehe presets/README.md */
 var selectedCopyPreset = CopyPresets.getSelected();
+/* Seitentyp als Schluessel in brandCfg.vorlagen. Bestimmt CTA-Wortlaut,
+   Microcopy, Preisstatus und Conversion-Aktion - alles Werte, die vorher im
+   Prompt hartcodiert standen und dadurch die Regelwerke ueberstimmt haben. */
+var selectedLpVorlage = null;
+
+function selectLpVorlage(key) {
+  selectedLpVorlage = key;
+  lpVorlage = BrandConfig.vorlage(brandCfg, key);
+  var hint = document.getElementById('lp-vorlage-hint');
+  if (hint && lpVorlage) {
+    hint.innerHTML = 'CTA: <strong>' + ex(lpVorlage.ctaText) + '</strong>' +
+      (lpVorlage.microcopy ? ' &middot; ' + ex(lpVorlage.microcopy) : '') +
+      ' &middot; ' + ex(lpVorlage.priceStatus);
+  }
+}
+
+/* Fuellt die Seitentyp-Auswahl aus dem Regelwerk der gewaehlten Marke. Ohne
+   Preset bleibt sie verborgen - dann gelten neutrale Vorgaben. */
+function renderLpVorlagen() {
+  var wrap = document.getElementById('lp-vorlage-wrap');
+  var sel = document.getElementById('lp-vorlage');
+  if (!wrap || !sel) return;
+  var liste = BrandConfig.vorlagenListe(brandCfg);
+  if (!selectedCopyPreset || liste.length < 2) { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+  if (!liste.some(function(v){ return v.key === selectedLpVorlage; })) selectedLpVorlage = liste[0].key;
+  sel.innerHTML = liste.map(function(v) {
+    return '<option value="' + ex(v.key) + '"' + (v.key === selectedLpVorlage ? ' selected' : '') + '>' + ex(v.name) + '</option>';
+  }).join('');
+  selectLpVorlage(selectedLpVorlage);
+}
+
+/* Preset laden und Konfiguration uebernehmen, ohne einen Prompt zu bauen. */
+async function refreshBrandConfig() {
+  if (!selectedCopyPreset) { brandCfg = BrandConfig.GENERIC; lpVorlage = null; renderLpVorlagen(); return; }
+  var raw = await CopyPresets.load(selectedCopyPreset, presetBriefing());
+  brandCfg = BrandConfig.forPreset(raw);
+  renderLpVorlagen();
+}
 
 function renderCopyPresetPicker() {
   CopyPresets.renderPicker(document.getElementById('copy-preset-grid'), selectedCopyPreset, selectCopyPreset);
@@ -475,10 +520,13 @@ function selectCopyPreset(id) {
   renderCopyPresetPicker();
   // Preset sofort beim Auswählen laden: Fehler fallen so schon in Schritt 1
   // auf statt erst bei der Generierung.
+  selectedLpVorlage = null;
   if (id) {
-    CopyPresets.load(id).catch(function(e) {
+    refreshBrandConfig().catch(function(e) {
       alert('Preset "' + id + '" konnte nicht geladen werden:\n\n' + e.message + '\n\nOhne behobenes Problem bricht die Generierung ab.');
     });
+  } else {
+    refreshBrandConfig();
   }
 }
 
@@ -514,7 +562,7 @@ window.addEventListener('DOMContentLoaded', function() {
   renderCopyPresetPicker();
   // Aus Modul 1 übernommenes Preset direkt vorladen (Fehler nur loggen,
   // kein Alert beim reinen Seitenaufruf).
-  if (selectedCopyPreset) CopyPresets.load(selectedCopyPreset).catch(function(e){ console.warn(e); });
+  if (selectedCopyPreset) refreshBrandConfig().catch(function(e){ console.warn(e); });
   try {
     var raw = sessionStorage.getItem('wkt_hardfacts');
     if (raw) { acceptHF(JSON.parse(raw)); renderHF(); return; }
@@ -782,7 +830,7 @@ var PRESETS = {
     {id:'problem', name:'Problem / Mirror Effect', desc:'Selbstreflexions-Checkliste', active:true, custom:false},
     {id:'framework', name:'Educational Gap', desc:'Erklär-Block mit Kontext und Hintergrund-Wissen', active:true, custom:false},
     {id:'social', name:'Social Proof', desc:'3 Testimonials', active:true, custom:false},
-    {id:'authority', name:'Authority / Speaker', desc:'Experten-Bio, Webinar-Rolle', active:true, custom:false},
+    {id:'authority', name:'Authority / Speaker', desc:'Experten-Bio, Rolle in der Veranstaltung', active:true, custom:false},
     {id:'benefits', name:'Benefit Stack', desc:'3 Gründe teilzunehmen', active:true, custom:false},
     {id:'finalcta', name:'Final CTA / Scarcity', desc:'Abschluss mit Verknappung', active:true, custom:false}
   ],
@@ -838,13 +886,13 @@ async function suggestSectionsAI() {
   setGenerateButtonsDisabled(true);
 
   try {
-    var usr = 'Du bist ein Conversion-Optimierungsspezialist für Webinar-Landingpages.\n\n' +
+    var usr = 'Du bist ein Conversion-Optimierungsspezialist für Anmelde- und Verkaufs-Landingpages.\n\n' +
       'Kampagne: ' + (HF.titel||HF.kampagnenname||'') + '\n' +
       'Pre-Headline: ' + (HF.pre_headline||'') + '\n' +
       'Sub-Headline: ' + (HF.sub_headline||'') + '\n' +
       (HF.beschreibung ? 'Beschreibung: ' + HF.beschreibung + '\n' : '') +
       'Zielgruppe: ' + (HardfactsIO.audience(HF) || '(keine Angabe)') + '\n' +
-      'Angebot: ' + (HF.offer||'Kostenfreies Webinar') + '\n' +
+      'Angebot: ' + (HF.offer || (lpVorlage ? lpVorlage.name : '(keine Angabe)')) + '\n' +
       (hint ? 'Zusätzliche Hinweise: ' + hint + '\n' : '') +
       ctxPromptBlock() + '\n' +
       'Schlage die optimale Section-Struktur für diese Landingpage vor.\n\n' +
@@ -1143,13 +1191,28 @@ async function generateContentPlan(active, sysBlocks) {
   }
 }
 
+/* Marken-Konfiguration des gewaehlten Presets. Liefert CTA, Microcopy und
+   Event-Bezeichnung - vorher standen diese Werte hartcodiert im Prompt und
+   haben beide Regelwerke ueberstimmt (siehe buildHeroVorgabe). */
+var brandCfg = BrandConfig.GENERIC;
+var lpVorlage = null;
+
+/* Laedt das Preset, extrahiert die Konfiguration und entfernt den
+   Konfigurationsblock aus dem Prompt-Text. Deterministisch, damit der
+   Cache-Prefix ueber alle Calls byte-identisch bleibt. */
+async function loadPresetText() {
+  var raw = await CopyPresets.load(selectedCopyPreset, presetBriefing());
+  brandCfg = BrandConfig.forPreset(raw);
+  lpVorlage = BrandConfig.vorlage(brandCfg, selectedLpVorlage);
+  return raw ? BrandConfig.stripFromPrompt(raw) : raw;
+}
+
 async function generateAll(active) {
-  // presetBriefing() steuert die automatische Referenz-Wahl (Register-Heuristik)
-  var presetText = await CopyPresets.load(selectedCopyPreset, presetBriefing());
+  var presetText = await loadPresetText();
   logPresetUsage(presetText);
   var instr = [
     'Du bist ein Team aus Senior Online-Marketing-Stratege, Conversion-Copywriter und UI/UX-Designer.',
-    'Du schreibst komplette deutsche Webinar-Landingpages.',
+    'Du schreibst komplette deutsche Landingpages fuer Anmeldungen und Angebote.',
     presetText
       ? 'WICHTIG: Am Anfang dieses System-Prompts steht das Copywriter-Preset der Marke (Regelwerk, Wissensdatenbank, Referenz-Copys). Halte dich strikt an das Regelwerk für Tonalität, Sprache, Anrede und Stilregeln. Verwende nur Fakten, Zahlen und Zitate aus der Wissensdatenbank oder den Kampagnen-Hardfacts. Schreibe neue Copy so, wie die Referenz-Copys klingen (Satzrhythmus, Argumentationsführung, Section-Dramaturgie), aber übernimm deren im Kopf jeder Referenz gelistete Regelverstöße NICHT: bei Konflikt gilt immer das Regelwerk. Die Referenz-Copys sind reine Stil-Referenz, KEINE Textquelle: Übernimm daraus niemals Headlines, Sätze oder ganze Absätze wörtlich oder nur leicht umformuliert - und auch nicht deren inhaltliche Aufhänger, Themen-Einstiege oder Zeitgeschehen-Bezüge als Standard (die Referenz zeigt, WIE erzählt wird, nicht WORÜBER). Jede Formulierung und jeder Aufhänger wird neu und spezifisch für DIESE Kampagne gewählt (belegte Fakten und Zitate aus der Wissensdatenbank sind erlaubt, passend zum Kampagnen-Thema ausgewählt). Das Preset hat Vorrang vor allgemeinen Stilvorgaben und ist eng mit den Kampagnen-Hardfacts zu kombinieren.'
       : 'Stil: direkt, vertrauenswürdig, Frage-Formate, Curiosity Gaps. Passe Tonalität und Anrede (Du/Sie) an Zielgruppe und Strategie der Kampagne an; wähle im Zweifel die förmliche Sie-Anrede.',
@@ -1196,6 +1259,40 @@ async function generateAll(active) {
   return data;
 }
 
+/* Hero-Vorgabe aus der Marken-Konfiguration statt hartcodiert.
+
+   Vorher stand hier woertlich:
+     announcement ... z.B. "LIVE-Webinar am [Termin]"
+     ctaButton = "Jetzt kostenlos anmelden"
+     ctaSubline = "100% kostenfrei am [Termin]"
+     Generiere 4 Bulletpoints.
+   Diese Zeilen standen HINTER dem Preset im System-Prompt und waren konkreter
+   formuliert - sie haben die Regelwerke faktisch ueberstimmt. Fuer Hellinger
+   erzeugten sie zwei woertliche Verstoesse in der prominentesten Section
+   ("Webinar" ist dort verboten, der belegte CTA sagt "kostenfrei"), und die
+   feste Zahl 4 verwarf die Bullet-Auswahl des Nutzers.
+
+   Die Anzahl richtet sich jetzt nach den tatsaechlich bestaetigten Bullets. */
+function buildHeroVorgabe() {
+  var anzahl = (HF.bulletpoints || []).length;
+  var cta = lpVorlage ? lpVorlage.ctaText : 'Jetzt kostenfrei anmelden';
+  var micro = lpVorlage && lpVorlage.microcopy ? lpVorlage.microcopy : '100 % kostenfrei · Am [Datum] um [Uhrzeit]';
+  var event = brandCfg.eventBezeichnung || 'Live-Webinar';
+  return '- Hero: announcement = kurzer Termin-Hinweis fuer die Announcement-Bar ganz oben, basierend auf "Termin". ' +
+    'Nenne das Format "' + event + '" - genau so, keine andere Bezeichnung. ' +
+    'Verwende die Hardfacts DIREKT und ungekuerzt: preHeadline = exakt aus "Pre-Headline", h1 = exakt aus "Titel", ' +
+    'h2 = exakt aus "Sub-Headline". Aendere daran kein Wort.\n' +
+    '  Die bulletpoints kommen 1:1 aus "Inhalts-Bullets": ' +
+    (anzahl
+      ? 'genau ' + anzahl + ' Stueck, in derselben Reihenfolge, im Wortlaut unveraendert. Liefere weder mehr noch weniger.'
+      : 'keine angegeben - dann bulletpoints als leeres Array.') +
+    ' Zerlege jeden Bullet in {"title","text"}: title ist der tragende Kern (2-6 Woerter), ' +
+    'text der Rest des Satzes. Erfinde keinen Inhalt dazu; laesst sich ein Bullet nicht sinnvoll teilen, ' +
+    'gehoert der ganze Satz in "title" und "text" bleibt leer.\n' +
+    '  ctaButton = "' + cta + '", ctaSubline orientiert sich an: "' + micro + '" (Platzhalter durch die echten Werte ersetzen), ' +
+    'videoPlaceholder = "[16:9 Video-Platzhalter: Anmeldeseiten-Video mit Referent]"\n';
+}
+
 async function generateChunk(chunk, sysBlocks, ctx, attempt) {
   ctx = ctx || {};
   attempt = attempt || 1;
@@ -1218,7 +1315,7 @@ async function generateChunk(chunk, sysBlocks, ctx, attempt) {
     'Termin: ' + (HF.live_termin||'') + '\n' +
     'Offer: ' + (HF.offer||'') + '\n' +
     (HF.beschreibung ? 'Kampagnen-Beschreibung (Thema, Host/Referent, Zielgruppe, Besonderheiten): ' + HF.beschreibung + '\n' : '') +
-    'Webinar-Inhalte (Bulletpoints 1:1 für Hero verwenden):\n' + (bpList||'(keine Bulletpoints angegeben)') + '\n' +
+    'Inhalts-Bullets (1:1 für Hero verwenden):\n' + (bpList||'(keine Bulletpoints angegeben)') + '\n' +
     'Zielgruppe: ' + (zielgruppe||'(keine Angabe)') + '\n' +
     (strategie ? 'Strategie / Positionierung: ' + strategie + '\n' : '') +
     ctxPromptBlock() + '\n' +
@@ -1227,8 +1324,8 @@ async function generateChunk(chunk, sysBlocks, ctx, attempt) {
     'Generiere folgende Sections als JSON-Objekt mit exakt diesen Keys:\n{\n  ' + schemaLines + '\n}\n\n' +
     'Regeln:\n' +
     '- KEINE inhaltlichen Dopplungen zwischen Sections: Jede Section erfüllt exakt ihre Rolle laut Seitenaufbau' + (ctx.planText ? ' und Content-Plan' : '') + '. Argumente, Beispiele, Formulierungen und Narrative, die zu einer anderen Section gehören, hier NICHT wiederholen - auch nicht umformuliert. Schreibe jede Section aus ihrem eigenen Blickwinkel.\n' +
-    '- Hero: announcement = kurzer Termin-Hinweis für die Announcement-Bar ganz oben (Live-Charakter, basierend auf "Termin", z.B. "LIVE-Webinar am [Termin]"). Verwende die Hardfacts DIREKT und ungekürzt: preHeadline = exakt aus "Pre-Headline", h1 = exakt aus "Titel", h2 = exakt aus "Sub-Headline". Die bulletpoints kommen 1:1 aus "Webinar-Inhalte" - parse jeden Bullet als {"title":"...", "text":"..."} wobei title der Hauptpunkt ist und text die Erklärung (falls vorhanden, sonst leer lassen). Generiere 4 Bulletpoints. ctaButton = "Jetzt kostenlos anmelden", ctaSubline = "100% kostenfrei am [Termin]", videoPlaceholder = "[16:9 Video-Platzhalter: Anmeldeseiten-Video mit Referent]"\n' +
-    '- introtext (Intro Text): badge = kurze Pill-Kategorie (max 5 Worte), headline = aufmerksamkeitsstarke H2, paragraphs = Array aus Fließtext-Absätzen, die zusammen eine Kontext-Story aufbauen (Gesamtlänge und Absatzzahl siehe TEXTLAENGEN unten - die Absatzzahl ist bewusst nicht vorgegeben) (gesellschaftlicher Wandel, Warum-jetzt-Narrativ, Marktentwicklung oder ähnliches passend zur Kampagne), closingLine = Brücken-Satz der auf den Referenten und das Webinar leitet. Den Aufhänger der Kontext-Story frisch und spezifisch für DIESE Kampagne wählen: NICHT automatisch das Zeitgeschehen-Ereignis oder den Einstieg der Referenz-Copy übernehmen (z.B. eine bestimmte Reform) - die Referenz zeigt nur, WIE so eine Story erzählt wird, nicht WORÜBER. Belegte Fakten aus der Wissensdatenbank passend zum Kampagnen-Thema auswählen.\n' +
+    buildHeroVorgabe() +
+    '- introtext (Intro Text): badge = kurze Pill-Kategorie (max 5 Worte), headline = aufmerksamkeitsstarke H2, paragraphs = Array aus Fließtext-Absätzen, die zusammen eine Kontext-Story aufbauen (Gesamtlänge und Absatzzahl siehe TEXTLAENGEN unten - die Absatzzahl ist bewusst nicht vorgegeben) (gesellschaftlicher Wandel, Warum-jetzt-Narrativ, Marktentwicklung oder ähnliches passend zur Kampagne), closingLine = Brücken-Satz der auf den Referenten und die Veranstaltung leitet. Den Aufhänger der Kontext-Story frisch und spezifisch für DIESE Kampagne wählen: NICHT automatisch das Zeitgeschehen-Ereignis oder den Einstieg der Referenz-Copy übernehmen (z.B. eine bestimmte Reform) - die Referenz zeigt nur, WIE so eine Story erzählt wird, nicht WORÜBER. Belegte Fakten aus der Wissensdatenbank passend zum Kampagnen-Thema auswählen.\n' +
     '- Educational Gap (framework): headline + bodyCopy als erklärenden Fließtext-Block, KEIN Kompass-Prinzip\n' +
     '- Problem-Checklist: exakt 5 Einträge als Array mit je "title" und "text"\n' +
     '- Testimonials: exakt 3 Einträge als Array mit je "quote", "name", "role"\n' +
@@ -1238,7 +1335,8 @@ async function generateChunk(chunk, sysBlocks, ctx, attempt) {
     '- Alle String-Werte EINZEILIG: keine echten Zeilenumbrüche UND keine \\n-Sequenzen im Text (die erscheinen sonst wörtlich auf der Seite). Brauchst Du mehrere Absätze, nutze ein Array aus Strings statt einem String mit Umbrüchen.\n' +
     '- Innerhalb von Textwerten NIEMALS gerade Anführungszeichen ("...") verwenden - sie beenden den String und zerstören das JSON. Zum Zitieren im Fließtext typografische Anführungszeichen nutzen: „...".\n' +
     '- Referent/Host NIEMALS erfinden: Verwende für Authority/Speaker und alle Referenten-Nennungen ausschließlich die Person aus der Kampagnen-Beschreibung bzw. dem Copywriter-Preset (Name, Titel, belegte Fakten). Fehlen Angaben zur Person komplett, schreibe neutral ohne erfundene Namen, Qualifikationen oder Erfahrungsjahre und setze Platzhalter in eckigen Klammern, z.B. [Name Referent].\n' +
-    '- Alle CTAs auf kostenfreie Webinar-Anmeldung\n' +
+    '- Alle CTAs fuehren zu: ' + (lpVorlage ? lpVorlage.conversionAction : 'anmeldung') +
+      '. Wortlaut des Haupt-CTA: "' + (lpVorlage ? lpVorlage.ctaText : 'Jetzt kostenfrei anmelden') + '"\n' +
     '- Sprache: Deutsch\n\n' +
     COPY_LENGTH_RULES + '\n\n' +
     '- NUR das JSON-Objekt, absolut kein anderer Text';
@@ -1674,11 +1772,11 @@ async function regenSection(secId) {
   isGenerating = true;
   document.getElementById('progress-bar').classList.add('nav-locked');
   try {
-    var presetText = await CopyPresets.load(selectedCopyPreset, presetBriefing());
+    var presetText = await loadPresetText();
     logPresetUsage(presetText);
     var instr = [
       'Du bist ein Team aus Online-Marketing-Stratege, Conversion-Copywriter und UI/UX-Designer.',
-      'Du überarbeitest EINE Section einer deutschen Webinar-Landingpage.',
+      'Du überarbeitest EINE Section einer deutschen Landingpage.',
       presetText
         ? 'WICHTIG: Am Anfang dieses System-Prompts steht das Copywriter-Preset der Marke (Regelwerk, Wissensdatenbank, Referenz-Copys). Halte dich strikt an das Regelwerk für Tonalität, Sprache, Anrede und Stilregeln. Verwende nur Fakten, Zahlen und Zitate aus der Wissensdatenbank oder den Kampagnen-Hardfacts. Schreibe so, wie die Referenz-Copys klingen, aber übernimm deren gelistete Regelverstöße NICHT: bei Konflikt gilt immer das Regelwerk. Die Referenz-Copys sind reine Stil-Referenz, KEINE Textquelle: niemals Headlines, Sätze oder Absätze daraus wörtlich oder nur leicht umformuliert übernehmen - und auch nicht deren inhaltliche Aufhänger oder Zeitgeschehen-Bezüge als Standard (die Referenz zeigt, WIE erzählt wird, nicht WORÜBER). Alles neu für diese Kampagne formulieren.'
         : 'Stil: Passe Tonalität und Anrede (Du/Sie) an Zielgruppe und Strategie der Kampagne an; wähle im Zweifel die förmliche Sie-Anrede.',
@@ -2778,6 +2876,79 @@ Was nicht geht, mit Falsch- und Besser-Beispielen. Vieles davon ist im Projektma
 10. Steht irgendwo "Webinar" statt "Live-Seminar" oder "Online-Seminar"?
 11. Steht irgendwo eine "nicht … sondern"-Konstruktion? Wenn ja, in eine fließende Perspektivverschiebung umbauen.
 12. Sind alle Verbote eingehalten? Kein Heilsversprechen, keine Esoterik, kein Gold, kein Gedankenstrich, kein "Schmerz zurückgeben", kein "blinde Liebe", keine Preise?
+
+## 8. Maschinenlesbare Konfiguration
+
+Dieser Block ist die **einzige** strukturierte Quelle für die Regeln oben. Das
+Tool liest ihn zur Laufzeit aus dieser Datei (siehe `shared/brand-config.js`) -
+es gibt keine zweite Konfigurationsdatei, die synchron gehalten werden müsste.
+Wird eine Regel oben geändert, gehört die Entsprechung hier dazu.
+
+Die vier Achsen sind bewusst getrennt: Eine Seite kann eine Salespage für eine
+Ausbildung sein, ein kostenloses Beratungsgespräch kann zu einem
+kostenpflichtigen Angebot führen. Ein einzelner „LP-Typ" könnte das nicht
+ausdrücken. `vorlagen` bündelt die üblichen Kombinationen als Bedienkomfort.
+
+```json brand-config
+{
+  "anrede": "du",
+  "eventBezeichnung": "Live-Seminar",
+  "vorlagen": {
+    "live_seminar": {
+      "name": "Kostenfreies Live-Seminar",
+      "offerType": "lead-event",
+      "conversionAction": "anmeldung",
+      "priceStatus": "kostenlos",
+      "eventFormat": "live-seminar",
+      "ctaText": "Jetzt kostenfrei anmelden",
+      "microcopy": "100% kostenfrei · Live am [Datum] um [Uhrzeit] Uhr"
+    },
+    "ausbildung": {
+      "name": "Ausbildung (Bewerbung)",
+      "offerType": "ausbildung",
+      "conversionAction": "bewerbung",
+      "priceStatus": "nicht-kommunizieren",
+      "eventFormat": "kein-event",
+      "ctaText": "Jetzt auf Platz bewerben",
+      "microcopy": "Unverbindlich · Wir klären gemeinsam, ob der Weg zu Dir passt"
+    },
+    "kennenlerngespraech": {
+      "name": "Kennenlerngespräch",
+      "offerType": "beratung",
+      "conversionAction": "terminbuchung",
+      "priceStatus": "kostenlos",
+      "eventFormat": "kein-event",
+      "ctaText": "Hier Kennenlerntermin reservieren",
+      "microcopy": "Persönlich · Unverbindlich"
+    }
+  },
+  "angleKatalog": ["curiosity", "versprechen", "perspektivwechsel", "muster", "tiefenkontrast"],
+  "angleVerboten": {
+    "frage": "Abschnitt 6: Keine Fragen im Seminartitel und in den Inhalts-Bullets.",
+    "zeitgeschehen": "Kommt im Regelwerk nicht vor; das Register ist innerlich/systemisch, nicht gesellschaftspolitisch.",
+    "faktencheck": "Abschnitt 6: Nur belegte Zahlen. Ein Faktencheck-Titel erzwingt sonst eine Erfindung."
+  },
+  "verbote": [
+    {"id": "webinar", "regex": "\\bWebinar\\w*", "hinweis": "Das Event heißt Live-Seminar oder Online-Seminar.", "quelle": "Abschnitt 6"},
+    {"id": "kostenlos", "regex": "\\bkostenlos(e[nmrs]?)?\\b", "hinweis": "Die belegte Formulierung ist kostenfrei.", "quelle": "Abschnitt 3.8"},
+    {"id": "gedankenstrich", "regex": "\\s[–—]\\s", "hinweis": "Keine Gedankenstriche im laufenden Text.", "quelle": "Abschnitt 6"},
+    {"id": "nicht-sondern", "regex": "\\bnicht\\b[^.!?]{1,60}\\bsondern\\b", "hinweis": "Perspektivverschiebung fließend formulieren.", "quelle": "Abschnitt 6"},
+    {"id": "familienkonstellation", "regex": "Familienkonstellation", "hinweis": "Der Terminus ist Familienstellen.", "quelle": "Abschnitt 6"},
+    {"id": "blinde-liebe", "regex": "blinde[nrs]? Liebe", "hinweis": "Begriff wird nicht verwendet.", "quelle": "Abschnitt 6"},
+    {"id": "preis", "regex": "\\d[\\d.,]*\\s?(€|EUR|Euro)", "hinweis": "Keine Preise in der Copy.", "quelle": "Abschnitt 6"},
+    {"id": "druck", "regex": "(Nur jetzt|Verpasse es nicht|zu spät)[!]?", "hinweis": "Keine Druck-Sprache.", "quelle": "Abschnitt 6"},
+    {"id": "sie-anrede", "regex": "\\b(Ihnen|Ihre[nmrs]?|Sie sich)\\b", "hinweis": "Durchgängig Du, großgeschrieben.", "quelle": "Abschnitt 2"}
+  ],
+  "verboteInFeldern": {
+    "frage": {
+      "regex": "\\?",
+      "felder": ["titel.pre", "titel.h1", "titel.h2", "bullets"],
+      "hinweis": "Seminartitel und Inhalts-Bullets enthalten keine Fragezeichen.",
+      "quelle": "Abschnitt 6"
+    }
+  }
+}
+```
 </script>
 <script type="text/plain" data-preset-file="presets/hellinger/wissensdatenbank.md">
 ---
@@ -3555,6 +3726,78 @@ Prüfe jeden Text vor der finalen Ausgabe:
 > **Altbestand-Hinweis:** Ältere veröffentlichte Seiten (und Teile der Referenz-Copys) nutzen noch Gedankenstriche, „ganzheitlich", „nicht X, sondern Y" und Versal-CTAs. Das ist überholt. Der aktuelle Standard entfernt diese Muster. Beispiel:
 > Original (Altbestand): „Das Ergebnis: tiefgreifende und spürbare Veränderungen, Beschwerden klingen ab, Sie fühlen sich leichter, frischer und energievoller – und das mit minimalem Zeitaufwand."
 > Aktueller Standard: „Das Ergebnis: Sie fühlen sich leichter, frischer und energievoller, und das mit wenig Zeitaufwand. Viele bemerken, dass Beschwerden nachlassen."
+
+## 9. Maschinenlesbare Konfiguration
+
+Dieser Block ist die **einzige** strukturierte Quelle für die Regeln oben. Das
+Tool liest ihn zur Laufzeit aus dieser Datei (siehe `shared/brand-config.js`) -
+es gibt keine zweite Konfigurationsdatei, die synchron gehalten werden müsste.
+Wird eine Regel oben geändert, gehört die Entsprechung hier dazu.
+
+Die `vorlagen` entsprechen der LP-Typ-Tabelle in Abschnitt 4. Die vier Achsen
+sind getrennt gespeichert, weil sie unabhängig variieren: Das Beratungsgespräch
+für die Ausbildung ist kostenlos, die Ausbildung selbst nicht.
+
+```json brand-config
+{
+  "anrede": "sie",
+  "eventBezeichnung": "Live-Seminar",
+  "vorlagen": {
+    "webinar": {
+      "name": "Kostenfreies Live-Seminar",
+      "offerType": "lead-event",
+      "conversionAction": "anmeldung",
+      "priceStatus": "kostenlos",
+      "eventFormat": "live-seminar",
+      "ctaText": "Jetzt Ihren Platz reservieren",
+      "microcopy": "Digital & 100 % kostenfrei: Am [Datum], um [Uhrzeit]"
+    },
+    "ausbildung": {
+      "name": "Ausbildung / Fach-Coach (Beratungsgespräch)",
+      "offerType": "ausbildung",
+      "conversionAction": "terminbuchung",
+      "priceStatus": "kostenlos",
+      "priceStatusAngebot": "kostenpflichtig",
+      "eventFormat": "kein-event",
+      "ctaText": "Jetzt kostenloses Beratungsgespräch vereinbaren",
+      "microcopy": "Unverbindlich · Persönlich · Wir klären gemeinsam, welcher Weg zu Ihnen passt"
+    },
+    "salespage": {
+      "name": "Salespage (Kurs/Plan)",
+      "offerType": "kurs",
+      "conversionAction": "kauf",
+      "priceStatus": "kostenpflichtig",
+      "eventFormat": "kein-event",
+      "ctaText": "Jetzt starten",
+      "microcopy": "Ruhiger Preishinweis, kein Versal-Druck"
+    },
+    "freebie": {
+      "name": "Freebie (Test / Ratgeber)",
+      "offerType": "lead-magnet",
+      "conversionAction": "download",
+      "priceStatus": "kostenlos",
+      "eventFormat": "kein-event",
+      "ctaText": "Ratgeber kostenlos sichern",
+      "microcopy": "In wenigen Minuten · Sofort per E-Mail",
+      "hinweis": "Abgeleitet, nicht wörtlich belegt (siehe Abschnitt 4)."
+    }
+  },
+  "angleKatalog": ["curiosity", "versprechen", "zeitgeschehen", "faktencheck", "frage", "reframe"],
+  "angleVerboten": {},
+  "verbote": [
+    {"id": "gedankenstrich", "regex": "\\s[–—]\\s", "hinweis": "Keine Gedankenstriche als Stilmittel.", "quelle": "Abschnitt 6.1"},
+    {"id": "nicht-sondern", "regex": "\\bnicht\\b[^.!?]{1,60}\\bsondern\\b", "hinweis": "Konstruktion wirkt künstlich.", "quelle": "Abschnitt 6.2"},
+    {"id": "mehr-als-nur", "regex": "\\bmehr als nur\\b", "hinweis": "Keine künstliche Aufwertung.", "quelle": "Abschnitt 6.4"},
+    {"id": "floskeln", "regex": "\\b(Transformation|Potenzial entfalten|nächste[s]? Level|Gamechanger|lebensverändernd|nachhaltig wachsen)\\w*", "hinweis": "Generische Transformationsfloskel.", "quelle": "Abschnitt 6.5"},
+    {"id": "ki-satzanfang", "regex": "(In einer Welt, in der|Gerade in der heutigen Zeit|Viele Menschen fragen sich|Vielleicht kennen Sie das|Stellen Sie sich vor|Was wäre, wenn)", "hinweis": "KI-typischer Satzanfang.", "quelle": "Abschnitt 6.9"},
+    {"id": "leere-adjektive", "regex": "\\b(ganzheitlich|tiefgehend|einzigartig|wirkungsvoll)\\w*", "hinweis": "Leeres Adjektiv ohne Beleg.", "quelle": "Abschnitt 6.8"},
+    {"id": "versal-cta", "regex": "\\b[A-ZÄÖÜ]{4,}\\b!", "hinweis": "Keine aggressiven Versal-CTAs.", "quelle": "Abschnitt 6.10"},
+    {"id": "vorsorge", "regex": "\\bVorsorge\\w*", "hinweis": "Das Markenthema heißt Prävention.", "quelle": "Abschnitt 6.10"},
+    {"id": "du-anrede", "regex": "\\b(Dein[enmrs]?|Dich|Dir)\\b", "hinweis": "Holistic House schreibt immer Sie.", "quelle": "Abschnitt 2"}
+  ],
+  "verboteInFeldern": {}
+}
+```
 </script>
 <script type="text/plain" data-preset-file="presets/holistic-house/wissensdatenbank.md">
 # Holistic House - Wissensdatenbank
