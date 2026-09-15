@@ -1,5 +1,10 @@
 # Proxy-Faehigkeiten (Phase 0.3) — GEKLAERT
 
+> **Stand:** Eine ueberarbeitete Worker-Fassung liegt in `worker/index.js` und
+> behebt die Punkte 1-3 unten. Sie ist **noch nicht deployt** — bis dahin gilt
+> fuer den laufenden Betrieb weiterhin das hier beschriebene Verhalten, und
+> `shared/api-client.js` ist entsprechend darauf ausgelegt.
+
 Zwischen Browser und Claude-API sitzt ein Cloudflare Worker unter
 `https://claude.korbinian.workers.dev/`. Der Worker-Code wurde bereitgestellt;
 die Fragen sind damit **aus dem Code beantwortet**, ohne Testrequests.
