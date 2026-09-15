@@ -28,6 +28,12 @@ curl -sS -D - -o /dev/null -X POST https://claude.korbinian.workers.dev/ \
 Erwartet: HTTP **400** (nicht 200) und ein `request-id`-Header. Kommt weiterhin
 200, ist die alte Fassung aktiv.
 
+**Ergebnis der Pruefung nach dem Deploy:** `HTTP/2 400`, `request-id:
+req_011Cf5erGJp7Z8yZLHazJByM`, `access-control-expose-headers: request-id,
+retry-after, anthropic-ratelimit-requests-remaining, ...` — beide Punkte
+bestaetigt. `shared/api-client.js` nutzt seitdem `retry-after` und die
+Rate-Limit-Header (siehe `docs/proxy-capabilities.md`).
+
 ## Environment
 
 | Variable | Pflicht | Bedeutung |

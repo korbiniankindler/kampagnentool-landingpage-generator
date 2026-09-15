@@ -188,10 +188,12 @@ test('onRetry meldet jeden Wiederholversuch an die UI', async () => {
   assert.equal(seen[0].status, 503);
 });
 
-/* ---- Verhalten des konkret eingesetzten Cloudflare Workers ----
-   Er gibt JEDE Antwort mit HTTP 200 zurueck und verwirft die
-   Anthropic-Header (siehe docs/proxy-capabilities.md). Der Body-Fehler-Zweig
-   ist damit der einzige, der API-Fehler ueberhaupt sieht. */
+/* ---- Fehler-Body trotz HTTP 200 ----
+   So verhielt sich die alte Worker-Fassung: JEDE Antwort kam mit HTTP 200 an.
+   Die deployte Fassung reicht den Status durch (Tests dazu weiter unten), aber
+   ein Rollback oder ein statusnormalisierender Zwischenproxy fuehrt wieder
+   hierher. Ohne diesen Zweig wuerde so eine Antwort still als Erfolg gelten -
+   diese Tests halten ihn deshalb am Leben. */
 
 test('Worker-Verhalten: 429 als HTTP 200 im Body wird wiederholt', () => {
   // Deckt ab, was der Worker aus einem echten 429 macht
@@ -230,12 +232,108 @@ test('Worker-Verhalten: invalid_request wird NICHT wiederholt', async () => {
   assert.equal(calls.length, 1, 'ein Schemafehler aendert sich durch Wiederholung nicht');
 });
 
-test('Worker-Verhalten: fehlendes retry-after faellt auf das Fenster zurueck', async () => {
-  // Der Worker verwirft die Anthropic-Header - retry-after gibt es nie.
+test('Fehlendes retry-after faellt auf das berechnete Fenster zurueck', async () => {
+  // Alte Worker-Fassung: Anthropic-Header verworfen, retry-after gibt es nie.
   const { sleeps } = setup([
     mockResponse({ body: JSON.stringify({ error: { type: 'rate_limit_error', message: 'rate limit' } }) }),
     mockResponse({ body: OK_BODY })
   ]);
   await ClaudeAPI.send({ model: 'm', max_tokens: 100 });
   assert.ok(sleeps[0] >= 10000, 'berechnetes Rate-Limit-Fenster statt 2s-Backoff, war: ' + sleeps[0]);
+});
+
+/* ---- Verhalten des deployten Workers (worker/index.js) ----
+   Er reicht den Status von Anthropic durch und gibt request-id, retry-after
+   und die anthropic-ratelimit-*-Header per Access-Control-Expose-Headers
+   frei. Damit ist der resp.ok-Zweig der Hauptpfad und die Wartezeiten sind
+   Angaben des Servers statt Schaetzungen. */
+
+test('Echter HTTP 429 mit retry-after wird als solcher erkannt und befolgt', async () => {
+  const { calls, sleeps } = setup([
+    mockResponse({ ok: false, status: 429, statusText: 'Too Many Requests',
+      body: JSON.stringify({ type: 'error', error: { type: 'rate_limit_error', message: 'rate limit' } }),
+      headers: { 'retry-after': '9', 'request-id': 'req_live1' } }),
+    mockResponse({ body: OK_BODY })
+  ]);
+  await ClaudeAPI.send({ model: 'm', max_tokens: 100 });
+  assert.equal(calls.length, 2);
+  assert.ok(sleeps[0] >= 9000 && sleeps[0] <= 9500, 'Angabe des Servers, nicht geschaetzt, war: ' + sleeps[0]);
+});
+
+test('429 ohne retry-after nutzt den gemeldeten Reset-Zeitpunkt', async () => {
+  // Der Reset-Header ist praeziser als der lokale Zaehler: er kennt auch die
+  // Requests anderer Tabs und Mitarbeiter.
+  const jetzt = Date.parse('2026-01-01T12:00:00Z');
+  const { sleeps } = setup([
+    mockResponse({ ok: false, status: 429,
+      body: JSON.stringify({ error: { type: 'rate_limit_error', message: 'rate limit' } }),
+      headers: { 'anthropic-ratelimit-requests-remaining': '0',
+                 'anthropic-ratelimit-requests-reset': '2026-01-01T12:00:20Z' } }),
+    mockResponse({ body: OK_BODY, headers: { 'anthropic-ratelimit-requests-remaining': '4' } })
+  ]);
+  ClaudeAPI.configure({ nowImpl: () => jetzt });
+  await ClaudeAPI.send({ model: 'm', max_tokens: 100 });
+  ClaudeAPI.configure({ nowImpl: () => Date.now() });
+  assert.ok(sleeps.some((ms) => ms >= 20000 && ms <= 21000),
+    'bis zum gemeldeten Reset, nicht pauschale 15s. Wartezeiten: ' + JSON.stringify(sleeps));
+});
+
+test('remaining 0: der naechste Request wartet, statt den 429 zu provozieren', async () => {
+  const jetzt = Date.parse('2026-01-01T12:00:00Z');
+  const { calls, sleeps } = setup([mockResponse({
+    body: OK_BODY,
+    headers: { 'anthropic-ratelimit-requests-remaining': '0',
+               'anthropic-ratelimit-requests-reset': '2026-01-01T12:00:30Z' }
+  })]);
+  ClaudeAPI.configure({ nowImpl: () => jetzt });
+  await ClaudeAPI.send({ model: 'm', max_tokens: 100 });
+  assert.equal(sleeps.length, 0, 'der erste Request wartet nicht');
+  await ClaudeAPI.send({ model: 'm', max_tokens: 100 });
+  ClaudeAPI.configure({ nowImpl: () => Date.now() });
+  assert.equal(calls.length, 2);
+  assert.ok(sleeps[0] >= 30000 && sleeps[0] <= 31000,
+    'wartet bis zum Reset statt einen sicheren 429 auszuloesen, war: ' + sleeps[0]);
+});
+
+test('ohne Rate-Limit-Header bleibt die lokale Schaetzung gueltig', async () => {
+  // Rollback auf die alte Worker-Fassung: es darf nicht schlechter werden als
+  // vorher, insbesondere darf kein alter Reset-Zeitpunkt haengen bleiben.
+  const { sleeps } = setup([mockResponse({ body: OK_BODY })]);
+  await ClaudeAPI.send({ model: 'm', max_tokens: 100 });
+  assert.equal(sleeps.length, 0);
+  assert.equal(ClaudeAPI._limitZustandForTests().remaining, null);
+  assert.equal(ClaudeAPI._limitZustandForTests().resetAt, null);
+});
+
+test('request-id des Workers landet in der Fehlermeldung eines echten 400', async () => {
+  // Genau der Fall aus worker/README.md: max_tokens zu gross -> HTTP 400.
+  setup([mockResponse({
+    ok: false, status: 400, statusText: 'Bad Request',
+    body: JSON.stringify({ type: 'error', error: { type: 'invalid_request_error', message: 'max_tokens: 999999 > 64000' } }),
+    headers: { 'request-id': 'req_011Cf5erGJp7Z8yZLHazJByM' }
+  })]);
+  await assert.rejects(() => ClaudeAPI.send({ model: 'm', max_tokens: 999999 }), (err) => {
+    assert.match(err.message, /max_tokens/);
+    assert.match(err.message, /req_011Cf5erGJp7Z8yZLHazJByM/);
+    assert.equal(err.status, 400);
+    return true;
+  });
+});
+
+test('Schema-Rueckfall greift auch bei echtem HTTP 400', async () => {
+  // Mit durchgereichtem Status kommt eine abgelehnte output_config als 400 an,
+  // nicht mehr als 200 mit Fehler-Body. Der Rueckfall muss trotzdem greifen.
+  const { calls } = setup([
+    mockResponse({ ok: false, status: 400,
+      body: JSON.stringify({ type: 'error', error: { type: 'invalid_request_error', message: 'unexpected parameter: output_config' } }) }),
+    mockResponse({ body: OK_BODY })
+  ]);
+  let gemeldet = null;
+  const d = await ClaudeAPI.sendMitSchema({ model: 'm', max_tokens: 100 },
+    { format: { type: 'json_schema', schema: { type: 'object' } } },
+    { onFallback: (e) => { gemeldet = e.message; } });
+  assert.equal(calls.length, 2);
+  assert.ok(gemeldet, 'der Rueckfall darf nicht still passieren');
+  assert.equal(d._schemaGenutzt, false);
+  assert.ok(!('output_config' in JSON.parse(calls[1].init.body)), 'zweiter Versuch ohne Schema');
 });

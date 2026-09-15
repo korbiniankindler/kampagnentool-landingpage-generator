@@ -1,15 +1,17 @@
-# Proxy-Faehigkeiten (Phase 0.3) — GEKLAERT
+# Proxy-Faehigkeiten (Phase 0.3) — GEKLAERT UND BEHOBEN
 
-> **Stand:** Eine ueberarbeitete Worker-Fassung liegt in `worker/index.js` und
-> behebt die Punkte 1-3 unten. Sie ist **noch nicht deployt** — bis dahin gilt
-> fuer den laufenden Betrieb weiterhin das hier beschriebene Verhalten, und
-> `shared/api-client.js` ist entsprechend darauf ausgelegt.
+> **Stand:** Die ueberarbeitete Fassung aus `worker/index.js` ist **deployt und
+> verifiziert**. Der Pruefrequest aus `worker/README.md` liefert HTTP **400**
+> (statt vorher 200) und einen `request-id`-Header; `access-control-expose-headers`
+> nennt `request-id, retry-after, anthropic-ratelimit-*`. Die drei Befunde unten
+> sind damit historisch — sie stehen hier, weil `shared/api-client.js` die
+> Behandlung fuer beide Faelle behaelt (Rollback, Zwischenproxy).
 
 Zwischen Browser und Claude-API sitzt ein Cloudflare Worker unter
 `https://claude.korbinian.workers.dev/`. Der Worker-Code wurde bereitgestellt;
-die Fragen sind damit **aus dem Code beantwortet**, ohne Testrequests.
+die Fragen waren damit **aus dem Code beantwortet**, ohne Testrequests.
 
-Der Worker in Kurzform:
+Die **alte** Fassung in Kurzform:
 
 ```js
 const body = await request.json();
@@ -27,36 +29,51 @@ return new Response(JSON.stringify(data), {
 
 ## Ergebnisse
 
-| # | Frage | Antwort | Beleg |
+| # | Frage | Alte Fassung | Jetzt (deployt) |
 |---|---|---|---|
-| P1 | `output_config` durchgereicht? | **Ja** | `JSON.stringify(body)` ohne Filterung |
-| P2 | `output_config.effort` durchgereicht? | **Ja** | dito |
-| P3 | Fehlerformat bei Upstream-Fehlern | **JSON, aber mit HTTP 200** | Status wird nicht weitergereicht |
-| P4 | `retry-after` / `request-id` weitergereicht? | **Nein** | Response-Header werden komplett neu gebaut |
-| P5 | Langer ungestreamter Request? | **offen, aber riskant** | `response.json()` puffert; Wall-Clock-Grenze des Workers ungetestet |
+| P1 | `output_config` durchgereicht? | Ja | Ja (Body unveraendert) |
+| P2 | `output_config.effort` durchgereicht? | Ja | Ja |
+| P3 | Fehlerformat bei Upstream-Fehlern | JSON, aber **immer HTTP 200** | **Status durchgereicht** (verifiziert: 400) |
+| P4 | `retry-after` / `request-id` weitergereicht? | Nein | **Ja**, inkl. `anthropic-ratelimit-*` und Expose-Headers |
+| P5 | Langer ungestreamter Request? | offen, gepuffert | `stream: true` wird durchgereicht; ungestreamt weiterhin gepuffert |
 
-## Drei Befunde mit Konsequenzen für den Code
+## Drei Befunde der alten Fassung — behoben, aber weiterhin abgesichert
 
-### 1. Jede Antwort kommt mit HTTP 200 an
+### 1. Jede Antwort kam mit HTTP 200 an — behoben
 
 `return new Response(...)` setzt keinen Status. Ein 429, ein 500 oder ein 529
 von Anthropic erreicht den Browser als **200 mit Fehler-Body**. Nur
 Worker-interne Fehler (`catch`) liefern 500.
 
-Konsequenz für `shared/api-client.js`: Der `resp.ok`-Check greift bei
-API-Fehlern faktisch nie. Der relevante Pfad ist die Auswertung von
-`data.error` — dort muss die Retry-Erkennung vollstaendig sein. Der
-`resp.ok`-Check bleibt trotzdem: er faengt Worker-Ausfaelle, Cloudflare-
-Fehlerseiten und einen spaeter korrigierten Worker ab.
+Konsequenz für `shared/api-client.js`: Der `resp.ok`-Zweig ist jetzt der
+Hauptpfad — ein 429 kommt als 429 an und wird gezielt wiederholt. Die
+Auswertung von `data.error` bei HTTP 200 **bleibt** trotzdem bestehen: Ein
+Rollback auf die alte Fassung oder ein statusnormalisierender Zwischenproxy
+fuehrt wieder dorthin, und ohne diesen Zweig gaelte so eine Antwort still als
+Erfolg. Beide Pfade sind in `tests/api-client.test.js` abgedeckt.
 
-### 2. `retry-after` ist nicht verfuegbar
+### 2. `retry-after` war nicht verfuegbar — behoben
 
-Die Anthropic-Header werden verworfen. Der Client faellt deshalb immer auf das
-berechnete Rate-Limit-Fenster zurueck — das ist implementiert und funktioniert,
-aber es ist eine Schaetzung statt der Angabe des Servers.
+Die Anthropic-Header wurden verworfen; der Client musste immer auf das
+berechnete Rate-Limit-Fenster zurueckfallen — eine Schaetzung statt der Angabe
+des Servers. Ebenso fehlte die `request-id`, womit sich kein Fehler gegenueber
+Anthropic nachverfolgen liess.
 
-Ebenso fehlt die `request-id`. Ein Fehler laesst sich damit gegenueber
-Anthropic nicht nachverfolgen. **Zwei Zeilen im Worker wuerden das loesen:**
+Beides ist jetzt verfuegbar, und `shared/api-client.js` nutzt es:
+
+* `retry-after` wird befolgt statt geschaetzt.
+* `anthropic-ratelimit-requests-reset` bestimmt bei einem 429 ohne
+  `retry-after` die Wartezeit.
+* `anthropic-ratelimit-requests-remaining === 0` laesst den naechsten Request
+  bis zum Reset warten, statt einen sicheren 429 zu provozieren. Das ist die
+  einzige Information im System, die das **organisationsweite** Limit
+  tatsaechlich kennt — der lokale Zaehler sieht nur den eigenen Tab.
+* Jede Fehlermeldung traegt die `request-id`.
+
+Fehlen die Header (Rollback, anderer Proxy), bleibt die lokale Schaetzung
+gueltig — der Client wird dadurch nicht schlechter als vorher.
+
+Die urspruenglich vorgeschlagene Minimalloesung war:
 
 ```js
 return new Response(JSON.stringify(data), {
@@ -69,17 +86,21 @@ return new Response(JSON.stringify(data), {
 Dazu gehoert `Access-Control-Expose-Headers: request-id, retry-after` in
 `corsHeaders`, sonst sieht der Browser sie trotz allem nicht.
 
-### 3. Streaming ist mit diesem Worker nicht moeglich
+### 3. Streaming war nicht moeglich — behoben
 
 `await response.json()` puffert die vollstaendige Antwort. Ein Request mit
 `stream: true` wuerde eine SSE-Antwort liefern, die `response.json()` nicht
 parsen kann.
 
-Konsequenz: Die **Ein-Call-Generierung einer kompletten Landingpage**
-(~25-35k Output-Tokens) ist mit diesem Worker nicht sinnvoll machbar. Sie
-braucht Streaming, und Streaming braucht einen geaenderten Worker
-(`return new Response(response.body, ...)`). Im Benchmark faellt dieser Arm
-damit aus — nicht aus Prinzip, sondern aus Infrastruktur.
+Die deployte Fassung reicht bei `"stream": true` den Body unveraendert durch
+(`return new Response(upstream.body, ...)`). Die **Ein-Call-Generierung einer
+kompletten Landingpage** (~25-35k Output-Tokens) ist damit infrastrukturell
+nicht mehr blockiert und kann als Benchmark-Arm antreten.
+
+Offen bleibt die Client-Seite: `shared/api-client.js` liest die Antwort mit
+`resp.text()` und kann SSE noch nicht verarbeiten. Solange kein Benchmark-Arm
+Streaming braucht, wird das bewusst nicht gebaut — der ungestreamte Pfad mit
+`max_tokens`-abhaengigem Timeout deckt die aktuellen Calls ab.
 
 ## Was damit entblockt ist
 
@@ -96,18 +117,26 @@ Beta-Header braucht, ist mit diesem Worker nicht nutzbar.
 **Hoeflichkeitsbremse pro Browser-Tab**, keine Garantie: ein Reload, ein
 zweiter Tab oder ein zweiter Mitarbeiter umgeht sie vollstaendig.
 
-Der Worker haelt keinen Zaehler. Echtes organisationsweites Limiting gehoert
+Die jetzt durchgereichten `anthropic-ratelimit-*`-Header entschaerfen das
+teilweise — der Client sieht nach jedem Request den **echten** Kontostand und
+wartet bei `remaining: 0` bis zum Reset. Das verhindert vermeidbare 429er,
+ersetzt aber keinen Zaehler: zwei Tabs, die gleichzeitig starten, wissen
+voneinander erst nach ihrem jeweils ersten Request.
+
+Der Worker haelt weiterhin keinen Zaehler. Echtes organisationsweites Limiting gehoert
 dorthin (Durable Object oder KV als gemeinsamer Zaehler). **Offener Blocker**,
 kein geloestes Problem.
 
 ## Nebenbefund: der Endpunkt ist unauthentifiziert
 
-Der Worker prueft nichts ausser der HTTP-Methode. Wer die URL kennt, kann auf
-Kosten des Kontos Anthropic-Tokens verbrauchen. Das ist fuer ein internes Tool
-eine bewusste Vereinfachung, hat aber eine Auswirkung auf die
+Die alte Fassung prueft nichts ausser der HTTP-Methode. Wer die URL kennt, kann
+auf Kosten des Kontos Anthropic-Tokens verbrauchen. Das ist fuer ein internes
+Tool eine bewusste Vereinfachung, hat aber eine Auswirkung auf die
 **Zuverlaessigkeit**: Ein Fremdzugriff wuerde das Org-Limit von 5
 Requests/Minute aufbrauchen, und das Tool liefe ohne erkennbaren Grund in
 429-Retries.
 
-Ein geteiltes Geheimnis im Header waere ein Dreizeiler — sinnvoll, sobald
-ohnehin am Worker gearbeitet wird (siehe Punkt 2).
+`worker/index.js` bringt dafuer ein optionales `SHARED_SECRET` mit
+(Header `x-tool-secret`). Es ist **nicht aktiviert**: das Frontend schickt den
+Header derzeit nicht, ein gesetztes Secret wuerde also alle aussperren. Erst
+aktivieren, wenn beide Seiten zusammen ausgerollt werden.

@@ -9,13 +9,20 @@
    - feste 14s Wartezeit, kein Retry-After, kein Backoff
    - keine request-id in der Fehlermeldung
 
-   Zum konkret eingesetzten Proxy (docs/proxy-capabilities.md): Er antwortet
-   IMMER mit HTTP 200 und verwirft die Anthropic-Header. Deshalb ist der
-   Body-Fehler-Zweig weiter unten der entscheidende, `retry-after` steht nie
-   zur Verfuegung (es greift das berechnete Fenster), und eine `request-id`
-   gibt es nur, wenn der Worker sie kuenftig durchreicht. Der resp.ok-Check
-   bleibt trotzdem: er faengt Worker-Ausfaelle und einen spaeter korrigierten
-   Worker ab.
+   Zum eingesetzten Proxy (worker/index.js, docs/proxy-capabilities.md): Seit
+   dem Deploy der ueberarbeiteten Fassung reicht er den HTTP-Status von
+   Anthropic durch und gibt `request-id`, `retry-after` und die Rate-Limit-
+   Header frei (Access-Control-Expose-Headers). Damit ist der `resp.ok`-Zweig
+   der Hauptpfad fuer API-Fehler: 429 kommt als 429 an, `retry-after` wird
+   tatsaechlich befolgt statt geschaetzt, und jede Fehlermeldung traegt die
+   request-id.
+
+   Der Body-Fehler-Zweig weiter unten bleibt trotzdem bestehen. Er ist kein
+   toter Code: Ein Browser mit gecachter Preflight-Antwort, ein Rollback auf
+   die alte Worker-Fassung oder ein zwischengeschalteter Proxy, der Status
+   normalisiert, liefern weiterhin 200 mit Fehler-Body. Faellt dieser Zweig
+   weg, wird so ein Fehler still als Erfolg geparst - genau das Fehlerbild,
+   das Phase 0 beseitigt hat.
 
    WICHTIG zum Rate-Limiting: Der Throttle unten ist eine HOEFLICHKEITSBREMSE
    pro Browser-Tab, keine organisationsweite Garantie. Ein Reload, ein zweiter
@@ -38,6 +45,12 @@ var ClaudeAPI = (function () {
   };
 
   var _timestamps = [];
+  /* Vom Server gemeldeter Zustand des ORGANISATIONSWEITEN Limits, gefuellt aus
+     den anthropic-ratelimit-*-Headern. Der lokale Zaehler oben sieht nur den
+     eigenen Tab; diese Angabe sieht das ganze Konto. Sie ersetzt keinen
+     serverseitigen Zaehler (siehe docs/proxy-capabilities.md), macht den
+     Throttle aber von einer reinen Schaetzung zu einer Beobachtung. */
+  var _limitZustand = { remaining: null, resetAt: null };
 
   function configure(opts) {
     Object.keys(opts || {}).forEach(function (k) { cfg[k] = opts[k]; });
@@ -72,6 +85,13 @@ var ClaudeAPI = (function () {
       if (!isNaN(when)) return Math.min(Math.max(when - cfg.nowImpl(), 0) + 250, 120000);
     }
     if (status === 429) {
+      /* Der Server nennt den Zeitpunkt, zu dem das Fenster faellt. Das ist
+         praeziser als der lokale Zaehler, weil es auch die Requests anderer
+         Tabs und Mitarbeiter beruecksichtigt. */
+      if (_limitZustand.resetAt) {
+        var bisReset = _limitZustand.resetAt - cfg.nowImpl() + 500;
+        if (bisReset > 0) return Math.min(bisReset, 120000);
+      }
       var oldest = _timestamps.length ? _timestamps[0] : null;
       if (oldest !== null) {
         var wait = cfg.windowMs - (cfg.nowImpl() - oldest) + 500;
@@ -85,6 +105,15 @@ var ClaudeAPI = (function () {
 
   async function throttle() {
     var now = cfg.nowImpl();
+    /* Hat der Server zuletzt "0 uebrig" gemeldet, ist ein weiterer Request
+       garantiert ein 429 - unabhaengig davon, was der lokale Zaehler glaubt.
+       Dann lieber gleich bis zum Reset warten, statt den Fehlversuch zu
+       provozieren. */
+    if (_limitZustand.remaining === 0 && _limitZustand.resetAt && _limitZustand.resetAt > now) {
+      await cfg.sleepImpl(Math.min(_limitZustand.resetAt - now + 500, 120000));
+      _limitZustand.remaining = null;
+      now = cfg.nowImpl();
+    }
     _timestamps = _timestamps.filter(function (t) { return now - t < cfg.windowMs; });
     if (_timestamps.length >= cfg.maxPerMin) {
       var oldest = _timestamps[0];
@@ -104,6 +133,23 @@ var ClaudeAPI = (function () {
      Melden mitschicken kann - ohne sie ist ein Proxy-Fehler nicht nachverfolgbar. */
   function withRequestId(message, requestId) {
     return requestId ? message + ' (request-id: ' + requestId + ')' : message;
+  }
+
+  /* Liest die Rate-Limit-Header, die der Worker seit der ueberarbeiteten
+     Fassung durchreicht. Fehlen sie (alte Worker-Fassung, anderer Proxy),
+     bleibt der Zustand unveraendert und es greift weiter die lokale
+     Schaetzung - deshalb wird hier nichts zurueckgesetzt. */
+  function merkeLimitZustand(headers) {
+    if (!headers || !headers.get) return;
+    try {
+      var rem = headers.get('anthropic-ratelimit-requests-remaining');
+      if (rem !== null && rem !== '' && !isNaN(parseInt(rem, 10))) _limitZustand.remaining = parseInt(rem, 10);
+      var reset = headers.get('anthropic-ratelimit-requests-reset');
+      if (reset) {
+        var t = Date.parse(reset);
+        if (!isNaN(t)) _limitZustand.resetAt = t;
+      }
+    } catch (e) { /* Header nicht lesbar - lokale Schaetzung bleibt gueltig */ }
   }
 
   /* Ein Claude-Request. Liefert den geparsten Antwort-Body.
@@ -160,6 +206,7 @@ var ClaudeAPI = (function () {
       try { requestId = resp.headers && resp.headers.get ? (resp.headers.get('request-id') || resp.headers.get('x-request-id')) : null; } catch (e) {}
       var retryAfter = null;
       try { retryAfter = resp.headers && resp.headers.get ? resp.headers.get('retry-after') : null; } catch (e) {}
+      merkeLimitZustand(resp.headers);
 
       var rawText = '';
       try { rawText = await resp.text(); } catch (e) { rawText = ''; }
@@ -192,13 +239,13 @@ var ClaudeAPI = (function () {
           rawText.replace(/\s+/g, ' ').trim().slice(0, 200), requestId), { status: resp.status, requestId: requestId, attempts: attempt });
       }
 
-      /* WICHTIG: Der eingesetzte Cloudflare Worker gibt JEDE Antwort mit
-         HTTP 200 zurueck - er reicht den Status von Anthropic nicht weiter
-         (siehe docs/proxy-capabilities.md). Ein 429, 500 oder 529 kommt hier
-         also als 200 mit Fehler-Body an. Dieser Zweig ist damit der EINZIGE,
-         der API-Fehler ueberhaupt sieht; der resp.ok-Check oben faengt nur
-         Worker-Ausfaelle. Die Retry-Erkennung muss hier entsprechend
-         vollstaendig sein. */
+      /* Fehler-Body trotz HTTP 200. Mit der aktuellen Worker-Fassung sollte
+         das nicht mehr vorkommen (der Status wird durchgereicht), aber ein
+         Rollback oder ein statusnormalisierender Zwischenproxy fuehrt genau
+         hierher. Ohne diesen Zweig wuerde so eine Antwort still als Erfolg
+         durchgehen und der Aufrufer fiele erst beim Parsen des fehlenden
+         `content` um - mit einer Fehlermeldung, die nichts mit der Ursache
+         zu tun hat. Die Retry-Erkennung bleibt deshalb vollstaendig. */
       if (data && data.error) {
         var errText = JSON.stringify(data.error);
         var bodyMsg = (data.error.message || data.error.type || 'Unbekannter API-Fehler') + label;
@@ -265,7 +312,7 @@ var ClaudeAPI = (function () {
     }
   }
 
-  function _resetThrottleForTests() { _timestamps = []; }
+  function _resetThrottleForTests() { _timestamps = []; _limitZustand = { remaining: null, resetAt: null }; }
 
   return {
     configure: configure,
@@ -276,6 +323,7 @@ var ClaudeAPI = (function () {
     isTruncated: isTruncated,
     timeoutForBody: timeoutForBody,
     retryDelayMs: retryDelayMs,
+    _limitZustandForTests: function () { return _limitZustand; },
     _resetThrottleForTests: _resetThrottleForTests
   };
 })();
