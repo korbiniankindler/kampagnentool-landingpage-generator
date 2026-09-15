@@ -17,6 +17,22 @@ Jede Zeile mit einem einzelnen Request klaerbar, Aufwand insgesamt ~15 Minuten.
 | P4 | Gibt er `retry-after` und `request-id` als Header weiter? | Ohne `retry-after` faellt der Client auf ein berechnetes Fenster zurueck; ohne `request-id` ist kein Fehler nachverfolgbar | **offen** |
 | P5 | Traegt er einen ungestreamten Request mit ~30.000 Output-Tokens? | Entscheidet, ob eine Landingpage in EINEM Call generiert werden kann | **offen** |
 
+## Warum das nicht in der Claude-Code-Sitzung geklaert werden kann
+
+Die Egress-Policy der Umgebung laesst `claude.korbinian.workers.dev` nicht zu:
+
+    curl: (56) CONNECT tunnel failed, response 403
+
+Das ist eine Richtlinie der Session, kein Problem des Workers. Sie laesst sich
+von innen nicht umgehen und soll es auch nicht. Zwei Wege:
+
+1. **Lokal ausfuehren** (empfohlen, ~2 Minuten):
+   `bash docs/check-proxy.sh` - klaert P1-P4 ohne nennenswerte Kosten.
+   `bash docs/check-proxy.sh --with-p5` ergaenzt den langen Request (~0,30 EUR).
+   Ein API-Key wird nicht gebraucht, den haelt der Worker.
+2. **Domain fuer die Umgebung freischalten**, falls die Netzwerkrichtlinie das
+   hergibt: https://code.claude.com/docs/en/claude-code-on-the-web
+
 ## Wie pruefen
 
 ```bash
@@ -61,6 +77,17 @@ time curl -sS -X POST https://claude.korbinian.workers.dev/ \
   keine `request-id`.
 - **P5 negativ** -> die Ein-Call-Variante scheidet im Benchmark aus. Nicht aus
   Prinzip, sondern aus Infrastruktur.
+
+## Nebenbefund: der Endpunkt ist unauthentifiziert
+
+Der Worker nimmt Requests ohne Authentifizierung entgegen - der API-Key liegt
+bei ihm. Das ist fuer ein internes Tool eine bewusste Vereinfachung, hat aber
+eine Auswirkung auf die **Zuverlaessigkeit**, nicht nur auf die Sicherheit:
+Wer die URL kennt, kann das Org-Rate-Limit von 5 Requests/Minute aufbrauchen.
+Das Tool wuerde dann ohne erkennbaren Grund in 429-Retries laufen.
+
+Kein Handlungsbedarf fuer Phase 0. Erwaehnenswert, sobald ohnehin am Worker
+gearbeitet wird (siehe naechster Abschnitt).
 
 ## Bekannte Grenze: organisationsweites Rate-Limiting
 
