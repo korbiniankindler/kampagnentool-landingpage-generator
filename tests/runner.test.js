@@ -10,11 +10,12 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const ROOT = path.join(__dirname, '..');
-const { ladePreset, metriken } = require(path.join(ROOT, 'eval/runner.js'));
+const { ladePreset, ladeReviewPreset, metriken, mockReview } = require(path.join(ROOT, 'eval/runner.js'));
 const CopyPresets = require(path.join(ROOT, 'shared/copywriter-presets.js'));
 global.SectionSchemas = global.SectionSchemas || require(path.join(ROOT, 'shared/section-schemas.js'));
 global.BrandConfig = global.BrandConfig || require(path.join(ROOT, 'shared/brand-config.js'));
 const Validators = require(path.join(ROOT, 'shared/validators.js'));
+const Reviewer = require(path.join(ROOT, 'shared/reviewer.js'));
 
 const FAELLE = path.join(ROOT, 'eval/faelle');
 
@@ -102,4 +103,76 @@ test('kein Feldname im Schema primt eine verbotene Bezeichnung', () => {
     const treffer = global.BrandConfig.pruefeText(hellinger, hint);
     assert.deepEqual(treffer, [], `Schema von "${id}" primt: ${JSON.stringify(treffer)}`);
   });
+});
+
+/* ---- Reviewer-Anbindung (--reviewer) ---- */
+
+test('Der Reviewer bekommt einen ANDEREN Preset-Text als der Generator', () => {
+  // Der Generator bekommt zusaetzlich genau eine Referenz-Copy. Waeren beide
+  // Texte gleich, wuerde der Reviewer Aehnlichkeit zur Referenz bewerten -
+  // eine Bestaetigungsschleife statt einer Pruefung.
+  const briefing = 'Webinar fuer Coaches und Therapeuten';
+  const gen = ladePreset('hellinger', briefing);
+  const rev = ladeReviewPreset('hellinger');
+  assert.ok(gen.text.length > rev.length, 'der Generator-Text muss die Referenz zusaetzlich enthalten');
+  assert.ok(gen.refId, 'Testannahme: der Generator waehlt eine Referenz');
+  const refText = fs.readFileSync(path.join(ROOT,
+    CopyPresets.CATALOG.find(p => p.id === 'hellinger').referenzen.find(r => r.id === gen.refId).file), 'utf8');
+  const probe = refText.split('\n').find(l => l.trim().length > 40).trim();
+  assert.ok(gen.text.includes(probe), 'Testannahme: die Referenz steckt im Generator-Text');
+  assert.ok(!rev.includes(probe), 'die Referenz-Copy darf NICHT im Reviewer-Kontext stehen');
+});
+
+test('Der Reviewer-Preset-Text enthaelt Regelwerk und Wissensdatenbank', () => {
+  CopyPresets.CATALOG.forEach((p) => {
+    const rev = ladeReviewPreset(p.id);
+    p.files.forEach((f) => {
+      const inhalt = fs.readFileSync(path.join(ROOT, f), 'utf8');
+      const probe = inhalt.split('\n').find(l => l.trim().length > 40 && !l.includes('"')).trim();
+      assert.ok(rev.includes(probe), p.id + ': Inhalt aus ' + f + ' fehlt');
+    });
+  });
+});
+
+test('Der brand-config-Block wird aus dem Reviewer-Text entfernt', () => {
+  // Er ist Maschinenkonfiguration, keine Regel fuer einen Leser - und er
+  // wird dem Generator ebenfalls nicht gezeigt.
+  CopyPresets.CATALOG.forEach((p) => {
+    assert.ok(!/```json brand-config/.test(ladeReviewPreset(p.id)), p.id);
+  });
+});
+
+test('ladeReviewPreset ohne Preset liefert leeren Text statt zu werfen', () => {
+  assert.equal(ladeReviewPreset(null), '');
+});
+
+test('Die Review-Metriken sind null ohne Reviewer, nicht 0', () => {
+  // 0 wuerde "geprueft, nichts gefunden" heissen. Ein Lauf ohne Reviewer hat
+  // aber gar nichts geprueft - das darf die Summe nicht beschoenigen.
+  const ohne = metriken([], { hero: { h1: 'Ein Titel' } }, [{ id: 'hero' }], []);
+  assert.equal(ohne.reviewSchnitt, null);
+  assert.equal(ohne.reviewKritisch, null);
+  assert.equal(ohne.reviewVerworfen, null);
+
+  const review = { punkte: { schnitt: 3.5 }, befunde: [{ schwere: 'kritisch' }, { schwere: 'hinweis' }], verworfen: [{}] };
+  const mit = metriken([], { hero: { h1: 'Ein Titel' } }, [{ id: 'hero' }], [], review);
+  assert.equal(mit.reviewSchnitt, 3.5);
+  assert.equal(mit.reviewKritisch, 1);
+  assert.equal(mit.reviewHinweise, 1);
+  assert.equal(mit.reviewVerworfen, 1);
+});
+
+test('Die gemockte Review-Antwort laeuft durch BEIDE Zweige der Belegpruefung', () => {
+  // Sonst prueft der Trockenlauf die wichtigste Funktion des Reviewers nie.
+  const sectionData = { hero: { h1: 'Der Platz, der zu Dir gehoert', h2: 'Warum alte Muster bleiben' } };
+  const roh = mockReview(sectionData);
+  const g = Reviewer.pruefeBelege(roh.befunde, sectionData);
+  assert.ok(g.befunde.length > 0, 'belegte Befunde fehlen');
+  assert.ok(g.verworfen.length > 0, 'unbelegter Befund fehlt - der Trockenlauf wuerde den Zweig nie erreichen');
+});
+
+test('Die gemockte Bewertung deckt jede Rubrik-Dimension ab', () => {
+  const roh = mockReview({ hero: { h1: 'Ein hinreichend langer Titel' } });
+  Reviewer.KATEGORIEN.forEach(k => assert.ok(roh.bewertung[k], k + ' fehlt'));
+  assert.equal(Reviewer.punkte(roh).schnitt !== null, true);
 });

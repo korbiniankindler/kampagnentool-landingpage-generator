@@ -16,6 +16,7 @@
      node eval/runner.js --variante zweiblock  Generierungsvariante
      node eval/runner.js --live                echte API-Calls (kostet Geld)
      node eval/runner.js --wiederholungen 3    fuer die Varianz-Messung
+     node eval/runner.js --reviewer            semantischer Reviewer dazu
 
    Ohne --live wird nichts an die API geschickt. */
 'use strict';
@@ -31,6 +32,7 @@ const CopyPresets = require(path.join(ROOT, 'shared/copywriter-presets.js'));
 const HardfactsIO = require(path.join(ROOT, 'shared/hardfacts.js'));
 const ClaudeAPI = require(path.join(ROOT, 'shared/api-client.js'));
 const ToolVersions = require(path.join(ROOT, 'shared/versions.js'));
+const Reviewer = require(path.join(ROOT, 'shared/reviewer.js'));
 const { extractJSON } = require(path.join(ROOT, 'shared/json-extract.js'));
 
 const PROXY_URL = process.env.PROXY_URL || 'https://claude.korbinian.workers.dev/';
@@ -59,6 +61,18 @@ function ladePreset(presetId, briefing) {
   const dateien = ref ? preset.files.concat([ref.file]) : preset.files;
   const text = dateien.map(f => fs.readFileSync(path.join(ROOT, f), 'utf8').trim()).join('\n\n---\n\n');
   return { text, refId: ref ? ref.id : null };
+}
+
+/* Preset-Text fuer den Reviewer: NUR Regelwerk und Wissensdatenbank, ohne die
+   Referenz-Copy. Begruendung in shared/reviewer.js - mit der Referenz im
+   Kontext bewertet der Reviewer Aehnlichkeit statt Qualitaet. */
+function ladeReviewPreset(presetId) {
+  if (!presetId) return '';
+  const preset = CopyPresets.CATALOG.find(p => p.id === presetId);
+  if (!preset) throw new Error('Unbekanntes Preset: ' + presetId);
+  const text = Reviewer.reviewDateien(preset)
+    .map(f => fs.readFileSync(path.join(ROOT, f), 'utf8').trim()).join('\n\n---\n\n');
+  return global.BrandConfig.stripFromPrompt(text);
 }
 
 /* ---------- API ---------- */
@@ -94,6 +108,35 @@ function mockAntwort(body) {
     out[id] = d;
   });
   return out;
+}
+
+/* Gemockte Review-Antwort fuer --dry. Sie zitiert bewusst ECHTE Stellen aus
+   der erzeugten Copy und zusaetzlich eine erfundene - nur so laeuft der
+   Trockenlauf durch beide Zweige von Reviewer.pruefeBelege. */
+function mockReview(sectionData) {
+  const zeilen = [];
+  Object.keys(sectionData).forEach((sid) => {
+    const d = sectionData[sid];
+    if (d && typeof d === 'object') {
+      Object.keys(d).forEach((f) => {
+        if (typeof d[f] === 'string' && d[f].length >= 12) zeilen.push({ section: sid, feld: sid + '.' + f, zitat: d[f] });
+      });
+    }
+  });
+  const bewertung = {};
+  Reviewer.KATEGORIEN.forEach((k, i) => {
+    bewertung[k] = { punkte: 3 + (i % 2), begruendung: 'Trockenlauf, keine echte Bewertung.' };
+  });
+  const befunde = zeilen.slice(0, 3).map((z) => Object.assign({}, z, {
+    kategorie: 'konkretheit', schwere: 'hinweis',
+    problem: 'Trockenlauf-Befund.', vorschlag: 'Wird nicht uebernommen.'
+  }));
+  befunde.push({
+    section: 'hero', feld: 'hero.h1', kategorie: 'konkretheit', schwere: 'hinweis',
+    zitat: 'Dieser Satz steht so nirgends in der Copy',
+    problem: 'Absichtlich halluziniert, muss verworfen werden.', vorschlag: '-'
+  });
+  return { bewertung, befunde, gesamturteil: 'Trockenlauf.' };
 }
 
 async function jsonCall(body, live, label) {
@@ -185,19 +228,53 @@ async function laufe(fall, opt) {
   /* Quality Gate */
   const befunde = Validators.pruefeAlles({ active, sectionData, hf, brandCfg, lockedFields: {} });
 
+  /* Semantischer Reviewer (optional, --reviewer). Er laeuft NACH dem
+     deterministischen Gate und aendert nichts an der Copy - seine Befunde
+     sind eine zweite, unabhaengige Messung, kein Korrekturschritt. */
+  let review = null;
+  if (opt.reviewer) {
+    try {
+      const reqOpt = {
+        hf, zielgruppe: HardfactsIO.audience(hf), strategie: hf.strategie || '',
+        ctxBlock: gemeinsam.ctxBlock, pageMap: gemeinsam.pageMap,
+        presetText: ladeReviewPreset(fall.preset),
+        copy: Reviewer.renderCopy(active, sectionData)
+      };
+      const body = Reviewer.buildRequest(reqOpt);
+      let roh;
+      if (opt.live) {
+        const d = await ClaudeAPI.sendMitSchema(body, Reviewer.outputConfig(), { label: 'Review' });
+        roh = extractJSON(ClaudeAPI.textOf(d));
+        calls++;
+      } else {
+        roh = mockReview(sectionData);
+      }
+      const geprueft = Reviewer.pruefeBelege(roh.befunde, sectionData);
+      review = {
+        modell: Reviewer.MODEL, rubrikVersion: Reviewer.RUBRIK_VERSION,
+        bewertung: roh.bewertung, gesamturteil: roh.gesamturteil,
+        punkte: Reviewer.punkte(roh),
+        befunde: geprueft.befunde, verworfen: geprueft.verworfen
+      };
+    } catch (e) {
+      review = { fehler: e.message };
+    }
+  }
+
   return {
     fall: fall.id, variante: opt.variante, preset: fall.preset, presetRef: refId,
     versions: ToolVersions.stamp({ preset: fall.preset, presetRef: refId }),
     dauerMs: Date.now() - t0, calls, truncations, planFehler, planVorhanden: !!planText,
     mergeKorrekturen: mergeProtokoll.length, mergeProtokoll,
     befunde: befunde.map(b => ({ schwere: b.schwere, id: b.id, section: b.section, feld: b.feld, text: b.text })),
-    metriken: metriken(befunde, sectionData, active, mergeProtokoll),
+    review,
+    metriken: metriken(befunde, sectionData, active, mergeProtokoll, review),
     sectionData
   };
 }
 
 /* Die Groessen, die im Benchmark verglichen werden. */
-function metriken(befunde, sectionData, active, mergeProtokoll) {
+function metriken(befunde, sectionData, active, mergeProtokoll, review) {
   const krit = befunde.filter(b => b.schwere === 'kritisch');
   const woerter = Validators.textFelder(sectionData).reduce((n, f) => n + String(f.text).split(/\s+/).filter(Boolean).length, 0);
   return {
@@ -210,7 +287,15 @@ function metriken(befunde, sectionData, active, mergeProtokoll) {
     faktenAbweichungen: mergeProtokoll.length,
     leereFelder: befunde.filter(b => b.id === 'feld-leer').length,
     anzahlFehler: befunde.filter(b => b.id === 'anzahl').length,
-    woerterGesamt: woerter
+    woerterGesamt: woerter,
+    /* Die Review-Groessen sind null ohne --reviewer, damit ein Lauf ohne
+       Reviewer nicht faelschlich als "0 Befunde" in die Summe eingeht. */
+    reviewSchnitt: (review && review.punkte) ? review.punkte.schnitt : null,
+    reviewKritisch: review && review.befunde ? review.befunde.filter(b => b.schwere === 'kritisch').length : null,
+    reviewHinweise: review && review.befunde ? review.befunde.filter(b => b.schwere !== 'kritisch').length : null,
+    /* Verworfene Befunde sind eine Aussage ueber den REVIEWER, nicht ueber die
+       Copy: eine hohe Quote heisst, dass er Stellen erfindet. */
+    reviewVerworfen: review && review.verworfen ? review.verworfen.length : null
   };
 }
 
@@ -240,19 +325,31 @@ async function main() {
         `${r.fall.padEnd(22)} ${r.variante.padEnd(10)} #${w}  ` +
         `${m.sectionsGeliefert}/${m.sectionsErwartet} Sections  ` +
         `${m.befundeKritisch} kritisch  ${m.presetVerstoesse} Verstoesse  ` +
-        `${m.faktenAbweichungen} Faktenabweichungen  ${r.dauerMs}ms`);
+        `${m.faktenAbweichungen} Faktenabweichungen  ${r.dauerMs}ms` +
+        (r.review ? (r.review.fehler
+          ? `  Review FEHLER: ${r.review.fehler}`
+          : `  Review ${m.reviewSchnitt}/5  ${m.reviewKritisch}k/${m.reviewHinweise}h  ${m.reviewVerworfen} unbelegt`) : ''));
       fs.writeFileSync(path.join(opt.out, `${r.fall}_${r.variante}_${w}.json`), JSON.stringify(r, null, 2));
     }
   }
 
-  const summe = (k) => alle.reduce((n, r) => n + r.metriken[k], 0);
+  const summe = (k) => alle.reduce((n, r) => n + (r.metriken[k] || 0), 0);
   console.log('\n--- Summe ueber ' + alle.length + ' Laeufe ---');
   console.log('  kritische Befunde  :', summe('befundeKritisch'));
   console.log('  Preset-Verstoesse  :', summe('presetVerstoesse'));
   console.log('  Faktenabweichungen :', summe('faktenAbweichungen'), '(vom Merge korrigiert)');
   console.log('  Redundanzen        :', summe('redundanzen'));
+  if (opt.reviewer) {
+    const mitSchnitt = alle.filter(r => r.metriken.reviewSchnitt !== null);
+    const schnitt = mitSchnitt.length
+      ? Math.round((mitSchnitt.reduce((n, r) => n + r.metriken.reviewSchnitt, 0) / mitSchnitt.length) * 100) / 100
+      : null;
+    console.log('  Review-Schnitt     :', schnitt, '/ 5  (' + mitSchnitt.length + ' von ' + alle.length + ' Laeufen)');
+    console.log('  Review kritisch    :', summe('reviewKritisch'));
+    console.log('  Review unbelegt    :', summe('reviewVerworfen'), '(verworfene Befunde - Guete des Reviewers)');
+  }
   console.log('  Ergebnisse in      :', opt.out);
 }
 
 if (require.main === module) main().catch(e => { console.error('FEHLER:', e.stack); process.exit(1); });
-module.exports = { laufe, ladePreset, metriken };
+module.exports = { laufe, ladePreset, ladeReviewPreset, metriken, mockReview };
