@@ -1,0 +1,24 @@
+{
+  "id": "hellinger-b2b",
+  "beschreibung": "Register B2B: andere Referenz-Copy muss greifen (Keyword-Heuristik).",
+  "preset": "hellinger",
+  "lpVorlage": "live_seminar",
+  "hardfacts": {
+    "kampagnenname": "Ordnung loest Ursachen - Fachkreise",
+    "beschreibung": "Kostenfreies Live-Seminar mit Sophie Hellinger fuer Coaches, Therapeuten und Berater.",
+    "zielgruppe": "Coaches, Therapeutinnen, Berater und Trainer, die an Grenzen klassischer Methoden stossen",
+    "live_termin": "04.10.2026, 11 Uhr",
+    "angebot": {"produkt": "Ausbildung", "preis": ""},
+    "offer": "Ausbildung",
+    "pre_headline": "FUER COACHES UND THERAPEUTEN",
+    "titel": "Wenn Coaching an seine Grenze kommt",
+    "sub_headline": "Im kostenfreien Live-Seminar siehst Du, welche Ebene unter den Themen Deiner Klienten wirkt und wie Du dort ansetzt.",
+    "bulletpoints": [
+      "Erkenne, was Deine Klienten zeigen und was darunter tatsaechlich wirkt",
+      "Lerne ein Werkzeug kennen, das an die Wurzel geht statt ans Symptom",
+      "Sieh an echten Fallbeispielen, wie systemische Ordnung Bewegung ausloest"
+    ],
+    "strategie_titel": "B2B-Register: Wirksamkeit und Werkzeug statt innerer Prozess."
+  },
+  "sections":[{"id":"hero","name":"Hero","desc":"Announcement Bar, Pre-Headline, H1, H2, CTA"},{"id":"trustbar","name":"Trust Bar","desc":"Presselogo-Platzhalter"},{"id":"introtext","name":"Intro Text","desc":"Kontext-Story, Warum-jetzt-Narrativ"},{"id":"problem","name":"Problem / Mirror Effect","desc":"Selbstreflexions-Checkliste"},{"id":"framework","name":"Educational Gap","desc":"Erklaer-Block mit Hintergrund"},{"id":"social","name":"Social Proof","desc":"3 Testimonials"},{"id":"authority","name":"Authority / Speaker","desc":"Experten-Bio, Rolle in der Veranstaltung"},{"id":"benefits","name":"Benefit Stack","desc":"3 Gruende teilzunehmen"},{"id":"finalcta","name":"Final CTA / Scarcity","desc":"Abschluss mit Verknappung"}]
+}

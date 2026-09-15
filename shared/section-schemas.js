@@ -68,7 +68,7 @@ var SectionSchemas = (function () {
       fields: [
         {name: 'headline', kind: 'text'},
         {name: 'bioBlock', kind: 'text'},
-        {name: 'webinarRole', kind: 'text'},
+        {name: 'rolle', kind: 'text'},   // frueher 'webinarRole' - der Feldname stand im Prompt und primte bei Hellinger das verbotene Wort
         {name: 'ctaButton', kind: 'text'}
       ]
     },

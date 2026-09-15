@@ -190,5 +190,11 @@ var CopyPresets = (function () {
     ];
   }
 
-  return { CATALOG: CATALOG, getSelected: getSelected, setSelected: setSelected, autoRef: autoRef, load: load, getName: getName, renderPicker: renderPicker, systemBlocks: systemBlocks };
+  return { CATALOG: CATALOG, getSelected: getSelected, setSelected: setSelected, autoRef: autoRef, load: load, getName: getName, renderPicker: renderPicker, systemBlocks: systemBlocks, pickRef: pickRef };
 })();
+
+/* Node-Export fuer den Headless-Runner und die Tests. Die DOM-abhaengigen
+   Teile (renderPicker, fetchFile, load) funktionieren dort nicht - CATALOG,
+   pickRef und systemBlocks schon, und genau die braucht der Runner, um
+   dieselbe Referenz-Copy zu waehlen wie das Tool. */
+if (typeof module !== 'undefined' && module.exports) module.exports = CopyPresets;

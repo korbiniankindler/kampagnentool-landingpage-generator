@@ -1,0 +1,20 @@
+{
+  "id": "hh-luecken",
+  "beschreibung": "Unvollstaendiges Briefing: kein Host, kein Termin, keine Zielgruppe. Prueft, ob Platzhalter statt Erfindungen entstehen.",
+  "preset": "holistic-house",
+  "lpVorlage": "webinar",
+  "hardfacts": {
+    "kampagnenname": "Neues Webinar Q4",
+    "beschreibung": "Thema steht noch nicht final fest, Richtung Darmgesundheit.",
+    "zielgruppe": "",
+    "live_termin": "",
+    "angebot": {"produkt": "", "preis": ""},
+    "offer": "",
+    "pre_headline": "",
+    "titel": "Was Ihr Darm Ihnen sagen will",
+    "sub_headline": "Ein erster Einblick in die Zusammenhaenge zwischen Verdauung und Wohlbefinden.",
+    "bulletpoints": ["Verstehen Sie die Grundlagen der Darmgesundheit"],
+    "strategie_titel": ""
+  },
+  "sections":[{"id":"hero","name":"Hero","desc":"Announcement Bar, Pre-Headline, H1, H2, CTA"},{"id":"trustbar","name":"Trust Bar","desc":"Presselogo-Platzhalter"},{"id":"introtext","name":"Intro Text","desc":"Kontext-Story, Warum-jetzt-Narrativ"},{"id":"problem","name":"Problem / Mirror Effect","desc":"Selbstreflexions-Checkliste"},{"id":"framework","name":"Educational Gap","desc":"Erklaer-Block mit Hintergrund"},{"id":"social","name":"Social Proof","desc":"3 Testimonials"},{"id":"authority","name":"Authority / Speaker","desc":"Experten-Bio, Rolle in der Veranstaltung"},{"id":"benefits","name":"Benefit Stack","desc":"3 Gruende teilzunehmen"},{"id":"finalcta","name":"Final CTA / Scarcity","desc":"Abschluss mit Verknappung"}]
+}

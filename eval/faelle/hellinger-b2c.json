@@ -1,0 +1,25 @@
+{
+  "id": "hellinger-b2c",
+  "beschreibung": "Kernfall: Hellinger B2C-Live-Seminar, vollstaendiges Briefing.",
+  "preset": "hellinger",
+  "lpVorlage": "live_seminar",
+  "hardfacts": {
+    "kampagnenname": "Alte Muster loesen - September 2026",
+    "beschreibung": "Kostenfreies Live-Seminar mit Sophie Hellinger. Thema: wiederkehrende Muster in Beziehungen und im Beruf.",
+    "zielgruppe": "Menschen mit Vorerfahrung in Coaching, Therapie oder Aufstellungsarbeit, ueberwiegend weiblich, DACH-Raum",
+    "live_termin": "20.09.2026, 11 Uhr",
+    "angebot": {"produkt": "Ausbildung zum Original Hellinger Familiensteller", "preis": ""},
+    "offer": "Ausbildung zum Original Hellinger Familiensteller",
+    "pre_headline": "ORIGINAL HELLINGER METHODE",
+    "titel": "Der Platz, der wirklich zu Dir gehoert",
+    "sub_headline": "Im kostenfreien Live-Seminar wird sichtbar, welche Ordnung hinter Deinen wiederkehrenden Themen wirkt und was sich loest, wenn Du sie anerkennst.",
+    "bulletpoints": [
+      "Erkenne, welche Ordnung hinter Deinen wiederkehrenden Themen wirkt",
+      "Spuere, was sich loest, wenn Du Deinen Platz im System einnimmst",
+      "Verstehe, warum Verstehen allein die Muster nicht aufloest",
+      "Erlebe an echten Beispielen, wie eine Aufstellung Bewegung bringt"
+    ],
+    "strategie_titel": "Die Winkel setzen auf Wiedererkennung statt auf Versprechen."
+  },
+  "sections":[{"id":"hero","name":"Hero","desc":"Announcement Bar, Pre-Headline, H1, H2, CTA"},{"id":"trustbar","name":"Trust Bar","desc":"Presselogo-Platzhalter"},{"id":"introtext","name":"Intro Text","desc":"Kontext-Story, Warum-jetzt-Narrativ"},{"id":"problem","name":"Problem / Mirror Effect","desc":"Selbstreflexions-Checkliste"},{"id":"framework","name":"Educational Gap","desc":"Erklaer-Block mit Hintergrund"},{"id":"social","name":"Social Proof","desc":"3 Testimonials"},{"id":"authority","name":"Authority / Speaker","desc":"Experten-Bio, Rolle in der Veranstaltung"},{"id":"benefits","name":"Benefit Stack","desc":"3 Gruende teilzunehmen"},{"id":"finalcta","name":"Final CTA / Scarcity","desc":"Abschluss mit Verknappung"}]
+}

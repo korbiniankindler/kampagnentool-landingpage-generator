@@ -1,0 +1,26 @@
+{
+  "id": "hh-b2c",
+  "beschreibung": "Kernfall Holistic House B2C. Andere Anrede (Sie), andere Verbotsliste.",
+  "preset": "holistic-house",
+  "lpVorlage": "webinar",
+  "hardfacts": {
+    "kampagnenname": "Gesundheit neu denken - Herbst 2026",
+    "beschreibung": "Kostenfreies Live-Seminar mit Dr. med. Ulrich Bauhofer. Thema: Praevention und Ayurveda fuer Frauen ab 45.",
+    "zielgruppe": "Frauen 45-65, gesundheitsbewusst, erste Wechseljahresbeschwerden, suchen fundierte Orientierung statt schneller Loesungen",
+    "live_termin": "27.09.2026, 11 Uhr",
+    "angebot": {"produkt": "Ayurveda Coach Ausbildung", "preis": "7.000 EUR"},
+    "offer": "Ayurveda Coach Ausbildung",
+    "pre_headline": "WARUM IMMER MEHR FRAUEN AB 45 UMDENKEN",
+    "titel": "Warum Ihr Koerper ab 45 eine andere Sprache spricht",
+    "sub_headline": "Erfahren Sie im kostenfreien Live-Seminar, wie Sie die Signale Ihres Koerpers einordnen und welche Stellschrauben im Alltag tatsaechlich etwas bewegen.",
+    "bulletpoints": [
+      "Verstehen Sie, warum der Koerper ab 45 anders auf Stress reagiert",
+      "Erkennen Sie die drei haeufigsten Fehler bei der Selbstbehandlung",
+      "Erhalten Sie einen ersten Einblick in Ihren persoenlichen Reset-Plan",
+      "Sehen Sie an Beispielen aus der Praxis, was sich im Alltag umsetzen laesst",
+      "Erfahren Sie, welche Rolle die Ayurveda-Typen dabei spielen"
+    ],
+    "strategie_titel": "Autoritaet ueber Einordnung, nicht ueber Angst."
+  },
+  "sections":[{"id":"hero","name":"Hero","desc":"Announcement Bar, Pre-Headline, H1, H2, CTA"},{"id":"trustbar","name":"Trust Bar","desc":"Presselogo-Platzhalter"},{"id":"introtext","name":"Intro Text","desc":"Kontext-Story, Warum-jetzt-Narrativ"},{"id":"problem","name":"Problem / Mirror Effect","desc":"Selbstreflexions-Checkliste"},{"id":"framework","name":"Educational Gap","desc":"Erklaer-Block mit Hintergrund"},{"id":"social","name":"Social Proof","desc":"3 Testimonials"},{"id":"authority","name":"Authority / Speaker","desc":"Experten-Bio, Rolle in der Veranstaltung"},{"id":"benefits","name":"Benefit Stack","desc":"3 Gruende teilzunehmen"},{"id":"finalcta","name":"Final CTA / Scarcity","desc":"Abschluss mit Verknappung"}]
+}

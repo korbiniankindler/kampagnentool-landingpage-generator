@@ -1659,7 +1659,7 @@ function renderSectionFields(s) {
     if (d.paragraphs && d.paragraphs.length) {
       out += fieldBlock(s.id, 'paragraphs', 'Fließtext (Absätze durch Leerzeile trennen)', d.paragraphs.join('\n\n'));
     }
-    if (d.closingLine) out += fieldBlock(s.id,'closingLine','Abschluss-Satz (Brücke zum Webinar)',d.closingLine);
+    if (d.closingLine) out += fieldBlock(s.id,'closingLine','Abschluss-Satz (Brücke zur Veranstaltung)',d.closingLine);
     return out;
   }
   if (s.id === 'problem' && d.checklist) {
@@ -1730,7 +1730,7 @@ function fieldBlock(secId, path, label, value) {
 }
 
 function labelFor(k) {
-  var map = {h1:'H1 Haupttitel',h2:'H2 Sub-Headline',preHeadline:'Pre-Headline',ctaButton:'CTA Button',ctaSubline:'CTA Subline',dozentLine:'Dozenten-Zeile',announcement:'Announcement Bar (Termin-Hinweis)',bodyCopy:'Body Copy',badge:'Badge/Pill',paragraphs:'Fließtext',closingLine:'Abschluss-Satz (Brücke zum Webinar)',bioBlock:'Bio',webinarRole:'Rolle im Webinar',scarcityCopy:'Scarcity Copy',note:'Hinweis',headline:'Headline',introCopy:'Intro Copy',transitionCopy:'Transition Copy',text:'Text',title:'Titel',bulletpoints:'Inhalts-Bulletpoints',videoPlaceholder:'Video (16:9 Platzhalter)',testimonials:'Testimonials',links:'Links',checklist:'Checkliste',items:'Punkte',quote:'Zitat',name:'Name',role:'Rolle',faqs:'Fragen & Antworten',question:'Frage',answer:'Antwort',columns:'Columns',cards:'Karten',steps:'Schritte',blocks:'Blöcke',subline:'Subline',label:'Label'};
+  var map = {h1:'H1 Haupttitel',h2:'H2 Sub-Headline',preHeadline:'Pre-Headline',ctaButton:'CTA Button',ctaSubline:'CTA Subline',dozentLine:'Dozenten-Zeile',announcement:'Announcement Bar (Termin-Hinweis)',bodyCopy:'Body Copy',badge:'Badge/Pill',paragraphs:'Fließtext',closingLine:'Abschluss-Satz (Brücke zur Veranstaltung)',bioBlock:'Bio',rolle:'Rolle in der Veranstaltung',webinarRole:'Rolle in der Veranstaltung',scarcityCopy:'Scarcity Copy',note:'Hinweis',headline:'Headline',introCopy:'Intro Copy',transitionCopy:'Transition Copy',text:'Text',title:'Titel',bulletpoints:'Inhalts-Bulletpoints',videoPlaceholder:'Video (16:9 Platzhalter)',testimonials:'Testimonials',links:'Links',checklist:'Checkliste',items:'Punkte',quote:'Zitat',name:'Name',role:'Rolle',faqs:'Fragen & Antworten',question:'Frage',answer:'Antwort',columns:'Columns',cards:'Karten',steps:'Schritte',blocks:'Blöcke',subline:'Subline',label:'Label'};
   return map[k] || k;
 }
 
