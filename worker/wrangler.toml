@@ -1,0 +1,34 @@
+# Deployment-Konfiguration fuer den Proxy.
+#
+#   npx wrangler deploy --config worker/wrangler.toml
+#
+# Ohne diese Datei laesst sich index.js weiterhin per Dashboard (Quick Edit)
+# einspielen - dann fehlt allerdings das Durable Object, und das Rate-Limiting
+# bleibt wirkungslos. Der Worker laeuft in dem Fall genau wie vorher; siehe
+# `pruefeLimit` in index.js.
+
+name = "claude-korbinian"
+main = "index.js"
+compatibility_date = "2026-01-01"
+
+# Organisationsweiter Anfragezaehler. Ohne dieses Binding zaehlt nur die
+# Bremse im Frontend, und die sieht bloss den eigenen Browser-Tab.
+[[durable_objects.bindings]]
+name = "RATE_LIMITER"
+class_name = "RateLimiter"
+
+# SQLite-basierte Durable Objects laufen auch im kostenlosen Tarif. Die
+# klassische Variante (`new_classes`) setzt einen kostenpflichtigen Plan
+# voraus. Der Zaehler selbst haelt nichts in der Storage-API - die Wahl
+# betrifft nur die Verfuegbarkeit.
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["RateLimiter"]
+
+[vars]
+# Das organisationsweite Anthropic-Limit. Hoeher setzen als das echte Limit
+# hilft nichts: dann antwortet Anthropic mit 429 statt des Proxys.
+RATE_LIMIT_PER_MIN = "5"
+
+# ANTHROPIC_KEY und SHARED_SECRET gehoeren NICHT hierher, sondern als Secret:
+#   npx wrangler secret put ANTHROPIC_KEY --config worker/wrangler.toml

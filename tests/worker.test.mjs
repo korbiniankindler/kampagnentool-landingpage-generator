@@ -4,7 +4,7 @@
    Worker-Fassung NICHT hatte - siehe docs/proxy-capabilities.md. */
 import test from 'node:test';
 import assert from 'node:assert';
-import worker from '../worker/index.js';
+import worker, { RateLimiter } from '../worker/index.js';
 
 const mkReq = (body, hdr) => new Request('https://x/', {
   method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, hdr || {}),
@@ -100,4 +100,109 @@ test('kaputter Request-Body ergibt 400 im Anthropic-Fehlerformat', async () => {
   }), ENV);
   assert.equal(r.status, 400);
   assert.equal((await r.json()).error.type, 'proxy_error');
+});
+
+/* ---- Organisationsweites Rate-Limiting ----
+   Die Bremse in shared/api-client.js zaehlt nur den eigenen Browser-Tab. Ein
+   Reload, ein zweiter Tab oder eine zweite Person umgeht sie vollstaendig.
+   Erst der Zaehler hier wird von allen geteilt. */
+
+/* Gemocktes Durable-Object-Binding: EIN Objekt fuer alle Namen, so wie
+   idFromName('global') es im Betrieb erzwingt. */
+function mkLimiterBinding(limiter) {
+  const inst = limiter || new RateLimiter({});
+  return {
+    idFromName: (n) => n,
+    get: () => ({ fetch: (url) => inst.fetch(new Request(url)) })
+  };
+}
+
+const OK_UPSTREAM = () => { globalThis.fetch = async () => new Response('{}', { status: 200 }); };
+
+test('ohne Binding verhaelt sich der Worker wie bisher', async () => {
+  // Der Code laesst sich damit deployen, BEVOR das Binding existiert -
+  // kein Stichtag, an dem beides gleichzeitig passen muss.
+  OK_UPSTREAM();
+  for (let i = 0; i < 20; i++) {
+    assert.equal((await worker.fetch(REQ(), ENV)).status, 200);
+  }
+});
+
+test('der gemeinsame Zaehler bremst ueber Tabs hinweg', async () => {
+  OK_UPSTREAM();
+  const env = { ...ENV, RATE_LIMITER: mkLimiterBinding(), RATE_LIMIT_PER_MIN: '3' };
+  assert.equal((await worker.fetch(REQ(), env)).status, 200);
+  assert.equal((await worker.fetch(REQ(), env)).status, 200);
+  assert.equal((await worker.fetch(REQ(), env)).status, 200);
+  const vierter = await worker.fetch(REQ(), env);
+  assert.equal(vierter.status, 429, 'der vierte Request im Fenster muss abgewiesen werden');
+});
+
+test('die Abweisung nennt Retry-After und ist als Proxy-Limit erkennbar', async () => {
+  OK_UPSTREAM();
+  const env = { ...ENV, RATE_LIMITER: mkLimiterBinding(), RATE_LIMIT_PER_MIN: '1' };
+  await worker.fetch(REQ(), env);
+  const r = await worker.fetch(REQ(), env);
+  assert.equal(r.status, 429);
+  const wartezeit = parseInt(r.headers.get('retry-after'), 10);
+  assert.ok(wartezeit >= 1 && wartezeit <= 60, 'Retry-After: ' + r.headers.get('retry-after'));
+  const body = await r.json();
+  assert.equal(body.error.type, 'proxy_rate_limit',
+    'unterscheidbar von einem Limit der API - sonst sucht man den Fehler bei Anthropic');
+  assert.match(body.error.message, /Konto/);
+});
+
+test('ein abgewiesener Request erreicht Anthropic nicht', async () => {
+  let calls = 0;
+  globalThis.fetch = async () => { calls++; return new Response('{}', { status: 200 }); };
+  const env = { ...ENV, RATE_LIMITER: mkLimiterBinding(), RATE_LIMIT_PER_MIN: '1' };
+  await worker.fetch(REQ(), env);
+  await worker.fetch(REQ(), env);
+  assert.equal(calls, 1, 'sonst kostet die Bremse trotzdem Tokens');
+});
+
+test('ein unberechtigter Request verbraucht keinen Platz im Fenster', async () => {
+  OK_UPSTREAM();
+  const env = { ...ENV, SHARED_SECRET: 'geheim', RATE_LIMITER: mkLimiterBinding(), RATE_LIMIT_PER_MIN: '1' };
+  assert.equal((await worker.fetch(REQ(), env)).status, 401);
+  assert.equal((await worker.fetch(mkReq({ model: 'm' }, { 'x-tool-secret': 'geheim' }), env)).status, 200,
+    'sonst sperrt ein Fremdzugriff die Berechtigten aus - genau anders herum als gewollt');
+});
+
+test('ein defekter Zaehler laesst durch, statt das Werkzeug lahmzulegen', async () => {
+  // Fail open: Ein ungebremster Moment endet schlimmstenfalls in einem 429
+  // von Anthropic, den der Client seit jeher behandelt. Ein Rate-Limiter, der
+  // bei eigener Stoerung alles blockiert, richtet mehr Schaden an.
+  OK_UPSTREAM();
+  const kaputt = { idFromName: () => { throw new Error('Durable Object nicht erreichbar'); }, get: () => {} };
+  const r = await worker.fetch(REQ(), { ...ENV, RATE_LIMITER: kaputt });
+  assert.equal(r.status, 200);
+});
+
+test('das Fenster gleitet, statt in festen Minutenbloecken zu springen', async () => {
+  // Bei festen Bloecken laufen zehn Requests durch, wenn fuenf am Ende des
+  // einen und fuenf am Anfang des naechsten Blocks liegen.
+  const limiter = new RateLimiter({});
+  const echt = Date.now;
+  let jetzt = 1_700_000_000_000;
+  Date.now = () => jetzt;
+  try {
+    const slot = async () => (await limiter.fetch(new Request('https://r/slot?limit=2'))).json();
+    assert.equal((await slot()).erlaubt, true);
+    assert.equal((await slot()).erlaubt, true);
+    assert.equal((await slot()).erlaubt, false);
+    jetzt += 59_000;
+    assert.equal((await slot()).erlaubt, false, 'innerhalb der Minute bleibt es gesperrt');
+    jetzt += 2_000;           // der erste Eintrag faellt aus dem Fenster
+    assert.equal((await slot()).erlaubt, true);
+  } finally {
+    Date.now = echt;
+  }
+});
+
+test('das Standardlimit entspricht dem Anthropic-Limit von 5 pro Minute', async () => {
+  OK_UPSTREAM();
+  const env = { ...ENV, RATE_LIMITER: mkLimiterBinding() };   // ohne RATE_LIMIT_PER_MIN
+  for (let i = 0; i < 5; i++) assert.equal((await worker.fetch(REQ(), env)).status, 200);
+  assert.equal((await worker.fetch(REQ(), env)).status, 429);
 });

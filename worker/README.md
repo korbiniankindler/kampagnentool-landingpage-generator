@@ -11,12 +11,17 @@ jetzt mit.
 ## Deployment
 
 Der Code in `index.js` ist ein vollstaendiger Ersatz fuer die bisherige
-Fassung. Einspielen im Cloudflare-Dashboard (Workers → den Worker öffnen →
-Quick Edit → Inhalt ersetzen → Deploy) oder per Wrangler:
+Fassung. Einspielen per Wrangler (empfohlen, weil nur so das Durable Object
+fuer das Rate-Limiting angelegt wird):
 
 ```bash
-npx wrangler deploy worker/index.js --name claude-korbinian
+npx wrangler deploy --config worker/wrangler.toml
+npx wrangler secret put ANTHROPIC_KEY --config worker/wrangler.toml
 ```
+
+Alternativ im Cloudflare-Dashboard (Workers → den Worker öffnen → Quick Edit →
+Inhalt ersetzen → Deploy). Dann fehlt das Binding `RATE_LIMITER`, und das
+Rate-Limiting bleibt wirkungslos — der Worker laeuft ansonsten unveraendert.
 
 Nach dem Deploy pruefen:
 
@@ -41,6 +46,11 @@ Rate-Limit-Header (siehe `docs/proxy-capabilities.md`).
 | `ANTHROPIC_KEY` | ja | API-Key. Als Secret setzen, nicht als Plaintext-Variable. |
 | `SHARED_SECRET` | nein | Wenn gesetzt, muss der Client denselben Wert als `x-tool-secret` senden. Ohne Wert bleibt der Endpunkt offen wie bisher. |
 | `ALLOWED_ORIGIN` | nein | Beschraenkt CORS. Ohne Wert gilt `*` — noetig, solange das Tool auch per `file://` geoeffnet wird. |
+| `RATE_LIMIT_PER_MIN` | nein | Requests pro Minute fuer das ganze Konto. Ohne Wert 5 (das Anthropic-Limit). Wirkt nur mit `RATE_LIMITER`-Binding. |
+
+| Binding | Pflicht | Bedeutung |
+|---|---|---|
+| `RATE_LIMITER` | nein | Durable-Object-Namespace auf die Klasse `RateLimiter`. Fehlt es, gibt es kein organisationsweites Limit. |
 
 `SHARED_SECRET` setzt voraus, dass das Tool den Header mitschickt. Der
 Frontend-Code tut das derzeit **nicht** — erst aktivieren, wenn beides
@@ -57,14 +67,45 @@ zusammen ausgerollt wird, sonst laeuft niemand mehr durch.
 | 5 | `anthropic-beta` nicht weitergereicht | durchgereicht, falls gesetzt | Sonst sind Beta-Features grundsaetzlich nicht nutzbar. |
 | 6 | kein Zugriffsschutz | optional per `SHARED_SECRET` | Standardmaessig aus, Verhalten unveraendert. |
 
+## Organisationsweites Rate-Limiting
+
+Die Bremse im Frontend (`shared/api-client.js`) zaehlt nur den eigenen
+Browser-Tab. Ein Reload, ein zweiter Tab oder eine zweite Person umgeht sie
+vollstaendig. Der Zaehler im Durable Object wird von allen geteilt.
+
+**Durable Object und nicht KV:** KV ist eventually consistent. Zwei
+gleichzeitige Requests wuerden denselben Wert lesen und beide durchgelassen —
+genau der Fall, den das Limit verhindern soll.
+
+**Gleitendes Fenster und nicht fester Minutenblock:** Bei festen Bloecken
+laufen zehn Requests durch, wenn fuenf am Ende des einen und fuenf am Anfang
+des naechsten Blocks liegen.
+
+**Fail open.** Fehlt das Binding oder faellt das Durable Object aus, wird
+durchgelassen. Ein Rate-Limiter, der bei einer eigenen Stoerung das ganze
+Werkzeug lahmlegt, richtet mehr Schaden an als das Limit, das er schuetzen
+soll. Ein ungebremster Moment endet schlimmstenfalls in einem 429 von
+Anthropic, und den behandelt der Client seit jeher.
+
+Eine Abweisung kommt als **HTTP 429** mit `Retry-After` und dem Fehlertyp
+`proxy_rate_limit` — unterscheidbar von einem Limit der API, sonst sucht man
+den Fehler bei Anthropic. Der Client setzt `Retry-After` direkt in seine
+Wartezeit um.
+
+**Der Zaehler haelt nichts dauerhaft.** Er lebt im Speicher des Durable
+Objects; wird das Objekt nach laengerer Ruhe evakuiert, faengt er bei null an.
+Das ist gewollt: Nach einer Ruhephase ist das Fenster ohnehin abgelaufen. Ein
+Storage-Roundtrip vor jedem einzelnen Request waere der teurere Fehler.
+
+**Was das im Alltag bedeutet:** Eine Generierung sind ein Content-Plan plus
+drei bis vier Chunks, also 4-5 Requests. Bei 5/Minute passt genau eine
+Generierung pro Minute ins Konto. Arbeiten zwei Personen gleichzeitig, wartet
+die zweite — das ist keine Eigenheit dieser Bremse, sondern das Limit selbst.
+Vorher aeusserte sich derselbe Engpass als 429 von Anthropic mitten in der
+Generierung.
+
 ## Was der Worker weiterhin NICHT tut
 
-**Organisationsweites Rate-Limiting.** Er zaehlt keine Requests. Die Bremse im
-Frontend (`shared/api-client.js`, 4/Minute) ist eine Hoeflichkeitsbremse pro
-Browser-Tab: ein Reload, ein zweiter Tab oder ein zweiter Mitarbeiter umgeht
-sie vollstaendig.
-
-Eine echte Loesung braucht einen gemeinsamen Zaehler — in Cloudflare entweder
-ein Durable Object oder KV mit kurzer TTL. Beides setzt ein Binding voraus,
-das im Dashboard angelegt werden muss. **Offener Punkt**, bewusst nicht
-mitgebaut, weil die Infrastruktur dafuer nicht bekannt ist.
+**Streaming auf der Client-Seite.** Der Worker reicht `stream: true` durch,
+aber `shared/api-client.js` liest die Antwort mit `resp.text()` und kann SSE
+noch nicht verarbeiten.

@@ -111,19 +111,29 @@ Eine Einschraenkung bleibt: Der Worker setzt **keinen** `anthropic-beta`-Header
 und reicht auch keinen aus dem Request weiter. Jedes Feature, das einen
 Beta-Header braucht, ist mit diesem Worker nicht nutzbar.
 
-## Bekannte Grenze: organisationsweites Rate-Limiting
+## Organisationsweites Rate-Limiting
 
 `shared/api-client.js` enthaelt eine Anfragebremse (4/Minute). Sie ist eine
 **Hoeflichkeitsbremse pro Browser-Tab**, keine Garantie: ein Reload, ein
 zweiter Tab oder ein zweiter Mitarbeiter umgeht sie vollstaendig.
 
-Die jetzt durchgereichten `anthropic-ratelimit-*`-Header entschaerfen das
-teilweise — der Client sieht nach jedem Request den **echten** Kontostand und
-wartet bei `remaining: 0` bis zum Reset. Das verhindert vermeidbare 429er,
-ersetzt aber keinen Zaehler: zwei Tabs, die gleichzeitig starten, wissen
-voneinander erst nach ihrem jeweils ersten Request.
+Die durchgereichten `anthropic-ratelimit-*`-Header entschaerfen das teilweise —
+der Client sieht nach jedem Request den **echten** Kontostand und wartet bei
+`remaining: 0` bis zum Reset. Das verhindert vermeidbare 429er, ersetzt aber
+keinen Zaehler: zwei Tabs, die gleichzeitig starten, wissen voneinander erst
+nach ihrem jeweils ersten Request.
 
-Der Worker haelt weiterhin keinen Zaehler. Echtes organisationsweites Limiting gehoert
+**Geloest:** `worker/index.js` enthaelt jetzt ein Durable Object als
+gemeinsamen Zaehler (`RateLimiter`). Es greift, sobald das Binding
+`RATE_LIMITER` existiert — `worker/wrangler.toml` legt es an. Ohne Binding
+verhaelt sich der Worker unveraendert, der Code laesst sich also deployen,
+bevor das Binding da ist.
+
+Begruendung der Entwurfsentscheidungen steht in `worker/README.md`; die drei
+wichtigsten: Durable Object statt KV (Konsistenz), gleitendes Fenster statt
+Minutenblock, und **fail open** — ein Rate-Limiter, der bei eigener Stoerung
+alles blockiert, richtet mehr Schaden an als das Limit, das er schuetzen
+soll. Echtes organisationsweites Limiting gehoert
 dorthin (Durable Object oder KV als gemeinsamer Zaehler). **Offener Blocker**,
 kein geloestes Problem.
 
