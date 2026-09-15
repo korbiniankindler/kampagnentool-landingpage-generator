@@ -16,6 +16,9 @@ global.SectionSchemas = global.SectionSchemas || require(path.join(ROOT, 'shared
 global.BrandConfig = global.BrandConfig || require(path.join(ROOT, 'shared/brand-config.js'));
 const Validators = require(path.join(ROOT, 'shared/validators.js'));
 const Reviewer = require(path.join(ROOT, 'shared/reviewer.js'));
+const Digest = require(path.join(ROOT, 'shared/digest.js'));
+const PromptBuilder = require(path.join(ROOT, 'shared/prompt-builder.js'));
+const HardfactsIO = require(path.join(ROOT, 'shared/hardfacts.js'));
 
 const FAELLE = path.join(ROOT, 'eval/faelle');
 
@@ -175,4 +178,129 @@ test('Die gemockte Bewertung deckt jede Rubrik-Dimension ab', () => {
   const roh = mockReview({ hero: { h1: 'Ein hinreichend langer Titel' } });
   Reviewer.KATEGORIEN.forEach(k => assert.ok(roh.bewertung[k], k + ' fehlt'));
   assert.equal(Reviewer.punkte(roh).schnitt !== null, true);
+});
+
+/* ---- Die Faelle selbst ----
+   Ein Fixture, das still kaputtgeht, ist schlechter als keines: der Lauf
+   bleibt gruen und misst etwas anderes als gedacht. */
+
+function alleFaelle() {
+  return fs.readdirSync(FAELLE).filter(f => f.endsWith('.json'))
+    .map(f => JSON.parse(fs.readFileSync(path.join(FAELLE, f), 'utf8')));
+}
+function cfgVon(presetId) {
+  const preset = CopyPresets.CATALOG.find(p => p.id === presetId);
+  return global.BrandConfig.forPreset(
+    fs.readFileSync(path.join(ROOT, preset.files[0]), 'utf8'));
+}
+
+test('kein Fall verstoesst mit seinem eigenen Briefing gegen sein Regelwerk', () => {
+  /* Genau das ist beim Anlegen von hellinger-viele-bullets passiert: die
+     Sub-Headline enthielt "nicht ... sondern". Der Hero-Merge uebernimmt sie
+     unveraendert, das Gate meldet einen Verstoss - und der Fall misst dann
+     einen Fixture-Fehler statt der Sache, um die es ihm geht. */
+  alleFaelle().forEach((fall) => {
+    if (!fall.preset) return;
+    const cfg = cfgVon(fall.preset);
+    const hf = fall.hardfacts;
+    const texte = [hf.titel, hf.pre_headline, hf.sub_headline, hf.beschreibung, hf.kampagnenname]
+      .concat(hf.bulletpoints || []).filter(Boolean);
+    texte.forEach((t) => {
+      assert.deepEqual(global.BrandConfig.pruefeText(cfg, t), [],
+        fall.id + ': das Briefing selbst verstoesst gegen das Regelwerk: "' + t + '"');
+    });
+  });
+});
+
+test('jeder Fall nennt eine Vorlage, die es im Regelwerk seiner Marke gibt', () => {
+  alleFaelle().forEach((fall) => {
+    if (!fall.preset || !fall.lpVorlage) return;
+    const cfg = cfgVon(fall.preset);
+    const v = global.BrandConfig.vorlage(cfg, fall.lpVorlage);
+    assert.ok(v && v.name, fall.id + ': unbekannte Vorlage "' + fall.lpVorlage + '"');
+  });
+});
+
+test('die acht Faelle decken die im Benchmark-Plan genannten Dimensionen ab', () => {
+  const faelle = alleFaelle();
+  assert.ok(faelle.length >= 8, 'der Plan nennt acht Faelle, vorhanden: ' + faelle.length);
+
+  const cfg = (f) => global.BrandConfig.vorlage(cfgVon(f.preset), f.lpVorlage) || {};
+  assert.ok(faelle.some(f => cfg(f).priceStatus === 'kostenpflichtig'),
+    'kein Fall mit kostenpflichtigem Angebot - der Preis-Zweig der Regelwerke bleibt sonst ungeprueft');
+  assert.ok(faelle.filter(f => f.digest).length >= 2,
+    'weniger als zwei Faelle mit Dokument-Kontext');
+  assert.ok(faelle.some(f => (f.hardfacts.bulletpoints || []).length >= 6),
+    'kein Fall mit unueblich vielen Bulletpoints');
+  assert.ok(new Set(faelle.map(f => (f.hardfacts.bulletpoints || []).length)).size >= 3,
+    'die Bulletpoint-Anzahl variiert zu wenig');
+});
+
+test('ein kostenpflichtiger Fall nennt auch wirklich einen Preis', () => {
+  const faelle = alleFaelle().filter(f =>
+    (global.BrandConfig.vorlage(cfgVon(f.preset), f.lpVorlage) || {}).priceStatus === 'kostenpflichtig');
+  assert.ok(faelle.length);
+  faelle.forEach(f => assert.ok((f.hardfacts.angebot || {}).preis,
+    f.id + ': kostenpflichtig, aber ohne Preis - dann ist der Fall wirkungslos'));
+});
+
+test('die eingecheckten Digests sind strukturell in Ordnung', () => {
+  // Ein Fixture mit fehlendem Beleg oder unmoeglicher Seitenzahl wuerde
+  // Befunde erzeugen, die nichts mit der Pipeline zu tun haben.
+  alleFaelle().filter(f => f.digest).forEach((fall) => {
+    const strukturell = Digest.pruefe(fall.digest, { seitenGesamt: fall.digestSeiten || null })
+      .filter(b => /konflikt/.test(b.id) === false);
+    assert.deepEqual(strukturell, [], fall.id + ': Digest-Fixture ist mangelhaft');
+  });
+});
+
+test('genau ein Dokument-Fall traegt einen Terminkonflikt, der auch gefunden wird', () => {
+  const mitKonflikt = alleFaelle().filter(f => f.digest).filter(f =>
+    Digest.pruefe(f.digest, { hf: f.hardfacts }).some(b => b.id === 'termin-konflikt'));
+  assert.equal(mitKonflikt.length, 1, 'genau ein Fall soll den Widerspruch abdecken');
+
+  const fall = mitKonflikt[0];
+  assert.deepEqual(fall.digest.konflikte, [],
+    'der Fall lebt davon, dass das MODELL den Konflikt uebersehen hat');
+  const txt = Digest.renderForPrompt(fall.digest, fall.hardfacts,
+    Digest.pruefe(fall.digest, { hf: fall.hardfacts }));
+  assert.match(txt, /Verbindlich ist immer das Briefing/);
+  assert.ok(txt.includes(fall.hardfacts.live_termin), 'der verbindliche Termin fehlt im Prompt');
+  assert.match(txt, /ACHTUNG/, 'der abweichende Fakt ist nicht entwertet');
+});
+
+test('der konfliktfreie Dokument-Fall erzeugt auch keinen Konflikt', () => {
+  const ohne = alleFaelle().filter(f => f.digest).filter(f =>
+    !Digest.pruefe(f.digest, { hf: f.hardfacts }).some(b => /konflikt/.test(b.id)));
+  assert.ok(ohne.length >= 1, 'ohne Gegenprobe ist nicht zu sehen, ob die Erkennung nur Alarm schlaegt');
+  const txt = Digest.renderForPrompt(ohne[0].digest, ohne[0].hardfacts, []);
+  assert.ok(!/ACHTUNG/.test(txt));
+  assert.ok(!/Verbindlich ist immer das Briefing/.test(txt));
+});
+
+test('der Dokument-Kontext landet im Generierungs-Prompt', () => {
+  // Sonst waere der ganze Digest-Zweig im Runner wirkungslos und der Fall
+  // wuerde dasselbe messen wie ein Fall ohne Dokument.
+  const fall = alleFaelle().find(f => f.digest && !f.digest.konflikte.length &&
+    !Digest.pruefe(f.digest, { hf: f.hardfacts }).some(b => /konflikt/.test(b.id)));
+  const block = Digest.renderForPrompt(fall.digest, fall.hardfacts, []);
+  const usr = PromptBuilder.buildChunkPrompt({
+    hf: fall.hardfacts, zielgruppe: HardfactsIO.audience(fall.hardfacts),
+    strategie: '', ctxBlock: block, chunk: fall.sections.slice(0, 2),
+    pageMap: PromptBuilder.buildPageMap(fall.sections), brandCfg: cfgVon(fall.preset),
+    lpVorlage: global.BrandConfig.vorlage(cfgVon(fall.preset), fall.lpVorlage)
+  });
+  assert.match(usr, new RegExp(fall.digest.fakten[0].aussage.slice(0, 30).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+});
+
+test('unuebliche Bulletpoint-Anzahl ueberlebt den Hero-Merge unveraendert', () => {
+  const fall = alleFaelle().find(f => (f.hardfacts.bulletpoints || []).length >= 6);
+  const soll = fall.hardfacts.bulletpoints;
+  const out = Validators.mergeHero(
+    { bulletpoints: [{ title: 'Eigener Text', text: 'vom Modell erfunden' }] },
+    fall.hardfacts, null, []);
+  assert.equal(out.bulletpoints.length, soll.length,
+    'weder gekuerzt noch aufgefuellt - die bestaetigten Bullets sind gesetzt');
+  assert.equal(out.bulletpoints[0].title, soll[0]);
+  assert.equal(out.bulletpoints[soll.length - 1].title, soll[soll.length - 1]);
 });

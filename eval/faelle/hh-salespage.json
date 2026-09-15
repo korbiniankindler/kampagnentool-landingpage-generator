@@ -1,0 +1,74 @@
+{
+  "id": "hh-salespage",
+  "beschreibung": "Kostenpflichtiges Angebot (Salespage). priceStatus ist kostenpflichtig statt kostenlos - der Preis DARF hier stehen, und die Conversion-Aktion ist ein Kauf, keine Anmeldung. Prueft, ob die vier Achsen aus dem Regelwerk die Copy wirklich steuern.",
+  "preset": "holistic-house",
+  "lpVorlage": "salespage",
+  "hardfacts": {
+    "kampagnenname": "Reset-Programm - Launch Q1 2027",
+    "beschreibung": "Achtwoechiges Online-Programm mit Dr. med. Ulrich Bauhofer. Videomodule, woechentliche Live-Calls, Begleitmaterial.",
+    "zielgruppe": "Frauen und Maenner 40-65, die bereits ein Live-Seminar besucht haben und einen strukturierten Weg suchen",
+    "live_termin": "",
+    "angebot": {
+      "produkt": "Reset-Programm (8 Wochen)",
+      "preis": "890 EUR"
+    },
+    "offer": "Reset-Programm (8 Wochen) · 890 EUR",
+    "pre_headline": "DAS ACHTWOECHIGE PROGRAMM",
+    "titel": "Acht Wochen, in denen Sie Ihren Rhythmus zurueckholen",
+    "sub_headline": "Ein strukturierter Weg mit Videomodulen, woechentlichen Live-Calls und Begleitmaterial - aufgebaut auf dem, was in der Praxis funktioniert.",
+    "bulletpoints": [
+      "Acht aufeinander aufbauende Module, jede Woche eines",
+      "Woechentlicher Live-Call mit Dr. Bauhofer fuer Ihre Fragen",
+      "Begleitmaterial zum Ausdrucken fuer jede Woche",
+      "Zugang zur Aufzeichnung fuer zwoelf Monate"
+    ],
+    "strategie_titel": "Struktur und Verbindlichkeit statt Motivation."
+  },
+  "sections": [
+    {
+      "id": "hero",
+      "name": "Hero",
+      "desc": "Announcement Bar, Pre-Headline, H1, H2, CTA"
+    },
+    {
+      "id": "trustbar",
+      "name": "Trust Bar",
+      "desc": "Presselogo-Platzhalter"
+    },
+    {
+      "id": "introtext",
+      "name": "Intro Text",
+      "desc": "Kontext-Story, Warum-jetzt-Narrativ"
+    },
+    {
+      "id": "problem",
+      "name": "Problem / Mirror Effect",
+      "desc": "Selbstreflexions-Checkliste"
+    },
+    {
+      "id": "framework",
+      "name": "Educational Gap",
+      "desc": "Erklaer-Block mit Hintergrund"
+    },
+    {
+      "id": "social",
+      "name": "Social Proof",
+      "desc": "3 Testimonials"
+    },
+    {
+      "id": "authority",
+      "name": "Authority / Speaker",
+      "desc": "Experten-Bio, Rolle in der Veranstaltung"
+    },
+    {
+      "id": "benefits",
+      "name": "Benefit Stack",
+      "desc": "3 Gruende teilzunehmen"
+    },
+    {
+      "id": "finalcta",
+      "name": "Final CTA / Scarcity",
+      "desc": "Abschluss mit Verknappung"
+    }
+  ]
+}

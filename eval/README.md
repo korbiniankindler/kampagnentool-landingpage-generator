@@ -72,20 +72,48 @@ erfundenen Befund, damit beide Zweige der Belegpruefung durchlaufen werden.
 ## Faelle
 
 Ein Fall ist ein JSON in `faelle/` mit `id`, `beschreibung`, `preset`,
-`lpVorlage`, `hardfacts` und `sections`. Die vier vorhandenen sind ein
-Startpunkt, kein vollstaendiger Satz:
+`lpVorlage`, `hardfacts` und `sections`. Die acht Faelle aus dem
+Benchmark-Plan sind vollstaendig:
 
 | Fall | deckt ab |
 |---|---|
-| `hellinger-b2c` | Kernfall, vollstaendiges Briefing, Du-Anrede |
+| `hellinger-b2c` | Kernfall, vollstaendiges Briefing, Du-Anrede, 4 Bulletpoints |
 | `hellinger-b2b` | anderes Register - die Keyword-Heuristik muss die B2B-Referenz waehlen |
+| `hellinger-viele-bullets` | 7 Bulletpoints statt 4, Vorlage `ausbildung` (Bewerbung statt Anmeldung) |
+| `hellinger-dokument` | Dokument-Kontext ohne Widerspruch |
 | `hh-b2c` | zweite Marke, Sie-Anrede, andere Verbotsliste, 5 Bulletpoints |
 | `hh-luecken` | unvollstaendiges Briefing: kein Host, kein Termin, keine Zielgruppe |
+| `hh-salespage` | **kostenpflichtiges** Angebot - der Preis darf hier stehen, Conversion ist ein Kauf |
+| `hh-dokument-konflikt` | Dokument-Kontext, dessen Termin dem Briefing widerspricht |
 
-**Was noch fehlt** (laut Benchmark-Plan 8 Faelle): ein kostenpflichtiges
-Angebot, zwei Faelle mit PDF-Kontext, ein Fall mit abweichender
-Bulletpoint-Anzahl. Am besten aus echten Laeufen uebernehmen - der
-Session-Export in Modul 2 liefert das passende Format.
+Die Faelle sind konstruiert, nicht aus echten Laeufen uebernommen. Fuer die
+Baseline-Messung braucht es echte Kampagnen; der Session-Export in Modul 2
+liefert das passende Format.
+
+### Dokument-Kontext ohne PDF
+
+Der Runner kennt keine Dateien. Ein Fall bringt deshalb einen **fertigen
+Digest** mit (`digest`, dazu optional `digestSeiten`) statt eines PDFs. Das
+ist kein Notbehelf, sondern besser: Eine echte Extraktion faellt bei jedem
+Lauf anders aus und waere als Fixture wertlos. Geprueft wird genau das, was im
+Tool nach der Extraktion passiert - `Digest.pruefe`, die Konflikt-Erkennung
+und der Prompt-Block.
+
+`hh-dokument-konflikt` ist dabei der interessante Fall: Das Dokument nennt
+einen anderen Termin als das bestaetigte Briefing, und `digest.konflikte` ist
+**leer** - das Modell hat den Widerspruch uebersehen. Die deterministische
+Pruefung muss ihn finden, und der falsche Termin darf nicht in der Copy
+landen.
+
+### Die Faelle werden selbst geprueft
+
+`tests/runner.test.js` prueft jeden Fall gegen das Regelwerk seiner Marke.
+Beim Anlegen von `hellinger-viele-bullets` enthielt die Sub-Headline
+"nicht nur lernst, sondern" - ein Verstoss gegen die Hellinger-Regel zur
+Perspektivverschiebung. Der Hero-Merge uebernimmt die Sub-Headline
+unveraendert, das Gate meldet den Verstoss, und der Fall haette einen
+Fixture-Fehler gemessen statt der Bulletpoint-Anzahl. Ein Fixture, das still
+kaputtgeht, ist schlechter als keines.
 
 ## Metriken
 
@@ -102,6 +130,8 @@ Pro Lauf in `ergebnisse/<fall>_<variante>_<n>.json`:
 | `reviewSchnitt` | Mittel der sechs Rubrik-Dimensionen (nur mit `--reviewer`) |
 | `reviewKritisch`, `reviewHinweise` | belegte Befunde des Reviewers |
 | `reviewVerworfen` | unbelegte Befunde — Guete des Reviewers, nicht der Copy |
+| `digestKonflikte` | Widersprueche zwischen Dokument und bestaetigtem Briefing |
+| `digestBefunde` | alle Befunde zum Digest (inkl. Struktur) |
 
 Die vier Review-Metriken sind `null` statt `0`, wenn ohne `--reviewer`
 gelaufen wurde. `0` hiesse "geprueft, nichts gefunden"; ein Lauf ohne Reviewer
@@ -119,9 +149,10 @@ Unterschiede von unter einem Punkt nicht zu deuten.
 
 ## Vor einem Live-Lauf
 
-- Jeder Lauf kostet echtes Geld. 4 Faelle x 3 Wiederholungen x 4 Requests
-  sind rund 50 Requests; mit `--reviewer` kommt je Lauf ein weiterer,
-  teurerer Request dazu.
+- Jeder Lauf kostet echtes Geld. 8 Faelle x 3 Wiederholungen x 4 Requests
+  sind rund 100 Requests; mit `--reviewer` kommt je Lauf ein weiterer,
+  teurerer Request dazu. Bei 4 Requests/Minute ist das ueber eine halbe
+  Stunde reine Wartezeit - erst einen einzelnen Fall fahren.
 - Das Rate-Limit liegt bei 5 Requests/Minute organisationsweit. Der
   api-client bremst auf 4/Minute - ein voller Lauf dauert entsprechend.
 - `PROMPT_VERSION` in `shared/versions.js` vor dem Lauf pruefen. Ohne sie ist

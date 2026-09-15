@@ -33,6 +33,7 @@ const HardfactsIO = require(path.join(ROOT, 'shared/hardfacts.js'));
 const ClaudeAPI = require(path.join(ROOT, 'shared/api-client.js'));
 const ToolVersions = require(path.join(ROOT, 'shared/versions.js'));
 const Reviewer = require(path.join(ROOT, 'shared/reviewer.js'));
+const Digest = require(path.join(ROOT, 'shared/digest.js'));
 const { extractJSON } = require(path.join(ROOT, 'shared/json-extract.js'));
 
 const PROXY_URL = process.env.PROXY_URL || 'https://claude.korbinian.workers.dev/';
@@ -165,9 +166,25 @@ async function laufe(fall, opt) {
   ].filter(Boolean).join('\n');
   const sysBlocks = CopyPresets.systemBlocks(presetText, instr);
 
+  /* Dokument-Kontext. Ein Fall kann einen fertigen Digest mitbringen
+     (`digest`), statt ein PDF anzuhaengen: der Runner kennt keine Dateien,
+     und ein eingecheckter Digest ist reproduzierbar, waehrend eine echte
+     Extraktion bei jedem Lauf anders ausfallen wuerde. Geprueft wird damit
+     genau das, was im Tool nach der Extraktion passiert - inklusive der
+     Konflikt-Erkennung. */
+  let digestBefunde = [];
+  let digestBlock = '';
+  if (fall.digest) {
+    digestBefunde = Digest.pruefe(fall.digest, { hf, seitenGesamt: fall.digestSeiten || null });
+    digestBlock = Digest.renderForPrompt(fall.digest, hf, digestBefunde);
+  }
+
   const gemeinsam = {
     hf, zielgruppe: HardfactsIO.audience(hf), strategie: hf.strategie || '',
-    ctxBlock: fall.kontext ? 'Zusaetzlicher Kontext:\n' + fall.kontext + '\n' : '',
+    ctxBlock: [
+      fall.kontext ? 'Zusaetzlicher Kontext:\n' + fall.kontext : '',
+      digestBlock.trim()
+    ].filter(Boolean).join('\n') + ((fall.kontext || digestBlock) ? '\n' : ''),
     pageMap: PromptBuilder.buildPageMap(active), brandCfg, lpVorlage
   };
 
@@ -268,13 +285,14 @@ async function laufe(fall, opt) {
     mergeKorrekturen: mergeProtokoll.length, mergeProtokoll,
     befunde: befunde.map(b => ({ schwere: b.schwere, id: b.id, section: b.section, feld: b.feld, text: b.text })),
     review,
-    metriken: metriken(befunde, sectionData, active, mergeProtokoll, review),
+    digestBefunde,
+    metriken: metriken(befunde, sectionData, active, mergeProtokoll, review, digestBefunde),
     sectionData
   };
 }
 
 /* Die Groessen, die im Benchmark verglichen werden. */
-function metriken(befunde, sectionData, active, mergeProtokoll, review) {
+function metriken(befunde, sectionData, active, mergeProtokoll, review, digestBefunde) {
   const krit = befunde.filter(b => b.schwere === 'kritisch');
   const woerter = Validators.textFelder(sectionData).reduce((n, f) => n + String(f.text).split(/\s+/).filter(Boolean).length, 0);
   return {
@@ -295,7 +313,10 @@ function metriken(befunde, sectionData, active, mergeProtokoll, review) {
     reviewHinweise: review && review.befunde ? review.befunde.filter(b => b.schwere !== 'kritisch').length : null,
     /* Verworfene Befunde sind eine Aussage ueber den REVIEWER, nicht ueber die
        Copy: eine hohe Quote heisst, dass er Stellen erfindet. */
-    reviewVerworfen: review && review.verworfen ? review.verworfen.length : null
+    reviewVerworfen: review && review.verworfen ? review.verworfen.length : null,
+    /* null ohne Dokument-Kontext - 0 hiesse "geprueft, nichts gefunden". */
+    digestKonflikte: digestBefunde ? digestBefunde.filter(b => /konflikt/.test(b.id)).length : null,
+    digestBefunde: digestBefunde ? digestBefunde.length : null
   };
 }
 
@@ -326,6 +347,7 @@ async function main() {
         `${m.sectionsGeliefert}/${m.sectionsErwartet} Sections  ` +
         `${m.befundeKritisch} kritisch  ${m.presetVerstoesse} Verstoesse  ` +
         `${m.faktenAbweichungen} Faktenabweichungen  ${r.dauerMs}ms` +
+        (r.metriken.digestKonflikte ? `  Digest: ${r.metriken.digestKonflikte} Konflikt(e)` : '') +
         (r.review ? (r.review.fehler
           ? `  Review FEHLER: ${r.review.fehler}`
           : `  Review ${m.reviewSchnitt}/5  ${m.reviewKritisch}k/${m.reviewHinweise}h  ${m.reviewVerworfen} unbelegt`) : ''));

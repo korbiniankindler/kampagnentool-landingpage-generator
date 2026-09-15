@@ -1,0 +1,126 @@
+{
+  "id": "hellinger-dokument",
+  "beschreibung": "Dokument-Kontext (1.3): ein eingecheckter Digest ersetzt das PDF. Der Digest passt zum Briefing, es gibt keinen Konflikt. Prueft, ob die extrahierten Fakten in der Copy ankommen.",
+  "preset": "hellinger",
+  "lpVorlage": "live_seminar",
+  "digestSeiten": 6,
+  "digest": {
+    "kernaussagen": [
+      "Ein kostenfreies Live-Seminar zum Umgang mit wiederkehrenden Mustern in Familie und Beruf.",
+      "Das Seminar fuehrt zur mehrstufigen Ausbildung zum Original Hellinger Familiensteller."
+    ],
+    "fakten": [
+      {
+        "aussage": "Das Seminar dauert etwa 90 Minuten inklusive Fragerunde.",
+        "zitat": "Dauer: circa 90 Minuten, davon 20 Minuten offene Fragerunde",
+        "seite": 2,
+        "kategorie": "inhalt"
+      },
+      {
+        "aussage": "Sophie Hellinger leitet das Seminar persoenlich.",
+        "zitat": "Leitung: Sophie Hellinger, Gruenderin der Hellingerschule",
+        "seite": 1,
+        "kategorie": "referent"
+      },
+      {
+        "aussage": "Es werden zwei echte Aufstellungen live gezeigt.",
+        "zitat": "Im Hauptteil zeigen wir zwei Aufstellungen mit Teilnehmenden aus dem Publikum",
+        "seite": 3,
+        "kategorie": "inhalt"
+      },
+      {
+        "aussage": "Die Aufzeichnung steht sieben Tage zur Verfuegung.",
+        "zitat": "Die Aufzeichnung bleibt sieben Tage nach dem Termin abrufbar",
+        "seite": 4,
+        "kategorie": "angebot"
+      },
+      {
+        "aussage": "Die Ausbildung umfasst vier Praesenzmodule ueber achtzehn Monate.",
+        "zitat": "Die Ausbildung besteht aus vier Praesenzmodulen und erstreckt sich ueber achtzehn Monate",
+        "seite": 5,
+        "kategorie": "angebot"
+      },
+      {
+        "aussage": "Bisher haben ueber 3.000 Menschen die Ausbildung abgeschlossen.",
+        "zitat": "Mehr als 3.000 Absolventinnen und Absolventen seit 1995",
+        "seite": 5,
+        "kategorie": "beleg"
+      },
+      {
+        "aussage": "Das Seminar richtet sich an Menschen mit Vorerfahrung in Coaching oder Therapie.",
+        "zitat": "Vorkenntnisse aus Coaching, Therapie oder Aufstellungsarbeit sind hilfreich, aber keine Voraussetzung",
+        "seite": 2,
+        "kategorie": "zielgruppe"
+      }
+    ],
+    "konflikte": []
+  },
+  "hardfacts": {
+    "kampagnenname": "Alte Muster loesen - September 2026",
+    "beschreibung": "Kostenfreies Live-Seminar mit Sophie Hellinger. Thema: wiederkehrende Muster in Beziehungen und im Beruf.",
+    "zielgruppe": "Menschen mit Vorerfahrung in Coaching, Therapie oder Aufstellungsarbeit, ueberwiegend weiblich, DACH-Raum",
+    "live_termin": "20.09.2026, 11 Uhr",
+    "angebot": {
+      "produkt": "Ausbildung zum Original Hellinger Familiensteller",
+      "preis": ""
+    },
+    "offer": "Ausbildung zum Original Hellinger Familiensteller",
+    "pre_headline": "ORIGINAL HELLINGER METHODE",
+    "titel": "Der Platz, der wirklich zu Dir gehoert",
+    "sub_headline": "Im kostenfreien Live-Seminar wird sichtbar, welche Ordnung hinter Deinen wiederkehrenden Themen wirkt.",
+    "bulletpoints": [
+      "Erkenne, welche Ordnung hinter Deinen wiederkehrenden Themen wirkt",
+      "Spuere, was sich loest, wenn Du Deinen Platz im System einnimmst",
+      "Verstehe, warum Verstehen allein die Muster nicht aufloest",
+      "Erlebe an echten Beispielen, wie eine Aufstellung Bewegung bringt"
+    ],
+    "strategie_titel": "Wiedererkennung statt Versprechen."
+  },
+  "sections": [
+    {
+      "id": "hero",
+      "name": "Hero",
+      "desc": "Announcement Bar, Pre-Headline, H1, H2, CTA"
+    },
+    {
+      "id": "trustbar",
+      "name": "Trust Bar",
+      "desc": "Presselogo-Platzhalter"
+    },
+    {
+      "id": "introtext",
+      "name": "Intro Text",
+      "desc": "Kontext-Story, Warum-jetzt-Narrativ"
+    },
+    {
+      "id": "problem",
+      "name": "Problem / Mirror Effect",
+      "desc": "Selbstreflexions-Checkliste"
+    },
+    {
+      "id": "framework",
+      "name": "Educational Gap",
+      "desc": "Erklaer-Block mit Hintergrund"
+    },
+    {
+      "id": "social",
+      "name": "Social Proof",
+      "desc": "3 Testimonials"
+    },
+    {
+      "id": "authority",
+      "name": "Authority / Speaker",
+      "desc": "Experten-Bio, Rolle in der Veranstaltung"
+    },
+    {
+      "id": "benefits",
+      "name": "Benefit Stack",
+      "desc": "3 Gruende teilzunehmen"
+    },
+    {
+      "id": "finalcta",
+      "name": "Final CTA / Scarcity",
+      "desc": "Abschluss mit Verknappung"
+    }
+  ]
+}

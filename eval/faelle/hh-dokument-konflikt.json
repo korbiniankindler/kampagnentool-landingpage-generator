@@ -1,0 +1,114 @@
+{
+  "id": "hh-dokument-konflikt",
+  "beschreibung": "Dokument-Kontext mit Widerspruch: Das Dokument nennt einen anderen Termin als das bestaetigte Briefing (ein veraltetes Konzeptpapier). Das Modell hat den Konflikt NICHT gemeldet - die deterministische Pruefung muss ihn finden, und der falsche Termin darf nicht in der Copy landen.",
+  "preset": "holistic-house",
+  "lpVorlage": "webinar",
+  "digestSeiten": 8,
+  "digest": {
+    "kernaussagen": [
+      "Konzeptpapier fuer ein kostenfreies Live-Seminar zu Praevention und Ayurveda."
+    ],
+    "fakten": [
+      {
+        "aussage": "Das Live-Seminar findet am 04.11.2026 statt.",
+        "zitat": "Geplanter Termin: 4. November 2026, 19:00 Uhr",
+        "seite": 1,
+        "kategorie": "termin"
+      },
+      {
+        "aussage": "Dr. med. Ulrich Bauhofer haelt das Seminar.",
+        "zitat": "Referent: Dr. med. Ulrich Bauhofer, Ayurveda-Mediziner",
+        "seite": 1,
+        "kategorie": "referent"
+      },
+      {
+        "aussage": "Das Seminar behandelt die drei Ayurveda-Typen als Einstieg.",
+        "zitat": "Einstieg ueber die drei Doshas als Ordnungssystem fuer die eigene Konstitution",
+        "seite": 3,
+        "kategorie": "inhalt"
+      },
+      {
+        "aussage": "Die Ausbildung dauert zwoelf Monate berufsbegleitend.",
+        "zitat": "Die Ayurveda Coach Ausbildung laeuft zwoelf Monate berufsbegleitend",
+        "seite": 6,
+        "kategorie": "angebot"
+      },
+      {
+        "aussage": "Eine Studie der Charite aus 2019 zeigt Effekte bei Schlafqualitaet.",
+        "zitat": "Charite-Studie 2019: signifikante Verbesserung der Schlafqualitaet nach acht Wochen",
+        "seite": 5,
+        "kategorie": "beleg"
+      }
+    ],
+    "konflikte": []
+  },
+  "hardfacts": {
+    "kampagnenname": "Gesundheit neu denken - Herbst 2026",
+    "beschreibung": "Kostenfreies Live-Seminar mit Dr. med. Ulrich Bauhofer. Thema: Praevention und Ayurveda fuer Frauen ab 45.",
+    "zielgruppe": "Frauen 45-65, gesundheitsbewusst, erste Wechseljahresbeschwerden",
+    "live_termin": "27.09.2026, 11 Uhr",
+    "angebot": {
+      "produkt": "Ayurveda Coach Ausbildung",
+      "preis": "7.000 EUR"
+    },
+    "offer": "Ayurveda Coach Ausbildung",
+    "pre_headline": "WARUM IMMER MEHR FRAUEN AB 45 UMDENKEN",
+    "titel": "Warum Ihr Koerper ab 45 eine andere Sprache spricht",
+    "sub_headline": "Erfahren Sie im kostenfreien Live-Seminar, wie Sie die Signale Ihres Koerpers einordnen.",
+    "bulletpoints": [
+      "Verstehen Sie, warum der Koerper ab 45 anders auf Stress reagiert",
+      "Erkennen Sie die drei haeufigsten Fehler bei der Selbstbehandlung",
+      "Erhalten Sie einen ersten Einblick in Ihren persoenlichen Reset-Plan",
+      "Sehen Sie an Beispielen aus der Praxis, was sich umsetzen laesst",
+      "Erfahren Sie, welche Rolle die Ayurveda-Typen dabei spielen"
+    ],
+    "strategie_titel": "Autoritaet ueber Einordnung."
+  },
+  "sections": [
+    {
+      "id": "hero",
+      "name": "Hero",
+      "desc": "Announcement Bar, Pre-Headline, H1, H2, CTA"
+    },
+    {
+      "id": "trustbar",
+      "name": "Trust Bar",
+      "desc": "Presselogo-Platzhalter"
+    },
+    {
+      "id": "introtext",
+      "name": "Intro Text",
+      "desc": "Kontext-Story, Warum-jetzt-Narrativ"
+    },
+    {
+      "id": "problem",
+      "name": "Problem / Mirror Effect",
+      "desc": "Selbstreflexions-Checkliste"
+    },
+    {
+      "id": "framework",
+      "name": "Educational Gap",
+      "desc": "Erklaer-Block mit Hintergrund"
+    },
+    {
+      "id": "social",
+      "name": "Social Proof",
+      "desc": "3 Testimonials"
+    },
+    {
+      "id": "authority",
+      "name": "Authority / Speaker",
+      "desc": "Experten-Bio, Rolle in der Veranstaltung"
+    },
+    {
+      "id": "benefits",
+      "name": "Benefit Stack",
+      "desc": "3 Gruende teilzunehmen"
+    },
+    {
+      "id": "finalcta",
+      "name": "Final CTA / Scarcity",
+      "desc": "Abschluss mit Verknappung"
+    }
+  ]
+}

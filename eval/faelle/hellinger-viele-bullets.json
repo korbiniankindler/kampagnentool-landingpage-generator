@@ -1,0 +1,77 @@
+{
+  "id": "hellinger-viele-bullets",
+  "beschreibung": "Sieben Inhalts-Bullets statt der ueblichen vier. Prueft, ob der Hero-Merge eine unuebliche Anzahl unveraendert uebernimmt, statt sie auf eine erwartete Zahl zu kuerzen oder aufzufuellen.",
+  "preset": "hellinger",
+  "lpVorlage": "ausbildung",
+  "hardfacts": {
+    "kampagnenname": "Ausbildung zum Original Hellinger Familiensteller - Jahrgang 2027",
+    "beschreibung": "Mehrstufige Ausbildung mit Sophie Hellinger. Vier Praesenzmodule ueber achtzehn Monate.",
+    "zielgruppe": "Coaches, Therapeutinnen und Beratende, die Aufstellungsarbeit in ihre Praxis aufnehmen wollen",
+    "live_termin": "",
+    "angebot": {
+      "produkt": "Ausbildung zum Original Hellinger Familiensteller",
+      "preis": ""
+    },
+    "offer": "Ausbildung zum Original Hellinger Familiensteller",
+    "pre_headline": "JAHRGANG 2027",
+    "titel": "Der Weg zur eigenen Aufstellungsarbeit",
+    "sub_headline": "Vier Praesenzmodule ueber achtzehn Monate, in denen Du die Methode lernst und sie zugleich an Deiner eigenen Geschichte erfaehrst.",
+    "bulletpoints": [
+      "Lerne die Ordnungen, auf denen jede Aufstellung ruht",
+      "Erfahre die Methode zuerst an Deiner eigenen Geschichte",
+      "Uebe das Aufstellen in kleinen Gruppen unter Begleitung",
+      "Verstehe, wann eine Aufstellung traegt und wann nicht",
+      "Baue Sicherheit im Umgang mit schweren Themen auf",
+      "Finde Deine eigene Haltung als Aufstellerin oder Aufsteller",
+      "Bereite die Arbeit mit Klientinnen und Klienten konkret vor"
+    ],
+    "strategie_titel": "Handwerk und Haltung, nicht Zertifikat."
+  },
+  "sections": [
+    {
+      "id": "hero",
+      "name": "Hero",
+      "desc": "Announcement Bar, Pre-Headline, H1, H2, CTA"
+    },
+    {
+      "id": "trustbar",
+      "name": "Trust Bar",
+      "desc": "Presselogo-Platzhalter"
+    },
+    {
+      "id": "introtext",
+      "name": "Intro Text",
+      "desc": "Kontext-Story, Warum-jetzt-Narrativ"
+    },
+    {
+      "id": "problem",
+      "name": "Problem / Mirror Effect",
+      "desc": "Selbstreflexions-Checkliste"
+    },
+    {
+      "id": "framework",
+      "name": "Educational Gap",
+      "desc": "Erklaer-Block mit Hintergrund"
+    },
+    {
+      "id": "social",
+      "name": "Social Proof",
+      "desc": "3 Testimonials"
+    },
+    {
+      "id": "authority",
+      "name": "Authority / Speaker",
+      "desc": "Experten-Bio, Rolle in der Veranstaltung"
+    },
+    {
+      "id": "benefits",
+      "name": "Benefit Stack",
+      "desc": "3 Gruende teilzunehmen"
+    },
+    {
+      "id": "finalcta",
+      "name": "Final CTA / Scarcity",
+      "desc": "Abschluss mit Verknappung"
+    }
+  ]
+}
