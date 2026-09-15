@@ -404,7 +404,7 @@ ausdrücken. `vorlagen` bündelt die üblichen Kombinationen als Bedienkomfort.
   "verboteInFeldern": {
     "frage": {
       "regex": "\\?",
-      "felder": ["titel.pre", "titel.h1", "titel.h2", "bullets"],
+      "felder": ["titel.pre", "titel.h1", "titel.h2", "bullets", "hero.preHeadline", "hero.h1", "hero.h2", "hero.bulletpoints"],
       "hinweis": "Seminartitel und Inhalts-Bullets enthalten keine Fragezeichen.",
       "quelle": "Abschnitt 6"
     }

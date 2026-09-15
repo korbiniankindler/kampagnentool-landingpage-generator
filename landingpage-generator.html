@@ -76,6 +76,16 @@
 .ai-suggest-box{border:1px solid var(--border-light);border-radius:var(--radius-md);padding:14px;background:var(--bg-secondary);margin-bottom:1rem}
 .ai-suggest-loading{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text-secondary);padding:8px 0}
 .sec-mode-hint{font-size:12px;color:var(--text-tertiary);margin-bottom:10px}
+.befund-badge{font-size:10.5px;font-weight:600;padding:2px 8px;border-radius:20px;background:#eef1f4;color:#4a5560;margin-left:8px}
+.befund-badge.kritisch{background:#fdecea;color:#a3271a}
+.befund-liste{margin:0 0 10px;display:flex;flex-direction:column;gap:5px}
+.befund{font-size:12px;line-height:1.5;padding:6px 9px;border-radius:6px;background:#f6f7f9;border-left:2px solid #c9d0d8;color:#3d4650}
+.befund.kritisch{background:#fdecea;border-left-color:#d9534f;color:#8a2318}
+.befund-feld{font-weight:600;font-family:ui-monospace,Menlo,monospace;font-size:11px}
+.befund-quelle{color:var(--text-tertiary);font-size:11px}
+.gate-summary{font-size:12.5px;line-height:1.55;padding:10px 12px;border-radius:8px;background:#f6f7f9;border:1px solid var(--border-light);margin-bottom:12px}
+.gate-summary.kritisch{background:#fdecea;border-color:#f0b4ae;color:#8a2318}
+.gate-ok{font-size:12.5px;line-height:1.55;padding:10px 12px;border-radius:8px;background:#eef7ee;border:1px solid #cfe6cf;color:#2f5d33;margin-bottom:12px}
 .incomplete-banner,.notice-banner{background:#fff8e1;border:1px solid #f0c674;border-left:3px solid #e0a800;border-radius:8px;padding:10px 12px;margin:0 0 10px;font-size:12.5px;line-height:1.55;color:#5c4400}
 .review-card.incomplete{border-color:#f0c674}
 #export-gate-hint:empty{display:none}
@@ -407,6 +417,8 @@
 <script src="shared/api-client.js"></script>
 <script src="shared/hardfacts.js"></script>
 <script src="shared/brand-config.js"></script>
+<script src="shared/section-schemas.js"></script>
+<script src="shared/validators.js"></script>
 <script src="shared/copywriter-presets.js"></script>
 <script>
 var PROXY_URL = 'https://claude.korbinian.workers.dev/';
@@ -419,6 +431,10 @@ var sectionData = {};
    aber als unvollstaendig markiert und sperren den Export, bis sie neu
    generiert oder bewusst freigegeben wurden. */
 var sectionIssues = {};
+/* Befunde des deterministischen Quality Gates, gruppiert nach Section.
+   Ersetzt das blinde Durchsehen von 60-100 Feldern durch eine Liste
+   konkreter, belegter Punkte. */
+var qualityBefunde = [];
 /* Laufende Generierung: eine verspaetete Antwort eines ueberholten Laufs darf
    neueren Stand nicht ueberschreiben. Buttons zu deaktivieren reicht dagegen
    nicht - der erste Lauf laeuft ja weiter. */
@@ -940,6 +956,7 @@ async function suggestSectionsAI() {
 function goExport() {
   /* Zweite Sperre neben dem deaktivierten Button: goToStep(4) und ein
      direkter Aufruf sollen genauso wenig ein halbes Briefing exportieren. */
+  runQualityGate(sections.filter(function(s){return s.active;}));
   var open = incompleteSectionIds();
   if (open.length) {
     updateExportGate();
@@ -1001,20 +1018,14 @@ function addCustomSection() {
 }
 
 
+/* Der Schema-Hinweis wird aus shared/section-schemas.js generiert. Vorher war
+   er ein handgepflegter String, waehrend die Anzahl-Vorgaben ("exakt 5
+   Eintraege") an einer zweiten Stelle im Prompt standen - zwei Orte, die
+   auseinanderlaufen konnten. Jetzt eine Quelle, aus der auch die Validatoren
+   pruefen. */
 function sectionSchemaHint(s) {
-  var schemas = {
-    hero: '{"announcement":"...", "preHeadline":"...", "h1":"...", "h2":"...", "bulletpoints":[{"title":"...","text":"..."},{"title":"...","text":"..."},{"title":"...","text":"..."},{"title":"...","text":"..."}], "ctaButton":"...", "ctaSubline":"...", "videoPlaceholder":"[16:9 Video-Platzhalter]"}',
-    trustbar: '{"note":"Platzhalter-Hinweis Text für Presselogos"}',
-    introtext: '{"badge":"...", "headline":"...", "paragraphs":[...], "closingLine":"..."}',
-    problem: '{"headline":"...", "introCopy":"...", "checklist":[{"title":"...","text":"..."},{"title":"...","text":"..."},{"title":"...","text":"..."},{"title":"...","text":"..."},{"title":"...","text":"..."}], "transitionCopy":"...", "ctaButton":"..."}',
-    framework: '{"headline":"...", "bodyCopy":"..."}',
-    social: '{"headline":"...", "testimonials":[{"quote":"...","name":"...","role":"..."},{"quote":"...","name":"...","role":"..."},{"quote":"...","name":"...","role":"..."}]}',
-    authority: '{"headline":"...", "bioBlock":"...", "webinarRole":"...", "ctaButton":"..."}',
-    benefits: '{"headline":"...", "items":[{"title":"...","text":"..."},{"title":"...","text":"..."},{"title":"...","text":"..."}]}',
-    finalcta: '{"headline":"...", "scarcityCopy":"...", "ctaButton":"...", "ctaSubline":"..."}',
-    faq: '{"headline":"...", "faqs":[{"question":"...","answer":"..."}, {"question":"...","answer":"..."}], "ctaButton":"... (falls passend)"}'
-  };
-  if (schemas[s.id]) return schemas[s.id];
+  var hint = SectionSchemas.promptHint(s.id);
+  if (hint) return hint;
   /* Eigene Sections bekommen bewusst KEIN festes Schema. Vorher stand hier
      immer {headline, bodyCopy, ctaButton} und die Section-Beschreibung folgte
      nur als Kommentar - das Modell hat das Schema befolgt und die Beschreibung
@@ -1085,6 +1096,8 @@ async function startGeneration() {
     var data = await generateAll(active);
     if (runId !== currentRunId) return;
     sectionData = data;
+    applyDeterministicMerge(active);
+    runQualityGate(active);
     /* maxStep erst JETZT erhoehen. Vorher stand es am Funktionsanfang - nach
        einem Fehlschlag galt Schritt 3 damit als erreicht, Schritt 2 war
        dadurch nicht mehr "frontier" und wurde read-only gerendert. Der
@@ -1327,10 +1340,10 @@ async function generateChunk(chunk, sysBlocks, ctx, attempt) {
     buildHeroVorgabe() +
     '- introtext (Intro Text): badge = kurze Pill-Kategorie (max 5 Worte), headline = aufmerksamkeitsstarke H2, paragraphs = Array aus Fließtext-Absätzen, die zusammen eine Kontext-Story aufbauen (Gesamtlänge und Absatzzahl siehe TEXTLAENGEN unten - die Absatzzahl ist bewusst nicht vorgegeben) (gesellschaftlicher Wandel, Warum-jetzt-Narrativ, Marktentwicklung oder ähnliches passend zur Kampagne), closingLine = Brücken-Satz der auf den Referenten und die Veranstaltung leitet. Den Aufhänger der Kontext-Story frisch und spezifisch für DIESE Kampagne wählen: NICHT automatisch das Zeitgeschehen-Ereignis oder den Einstieg der Referenz-Copy übernehmen (z.B. eine bestimmte Reform) - die Referenz zeigt nur, WIE so eine Story erzählt wird, nicht WORÜBER. Belegte Fakten aus der Wissensdatenbank passend zum Kampagnen-Thema auswählen.\n' +
     '- Educational Gap (framework): headline + bodyCopy als erklärenden Fließtext-Block, KEIN Kompass-Prinzip\n' +
-    '- Problem-Checklist: exakt 5 Einträge als Array mit je "title" und "text"\n' +
-    '- Testimonials: exakt 3 Einträge als Array mit je "quote", "name", "role"\n' +
-    '- faq (FAQ): headline + "faqs" als Array mit 5-7 Einträgen, je "question" und "answer". Das ist eine echte Frage-Antwort-Liste, KEIN Fließtext-Block - fasse die Antworten NICHT zu einem Absatz zusammen. Die Fragen sind die, die eine Anmeldung tatsächlich blockieren: Termin und Dauer, Aufzeichnung falls verhindert, technische Voraussetzungen, Vorwissen, Kosten und Verbindlichkeit, für wen es geeignet ist, was danach passiert. Jede Frage in der Sprache des Lesers ("Was, wenn ich am Termin nicht kann?"), nicht in Marketingsprache. Fragezeichen sind hier ausdrücklich richtig, auch wenn das Marken-Preset Fragen an anderer Stelle ausschließt.\n' +
-    '- Benefits items: exakt 3 Einträge als Array mit je "title" und "text"\n' +
+    '- Problem-Checklist: ' + SectionSchemas.countRules('problem') + ' als Array mit je "title" und "text"\n' +
+    '- Testimonials: ' + SectionSchemas.countRules('social') + ' als Array mit je "quote", "name", "role"\n' +
+    '- faq (FAQ): headline + "faqs" als Array, ' + SectionSchemas.countRules('faq') + ', je "question" und "answer". Das ist eine echte Frage-Antwort-Liste, KEIN Fließtext-Block - fasse die Antworten NICHT zu einem Absatz zusammen. Die Fragen sind die, die eine Anmeldung tatsächlich blockieren: Termin und Dauer, Aufzeichnung falls verhindert, technische Voraussetzungen, Vorwissen, Kosten und Verbindlichkeit, für wen es geeignet ist, was danach passiert. Jede Frage in der Sprache des Lesers ("Was, wenn ich am Termin nicht kann?"), nicht in Marketingsprache. Fragezeichen sind hier ausdrücklich richtig, auch wenn das Marken-Preset Fragen an anderer Stelle ausschließt.\n' +
+    '- Benefits items: ' + SectionSchemas.countRules('benefits') + ' als Array mit je "title" und "text"\n' +
     '- Eigene Sections (im Schema mit "Eigene Section ... Beschreibung:" kommentiert): Die Beschreibung gibt die STRUKTUR vor, nicht nur den Inhalt. Nennt sie mehrere gleichartige Elemente (z.B. zwei Columns, drei Karten, vier Schritte), dann liefere dafür ein Array aus Objekten - ein Objekt pro Element mit eigenen Feldern, z.B. "columns": [{"headline":"...","bodyCopy":"..."}, {"headline":"...","bodyCopy":"..."}]. Benenne den Array-Key nach dem, was die Beschreibung beschreibt (columns, cards, steps, ...), und liefere exakt so viele Einträge wie dort verlangt - fasse sie NIEMALS zu einem einzigen Fließtext-Block zusammen. Beschreibt die Beschreibung dagegen einen einzelnen Textblock, genügt {"headline":"...", "bodyCopy":"..."}. Erfinde keine Felder, die die Beschreibung nicht hergibt.\n' +
     '- Alle String-Werte EINZEILIG: keine echten Zeilenumbrüche UND keine \\n-Sequenzen im Text (die erscheinen sonst wörtlich auf der Seite). Brauchst Du mehrere Absätze, nutze ein Array aus Strings statt einem String mit Umbrüchen.\n' +
     '- Innerhalb von Textwerten NIEMALS gerade Anführungszeichen ("...") verwenden - sie beenden den String und zerstören das JSON. Zum Zitieren im Fließtext typografische Anführungszeichen nutzen: „...".\n' +
@@ -1412,6 +1425,64 @@ function updateReviewLoadingMsg(text) {
   if (el) el.textContent = text;
 }
 
+/* Setzt die vom Menschen bestaetigten Werte im Code - der Prompt bittet
+   darum, aber eine Bitte ist keine Garantie. Betrifft Pre-Headline, H1, H2,
+   die Bulletpoints in bestaetigter Anzahl und den CTA-Wortlaut der Marke. */
+var heroMergeProtokoll = [];
+function applyDeterministicMerge(active) {
+  heroMergeProtokoll = [];
+  if (!active.some(function (s) { return s.id === 'hero'; })) return;
+  if (!sectionData.hero) return;
+  sectionData.hero = Validators.mergeHero(sectionData.hero, HF, lpVorlage, heroMergeProtokoll);
+}
+
+/* Deterministische Pruefung. Eindeutig behebbare Befunde werden sofort
+   korrigiert und als korrigiert ausgewiesen; alles andere bleibt eine
+   Entscheidung des Menschen. */
+function runQualityGate(active) {
+  var ctx = {
+    active: active,
+    sectionData: sectionData,
+    hf: HF,
+    brandCfg: brandCfg,
+    lockedFields: lockedFieldValues()
+  };
+  var befunde = Validators.pruefeAlles(ctx);
+  /* Was der deterministische Merge bereits korrigiert hat, erscheint als
+     Hinweis - der Nutzer soll sehen, wo das Modell abweichen wollte. */
+  heroMergeProtokoll.forEach(function (p) {
+    befunde.push({ schwere: 'hinweis', id: 'autokorrigiert', section: 'hero', feld: p.feld,
+      text: 'Auf den bestaetigten Wert zurueckgesetzt. Das Modell hatte: "' +
+        String(p.gewollt).slice(0, 80) + '"' });
+  });
+  var korrigiert = Validators.autofix(sectionData, befunde);
+  if (korrigiert.length) {
+    /* Nach dem Autofix erneut pruefen - was behoben ist, soll nicht mehr
+       als offener Befund erscheinen. */
+    befunde = Validators.pruefeAlles(ctx);
+    korrigiert.forEach(function (b) {
+      befunde.push({ schwere: 'hinweis', id: 'autokorrigiert', section: b.section, feld: b.feld,
+        text: 'Automatisch auf den bestaetigten Wert zurueckgesetzt: ' + (b.feld || '') });
+    });
+  }
+  qualityBefunde = befunde;
+  return befunde;
+}
+
+/* lockedFields haelt nur `true` je Pfad. Fuer die Pruefung braucht es die
+   erwarteten WERTE - die stehen im aktuellen sectionData, solange nicht
+   regeneriert wurde. */
+function lockedFieldValues() {
+  var out = {};
+  Object.keys(lockedFields || {}).forEach(function (secId) {
+    var paths = Object.keys(lockedFields[secId] || {});
+    if (!paths.length) return;
+    out[secId] = {};
+    paths.forEach(function (p) { out[secId][p] = getByPath(sectionData[secId], p); });
+  });
+  return out;
+}
+
 /* ===== REVIEW RENDERING (Phase 3) ===== */
 function renderReview(active, opts) {
   var ro = !!(opts && opts.readOnly);
@@ -1420,7 +1491,7 @@ function renderReview(active, opts) {
     var el = document.getElementById('fb-'+s.id);
     if (el && el.value) prevFb[s.id] = el.value;
   });
-  var html = '';
+  var html = befundUebersichtHTML(active);
   if (planFailed) {
     html += '<div class="incomplete-banner" style="margin-bottom:12px">' +
       '<strong>Ohne Content-Plan generiert.</strong> Der Planungs-Schritt ist fehlgeschlagen, ' +
@@ -1444,8 +1515,10 @@ function renderReview(active, opts) {
         '</div>'
       : '';
     html += '<div class="review-card' + (issue && issue.incomplete ? ' incomplete' : '') + '" id="rc-'+s.id+'">' +
-      '<div class="review-head"><span class="review-title">'+(idx+1)+'. '+ex(s.name)+'</span><span class="review-status" id="rs-'+s.id+'"></span></div>' +
-      issueHtml +
+      '<div class="review-head"><span class="review-title">'+(idx+1)+'. '+ex(s.name)+'</span>' +
+        befundBadgeHTML(s.id) +
+        '<span class="review-status" id="rs-'+s.id+'"></span></div>' +
+      issueHtml + befundListeHTML(s.id) +
       '<div class="review-body" id="rb-'+s.id+'">' + renderSectionFields(s) + '</div>' +
       (ro ? '' :
       '<div class="review-feedback">' +
@@ -1476,6 +1549,49 @@ function renderReview(active, opts) {
   }
   document.getElementById('to-export-btn').style.display = ro ? 'none' : 'flex';
   updateExportGate();
+}
+
+/* --- Anzeige der Quality-Gate-Befunde ---
+   Der Review zeigte bisher 9 Sections mit zusammen 60-100 editierbaren
+   Feldern ohne jede Fuehrung. Diese drei Funktionen machen daraus eine
+   Liste konkreter Punkte mit Fundstelle im Regelwerk. */
+
+function befundeFuer(secId) {
+  return (qualityBefunde || []).filter(function (b) { return b.section === secId; });
+}
+
+function befundBadgeHTML(secId) {
+  var b = befundeFuer(secId);
+  if (!b.length) return '';
+  var krit = b.filter(function (x) { return x.schwere === 'kritisch'; }).length;
+  var cls = krit ? 'befund-badge kritisch' : 'befund-badge';
+  return '<span class="' + cls + '">' + (krit || b.length) + (krit ? ' zu prüfen' : ' Hinweis' + (b.length > 1 ? 'e' : '')) + '</span>';
+}
+
+function befundListeHTML(secId) {
+  var b = befundeFuer(secId);
+  if (!b.length) return '';
+  return '<div class="befund-liste">' + b.map(function (x) {
+    return '<div class="befund ' + x.schwere + '">' +
+      '<span class="befund-feld">' + ex(x.feld || x.id) + '</span> ' + ex(x.text) +
+      (x.quelle ? ' <span class="befund-quelle">' + ex(x.quelle) + '</span>' : '') +
+      '</div>';
+  }).join('') + '</div>';
+}
+
+function befundUebersichtHTML(active) {
+  var alle = qualityBefunde || [];
+  if (!alle.length) {
+    return '<div class="gate-ok">Automatische Prüfung bestanden: bestätigte Fakten übernommen, ' +
+      'Feldanzahlen korrekt, keine Regelverstöße gefunden. Inhaltliche Beurteilung bleibt Deine.</div>';
+  }
+  var krit = alle.filter(function (x) { return x.schwere === 'kritisch'; }).length;
+  var auto = alle.filter(function (x) { return x.id === 'autokorrigiert'; }).length;
+  return '<div class="gate-summary' + (krit ? ' kritisch' : '') + '">' +
+    '<strong>Automatische Prüfung: ' + (krit ? krit + ' Punkt' + (krit === 1 ? '' : 'e') + ' zu prüfen' : 'nur Hinweise') + '</strong>' +
+    (auto ? ' &middot; ' + auto + ' automatisch auf den bestätigten Wert zurückgesetzt' : '') +
+    ' &middot; ' + (alle.length - krit - auto) + ' Hinweis(e). Die Befunde stehen bei der jeweiligen Section.' +
+    '</div>';
 }
 
 /* Sections, die unvollstaendig generiert und noch nicht freigegeben wurden. */
@@ -1855,9 +1971,13 @@ async function regenSection(secId) {
     // egal was das Modell zurückgegeben hat (wie bei den Bullets in Modul 1)
     restoreLocks(secId, lockedSnap);
     delete sectionIssues[secId];
-    document.getElementById('rb-'+secId).innerHTML = renderSectionFields(s);
+    /* Der Hero bekommt seine bestaetigten Werte erneut - genau hier fehlte die
+       Vorgabe frueher komplett, weshalb eine Hero-Neugenerierung den
+       bestaetigten Titel neu erfunden hat. */
+    applyDeterministicMerge(sections.filter(function(x){ return x.active; }));
+    runQualityGate(sections.filter(function(x){ return x.active; }));
+    renderReview(sections.filter(function(x){ return x.active; }), {readOnly: false});
     document.getElementById('rs-'+secId).textContent = 'aktualisiert';
-    updateExportGate();
   } catch(e) {
     if (runId !== currentRunId) return;
     document.getElementById('rs-'+secId).textContent = 'Fehler';
@@ -1946,6 +2066,7 @@ function buildSessionExport() {
     sections: sections,
     sectionData: sectionData,
     sectionIssues: sectionIssues,
+    qualityBefunde: qualityBefunde,
     lockedFields: lockedFields,
     planFailed: planFailed
   };
@@ -2268,6 +2389,9 @@ function goToStep(n) {
     // Review stays fully editable regardless of frontier: no AI generation happens
     // between step 3 and step 4, so revisiting it can never leave stale/inconsistent data.
     document.getElementById('review-loading').style.display = 'none';
+    /* Erneut pruefen: zwischen zwei Besuchen kann der Nutzer Felder von Hand
+       geaendert haben - auch ein bestaetigter Titel laesst sich wegloeschen. */
+    if (Object.keys(sectionData).length) runQualityGate(sections.filter(function(s){return s.active;}));
     renderReview(sections.filter(function(s){return s.active;}), {readOnly: false});
     show('phase-review');
   } else if (n === 4) {
@@ -2297,7 +2421,7 @@ function renderSecListView() {
 
 function restartAll() {
   HF = null; sections = []; sectionData = {}; lockedFields = {}; activePreset = 'webinar'; customCounter = 0;
-  sectionIssues = {}; planFailed = false; hfMigrationNotes = []; currentRunId++;
+  sectionIssues = {}; qualityBefunde = []; heroMergeProtokoll = []; planFailed = false; hfMigrationNotes = []; currentRunId++;
   currentStep = 1; maxStep = 1;
   // Copywriter-Preset bewusst BEHALTEN: es ist eine Marken-Einstellung, keine
   // Kampagnen-Eingabe. Ein stiller Reset führte dazu, dass nach "Komplett neu
@@ -2942,7 +3066,7 @@ ausdrücken. `vorlagen` bündelt die üblichen Kombinationen als Bedienkomfort.
   "verboteInFeldern": {
     "frage": {
       "regex": "\\?",
-      "felder": ["titel.pre", "titel.h1", "titel.h2", "bullets"],
+      "felder": ["titel.pre", "titel.h1", "titel.h2", "bullets", "hero.preHeadline", "hero.h1", "hero.h2", "hero.bulletpoints"],
       "hinweis": "Seminartitel und Inhalts-Bullets enthalten keine Fragezeichen.",
       "quelle": "Abschnitt 6"
     }
