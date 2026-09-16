@@ -304,3 +304,26 @@ test('unuebliche Bulletpoint-Anzahl ueberlebt den Hero-Merge unveraendert', () =
   assert.equal(out.bulletpoints[0].title, soll[0]);
   assert.equal(out.bulletpoints[soll.length - 1].title, soll[soll.length - 1]);
 });
+
+test('der Runner bindet dieselben Schemas wie Modul 2', () => {
+  /* Ohne Schema misst der Runner eine andere Pipeline als die, die die
+     Mitarbeiter benutzen - und ein Live-Lauf wuerde Structured Outputs fuer
+     die Generierung gar nicht pruefen. Modul 2 ruft
+     SectionSchemas.outputConfig(chunk) auf; der Runner muss dasselbe tun. */
+  const quelle = fs.readFileSync(path.join(ROOT, 'eval/runner.js'), 'utf8');
+  assert.match(quelle, /SectionSchemas\.outputConfig\(/,
+    'die Chunk-Generierung laeuft ohne Schemabindung');
+  assert.match(quelle, /schemaFallbacks/,
+    'ein Rueckfall auf einen Request ohne Schema muss sichtbar sein, nicht still');
+
+  const html = fs.readFileSync(path.join(ROOT, 'landingpage-generator.html'), 'utf8');
+  assert.match(html, /SectionSchemas\.outputConfig\(chunk\)/, 'Testannahme zu Modul 2 stimmt nicht mehr');
+});
+
+test('eigene Sections bekommen kein Schema - fuer sie gibt es keines', () => {
+  const chunk = [{ id: 'hero', custom: false }, { id: 'garantie', custom: true }];
+  const cfg = global.SectionSchemas.outputConfig(chunk.filter(s => !s.custom));
+  assert.ok(cfg, 'fuer bekannte Sections muss ein Schema entstehen');
+  assert.ok(cfg.format.schema.properties.hero);
+  assert.ok(!cfg.format.schema.properties.garantie);
+});

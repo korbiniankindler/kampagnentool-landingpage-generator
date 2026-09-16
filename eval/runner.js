@@ -77,9 +77,13 @@ function ladeReviewPreset(presetId) {
 }
 
 /* ---------- API ---------- */
-async function call(body, opts) {
+function withThinking(body) {
   if (!('thinking' in body)) body.thinking = { type: 'disabled' };
-  return ClaudeAPI.send(body, opts);
+  return body;
+}
+
+async function call(body, opts) {
+  return ClaudeAPI.send(withThinking(body), opts);
 }
 
 /* Gemockte Antwort fuer --dry: strukturell korrekt, inhaltlich Platzhalter.
@@ -140,10 +144,21 @@ function mockReview(sectionData) {
   return { bewertung, befunde, gesamturteil: 'Trockenlauf.' };
 }
 
-async function jsonCall(body, live, label) {
+/* `schemaCfg` MUSS mitgegeben werden, wo das Tool es auch tut. Ohne das misst
+   der Runner eine andere Pipeline als die, die die Mitarbeiter benutzen - und
+   ein Live-Lauf wuerde Structured Outputs fuer die Generierung gar nicht
+   pruefen, obwohl genau das im Tool passiert. */
+async function jsonCall(body, live, label, schemaCfg) {
   if (!live) return { data: mockAntwort(body), truncated: false, mock: true };
-  const d = await call(body, { label });
-  return { data: extractJSON(ClaudeAPI.textOf(d)), truncated: ClaudeAPI.isTruncated(d), usage: d.usage };
+  const d = schemaCfg
+    ? await ClaudeAPI.sendMitSchema(withThinking(body), schemaCfg, { label })
+    : await call(body, { label });
+  return {
+    data: extractJSON(ClaudeAPI.textOf(d)),
+    truncated: ClaudeAPI.isTruncated(d),
+    usage: d.usage,
+    schemaGenutzt: d._schemaGenutzt
+  };
 }
 
 /* ---------- Pipeline ---------- */
@@ -210,7 +225,7 @@ async function laufe(fall, opt) {
         (_, i) => active.slice(i * GEN_CHUNK_SIZE, (i + 1) * GEN_CHUNK_SIZE));
 
   const sectionData = {};
-  let truncations = 0, calls = 0;
+  let truncations = 0, calls = 0, schemaFallbacks = 0;
 
   async function generiere(block, vorher) {
     const usr = PromptBuilder.buildChunkPrompt(Object.assign({}, gemeinsam, {
@@ -223,8 +238,12 @@ async function laufe(fall, opt) {
     const r = await jsonCall({
       model: ToolVersions.MODEL, max_tokens: 16000, system: sysBlocks,
       messages: [{ role: 'user', content: usr }]
-    }, opt.live, block.map(s => s.name).join(', '));
+    }, opt.live, block.map(s => s.name).join(', '),
+      /* Genau wie in Modul 2: Schema fuer bekannte Sections, keines fuer
+         eigene - fuer die gibt es kein Schema. */
+      global.SectionSchemas.outputConfig(block.filter(s => !s.custom)));
     if (r.truncated) truncations++;
+    if (r.schemaGenutzt === false) schemaFallbacks++;
     return r.data;
   }
 
@@ -282,6 +301,10 @@ async function laufe(fall, opt) {
     fall: fall.id, variante: opt.variante, preset: fall.preset, presetRef: refId,
     versions: ToolVersions.stamp({ preset: fall.preset, presetRef: refId }),
     dauerMs: Date.now() - t0, calls, truncations, planFehler, planVorhanden: !!planText,
+    /* Lehnt der Proxy output_config ab, faellt der Client still auf einen
+       Request ohne Schema zurueck. Still darf das nicht bleiben: ohne Schema
+       ist die Struktur der Antwort nicht mehr garantiert. */
+    schemaFallbacks,
     mergeKorrekturen: mergeProtokoll.length, mergeProtokoll,
     befunde: befunde.map(b => ({ schwere: b.schwere, id: b.id, section: b.section, feld: b.feld, text: b.text })),
     review,
@@ -347,6 +370,7 @@ async function main() {
         `${m.sectionsGeliefert}/${m.sectionsErwartet} Sections  ` +
         `${m.befundeKritisch} kritisch  ${m.presetVerstoesse} Verstoesse  ` +
         `${m.faktenAbweichungen} Faktenabweichungen  ${r.dauerMs}ms` +
+        (r.schemaFallbacks ? `  ${r.schemaFallbacks}x OHNE Schema` : '') +
         (r.metriken.digestKonflikte ? `  Digest: ${r.metriken.digestKonflikte} Konflikt(e)` : '') +
         (r.review ? (r.review.fehler
           ? `  Review FEHLER: ${r.review.fehler}`

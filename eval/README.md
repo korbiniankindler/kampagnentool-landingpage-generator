@@ -133,6 +133,11 @@ Pro Lauf in `ergebnisse/<fall>_<variante>_<n>.json`:
 | `digestKonflikte` | Widersprueche zwischen Dokument und bestaetigtem Briefing |
 | `digestBefunde` | alle Befunde zum Digest (inkl. Struktur) |
 
+Dazu `schemaFallbacks` je Lauf: wie oft der Proxy `output_config` abgelehnt hat
+und der Client still auf einen Request ohne Schema zurueckgefallen ist. Ohne
+Schema ist die Struktur der Antwort nicht mehr garantiert — das darf nicht
+unbemerkt bleiben.
+
 Die vier Review-Metriken sind `null` statt `0`, wenn ohne `--reviewer`
 gelaufen wurde. `0` hiesse "geprueft, nichts gefunden"; ein Lauf ohne Reviewer
 hat aber gar nichts geprueft.
