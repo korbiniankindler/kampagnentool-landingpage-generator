@@ -110,16 +110,42 @@ var Reviewer = (function () {
      nicht als JSON. Lesbar, weil eine semantische Bewertung an einer
      JSON-Struktur schlechter gelingt als an Fliesstext; mit Pfad, weil ein
      Befund ohne Fundstelle nicht nachpruefbar ist. */
-  function renderCopy(active, sectionData) {
+  function renderCopy(active, sectionData, schemas) {
     var teile = [];
     (active || []).forEach(function (s, i) {
       var d = sectionData ? sectionData[s.id] : null;
       teile.push('### ' + (i + 1) + '. ' + s.name + '  (' + s.id + ')');
       if (!d || typeof d !== 'object') { teile.push('(nicht generiert)'); teile.push(''); return; }
-      feldZeilen(d, s.id).forEach(function (z) { teile.push(z); });
+      /* Deterministisch gesetzte Felder markieren. Ein Befund auf hero.h1
+         richtet sich an den Menschen, der das Briefing verantwortet; einer auf
+         framework.bodyCopy an die Generierung. Das ist ein Unterschied in der
+         Handlungsanweisung, und ohne die Markierung sieht ihn niemand: Im
+         ersten Live-Lauf meldete der Reviewer die fehlende Marken-Kennzeichnung
+         in der Pre-Headline - voellig zu Recht, aber es las sich wie ein
+         Generierungsfehler, obwohl das Feld aus dem bestaetigten Briefing kam. */
+      var fest = festeFelder(s.id, schemas);
+      feldZeilen(d, s.id).forEach(function (z) {
+        var m = /^\[([^\]]*)\]/.exec(z);
+        if (m) {
+          var feld = m[1].split('.')[1];
+          if (fest.indexOf(feld) !== -1) {
+            z = z.replace(']', ' \u00b7 aus dem bestaetigten Briefing]');
+          }
+        }
+        teile.push(z);
+      });
       teile.push('');
     });
     return teile.join('\n').trim();
+  }
+
+  /* Welche Felder einer Section deterministisch gesetzt werden. `schemas` ist
+     SectionSchemas - als Parameter, damit shared/reviewer.js keine Abhaengigkeit
+     zu einem globalen Objekt braucht und im Test ohne Aufbau laeuft. */
+  function festeFelder(sectionId, schemas) {
+    if (!schemas || !schemas.get) return [];
+    var sch = schemas.get(sectionId);
+    return (sch && sch.deterministisch) || [];
   }
 
   function feldZeilen(wert, pfad, out) {
@@ -141,6 +167,30 @@ var Reviewer = (function () {
 
   /* ---------- Prompt ---------- */
 
+  /* Die Passage, die dem Reviewer sagt, was er sich sparen kann - und was
+     gerade deshalb seine Aufgabe ist. Ohne Verbotsliste entfaellt sie
+     ersatzlos; ein generischer Hinweis auf nicht genannte Regeln wuerde nur
+     verunsichern. */
+  function maschinellBlock(verbote) {
+    var liste = (verbote || []).filter(function (v) { return v && v.hinweis; });
+    if (!liste.length) return [];
+    return [
+      '',
+      'BEREITS MASCHINELL GEPRUEFT - nicht noch einmal melden:',
+      'Ein Abgleich prueft die Copy Wort fuer Wort gegen diese Regeln der Marke:'
+    ].concat(liste.map(function (v) {
+      return '- ' + v.hinweis;
+    })).concat([
+      'Die WOERTLICHE Form dieser Verstoesse ist damit abgedeckt.',
+      '',
+      'Was der Abgleich NICHT sieht und was deshalb DEINE Aufgabe ist: dieselbe',
+      'Regel sinngemaess verletzt, ohne die verbotene Wortfolge zu benutzen.',
+      'Ein Beispiel: Ist "nicht X, sondern Y" untersagt, dann faellt "Statt X',
+      'erlebst Du Y" durch den Abgleich, traegt aber denselben Gestus. Solche',
+      'Stellen sind wertvolle Befunde - melde sie.'
+    ]);
+  }
+
   function rubrikText() {
     return DIMENSIONEN.map(function (d, i) {
       return (i + 1) + '. ' + d.name + ' (' + d.key + ')\n' +
@@ -154,7 +204,21 @@ var Reviewer = (function () {
      bereits ohne Referenz-Copy uebergeben werden (siehe reviewDateien).
      Das ist keine Formalie: mit der Referenz im Kontext bewertet er
      Aehnlichkeit statt Qualitaet. */
-  function buildSystem(presetText) {
+  /* `verbote` ist die Verbotsliste der Marke (BrandConfig.verbote). Sie wird
+     dem Reviewer genannt, damit er NICHT meldet, was ohnehin maschinell
+     geprueft wird.
+
+     Im ersten Live-Lauf waren drei von fuenf kritischen Reviewer-Befunden
+     "nicht ... sondern"-Konstruktionen - die findet die Regex im Quality Gate
+     bereits, Wort fuer Wort und ohne Kosten. Der teure Call fand damit zu
+     einem guten Teil das, was der billige schon hatte.
+
+     Entscheidend ist die GENAUE Formulierung: nicht "ignoriere diese Regeln",
+     sondern "die WOERTLICHE Form ist abgedeckt, such die sinngemaesse". Denn
+     genau dort war der Reviewer stark: Er meldete "Statt einer weiteren
+     Erklaerung erlebst Du ..." - derselbe Korrekturgestus, ohne die verbotene
+     Wortfolge. Das sieht keine Regex, und das darf nicht verlorengehen. */
+  function buildSystem(presetText, verbote) {
     var anweisung = [
       'Du pruefst eine fertige deutsche Landingpage als kritischer Reviewer.',
       'Du schreibst die Copy NICHT um. Du lieferst ausschliesslich Befunde.',
@@ -168,14 +232,20 @@ var Reviewer = (function () {
       '- Erfundene Testimonials, Namen und Zitate von Teilnehmern, solange sie',
       '  zum Regelwerk passen. Das ist eine bewusste Produktentscheidung.',
       '- Vom Briefing abweichende Formulierungen, solange die Aussage stimmt.',
-      '- Sections, die bewusst nicht gewaehlt wurden. Bewerte nur, was da ist.',
+      '- Sections, die bewusst nicht gewaehlt wurden. Bewerte nur, was da ist.'
+    ].concat(maschinellBlock(verbote)).concat([
+      '',
+      'Felder, deren Pfad mit "aus dem bestaetigten Briefing" endet, hat ein',
+      'Mensch freigegeben; sie stammen nicht aus der Generierung.',
+      'Melde einen Mangel dort ruhig - aber im `problem` so, dass erkennbar',
+      'ist, dass das Briefing zu aendern waere und nicht die Generierung.',
       '',
       'Jeder Befund braucht ein WOERTLICHES Zitat aus der Copy (Feld `zitat`),',
       'zeichengenau kopiert. Befunde ohne auffindbares Zitat werden verworfen.',
       'Lieber fuenf belegte Befunde als zwanzig vermutete.',
       '',
       'KRITISCH: Antworte AUSSCHLIESSLICH mit einem einzigen gueltigen JSON-Objekt.'
-    ].join('\n');
+    ]).join('\n');
 
     if (!presetText) return [{ type: 'text', text: anweisung }];
     /* Eigener Cache-Block. Byte-identisch zwischen Review-Laeufen, aber
@@ -363,7 +433,7 @@ var Reviewer = (function () {
       model: MODEL,
       max_tokens: 4000,
       thinking: { type: 'disabled' },
-      system: buildSystem(o.presetText),
+      system: buildSystem(o.presetText, o.verbote),
       messages: [{ role: 'user', content: buildUser(o) }]
     };
   }
@@ -381,6 +451,7 @@ var Reviewer = (function () {
     DIMENSIONEN: DIMENSIONEN,
     KATEGORIEN: KATEGORIEN,
     renderCopy: renderCopy,
+    festeFelder: festeFelder,
     rubrikText: rubrikText,
     buildSystem: buildSystem,
     buildUser: buildUser,

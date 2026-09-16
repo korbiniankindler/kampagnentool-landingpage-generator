@@ -289,3 +289,99 @@ test('Die Rubrik-Version ist gesetzt - sonst sind zwei Laeufe nicht vergleichbar
   assert.equal(typeof R.RUBRIK_VERSION, 'number');
   assert.ok(R.RUBRIK_VERSION >= 1);
 });
+
+/* ---- Abgrenzung zum maschinellen Abgleich (nach dem ersten Live-Lauf) ----
+   Drei von fuenf kritischen Reviewer-Befunden waren "nicht ... sondern" -
+   das findet die Regex im Quality Gate bereits, Wort fuer Wort und ohne
+   Kosten. Der teure Call fand zu einem guten Teil das, was der billige
+   schon hatte.
+
+   Die Korrektur darf aber nicht in "ignoriere diese Regeln" umschlagen:
+   Der beste Befund des Laufs war "Statt einer weiteren Erklaerung erlebst
+   Du ..." - derselbe Korrekturgestus ohne die verbotene Wortfolge. Das sieht
+   keine Regex. */
+
+const VERBOTE = [
+  { id: 'nicht-sondern', hinweis: 'Perspektivverschiebung fliessend formulieren.' },
+  { id: 'sie-anrede', hinweis: 'Durchgaengig Du, grossgeschrieben.' }
+];
+const sysText = (verbote) => R.buildSystem('REGELWERK', verbote).map(b => b.text).join('\n');
+
+test('Der Reviewer erfaehrt, welche Regeln maschinell geprueft werden', () => {
+  const sys = sysText(VERBOTE);
+  assert.match(sys, /BEREITS MASCHINELL GEPRUEFT/);
+  VERBOTE.forEach(v => assert.match(sys, new RegExp(v.hinweis.slice(0, 25).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
+    v.id + ' fehlt im Prompt'));
+});
+
+test('Die sinngemaesse Verletzung bleibt ausdruecklich seine Aufgabe', () => {
+  // Ohne diesen Teil wuerde die Abgrenzung den Reviewer entwerten, statt ihn
+  // zu schaerfen.
+  const sys = sysText(VERBOTE);
+  assert.match(sys, /DEINE Aufgabe/);
+  assert.match(sys, /sinngemaess/);
+  assert.match(sys, /Statt X/, 'das Beispiel macht den Unterschied erst greifbar');
+  assert.match(sys, /melde sie/);
+});
+
+test('Ohne Verbotsliste entfaellt die Passage ersatzlos', () => {
+  // Ein Hinweis auf nicht genannte Regeln wuerde nur verunsichern.
+  [[], null, undefined].forEach((v) => {
+    assert.ok(!/BEREITS MASCHINELL GEPRUEFT/.test(sysText(v)), 'Passage trotz leerer Liste: ' + JSON.stringify(v));
+  });
+});
+
+test('Verbote ohne Hinweistext werden uebergangen', () => {
+  const sys = sysText([{ id: 'x' }, { id: 'y', hinweis: 'Keine Preise in der Copy.' }]);
+  assert.match(sys, /Keine Preise/);
+  assert.ok(!/- undefined/.test(sys));
+});
+
+test('buildRequest reicht die Verbotsliste durch', () => {
+  const b = R.buildRequest({ presetText: 'X', verbote: VERBOTE, copy: 'Y' });
+  assert.match(b.system.map(x => x.text).join('\n'), /BEREITS MASCHINELL GEPRUEFT/);
+});
+
+/* ---- Deterministische Felder ---- */
+
+const SCHEMAS = require('../shared/section-schemas.js');
+
+test('Felder aus dem bestaetigten Briefing sind in der Copy markiert', () => {
+  // Ein Befund auf hero.h1 richtet sich an den Menschen, der das Briefing
+  // verantwortet; einer auf framework.bodyCopy an die Generierung.
+  const copy = R.renderCopy([{ id: 'hero', name: 'Hero' }],
+    { hero: { h1: 'Der Titel', announcement: 'Der Banner' } }, SCHEMAS);
+  assert.match(copy, /\[hero\.h1 .* aus dem bestaetigten Briefing\]/);
+  assert.ok(!/announcement.*bestaetigten/.test(copy), 'ein generiertes Feld darf nicht markiert sein');
+});
+
+test('Der Prompt erklaert die Markierung, statt sie unkommentiert zu lassen', () => {
+  const sys = sysText(VERBOTE);
+  assert.match(sys, /aus dem bestaetigten Briefing/);
+  assert.match(sys, /Briefing zu aendern waere/);
+});
+
+test('Ohne Schemas bleibt renderCopy unveraendert', () => {
+  // Rueckwaertskompatibel: der dritte Parameter ist optional.
+  const sd = { hero: { h1: 'Der Titel' } };
+  const act = [{ id: 'hero', name: 'Hero' }];
+  assert.equal(R.renderCopy(act, sd), R.renderCopy(act, sd, null));
+  assert.ok(!/bestaetigten/.test(R.renderCopy(act, sd)));
+});
+
+test('Die Markierung zerstoert die Belegpruefung nicht', () => {
+  // pruefeBelege arbeitet auf den Rohdaten, nicht auf der gerenderten Copy -
+  // sonst wuerde die Markierung in den Zitatvergleich geraten.
+  const sd = { hero: { h1: 'Der Platz, der zu Dir gehoert' } };
+  const r = R.pruefeBelege([{ zitat: 'Der Platz, der zu Dir gehoert' }], sd);
+  assert.equal(r.befunde.length, 1);
+  assert.equal(r.verworfen.length, 0);
+});
+
+test('festeFelder kennt die deterministischen Felder des Hero', () => {
+  const f = R.festeFelder('hero', SCHEMAS);
+  ['h1', 'h2', 'bulletpoints', 'ctaButton', 'preHeadline'].forEach(
+    n => assert.ok(f.includes(n), n + ' fehlt'));
+  assert.deepEqual(R.festeFelder('unbekannt', SCHEMAS), []);
+  assert.deepEqual(R.festeFelder('hero', null), []);
+});

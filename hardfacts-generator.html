@@ -185,6 +185,7 @@ body{background:#fff;padding:0}
  <div id="phase-titles" style="display:none">
  <div class="page-title">Webinar-Titel <span class="modul-badge">Schritt 2 / 4</span></div>
  <p class="page-desc">Titel auswählen, Texte direkt anklicken und bearbeiten, oder per Feedback neue Varianten generieren.</p>
+ <div id="ref-hint" style="font-size:12px;color:var(--text-tertiary);margin-bottom:12px"></div>
  <div id="titles-loading" class="loading-card" style="display:none">
  <div class="spinner"></div><span id="titles-loading-msg">Titel werden generiert...</span>
  </div>
@@ -596,10 +597,55 @@ WICHTIG für gültiges JSON: Innerhalb von Textwerten NIEMALS gerade Anführungs
    Wird beim Prompt-Bau gesetzt und von den Prompt-Bausteinen genutzt. */
 var brandCfg = BrandConfig.GENERIC;
 
+/* Manuell gewählte Referenz-Copy. null = die Heuristik entscheidet.
+
+   Die Referenz-Copy steuert Tonalität und Satzrhythmus der Titel - und die
+   gehen 1:1 in Anzeigen, Kalendereinladungen und die Landingpage. Die Wahl
+   passierte bisher unsichtbar in pickRef: Im ersten Live-Lauf wurde ein
+   B2C-Seminar mit der B2B-Referenz getextet, weil im Briefing das Wort
+   „Coaching" stand. */
+var selectedRefId = null;
+
+function selectRef(id) {
+ selectedRefId = id || null;
+ renderRefHint(true);
+}
+
+function renderRefHint(geaendert) {
+ var el = document.getElementById('ref-hint');
+ if (!el) return;
+ var preset = CopyPresets.CATALOG.find(function(p){ return p.id === selectedCopyPreset; });
+ if (!preset || !(preset.referenzen || []).length) { el.innerHTML = ''; return; }
+
+ var detail = CopyPresets.pickRefDetail(preset, campaignCtx);
+ var aktiv = selectedRefId || (detail && detail.ref.id);
+
+ var html = 'Referenz-Copy: <select onchange="selectRef(this.value)" style="font-size:12px;padding:2px 4px">' +
+  preset.referenzen.map(function(r){
+   return '<option value="' + esc(r.id) + '"' + (r.id === aktiv ? ' selected' : '') + '>' +
+    esc(r.name) + ' &mdash; ' + esc(r.desc) + '</option>';
+  }).join('') + '</select>';
+
+ if (selectedRefId) {
+  /* Die Titel oben entstanden noch mit der alten Referenz. Das muss dastehen,
+     sonst glaubt der Nutzer, die Auswahl haette rueckwirkend gewirkt. */
+  html += geaendert
+   ? '<div class="notice-banner" style="margin-top:6px">Manuell gewählt. Die Titel oben wurden noch mit der vorherigen Referenz erzeugt &ndash; unten neu generieren, damit die Auswahl wirkt.</div>'
+   : '<div style="margin-top:4px">Manuell gewählt.</div>';
+ } else if (detail && !detail.sicher) {
+  html += '<div class="notice-banner" style="margin-top:6px">' + esc(detail.grund) +
+   ' Bitte kurz prüfen, ob das Register stimmt &ndash; die Referenz-Copy prägt den Ton der Titel.</div>';
+ } else if (detail) {
+  html += '<div style="margin-top:4px">' + esc(detail.grund) + '</div>';
+ }
+ el.innerHTML = html;
+}
+
 async function loadPresetText() {
  if (!selectedCopyPreset) { brandCfg = BrandConfig.GENERIC; return ''; }
- // campaignCtx steuert die automatische Referenz-Wahl (Register-Heuristik)
- var raw = await CopyPresets.load(selectedCopyPreset, campaignCtx);
+ // campaignCtx steuert die automatische Referenz-Wahl (Register-Heuristik),
+ // selectedRefId ueberschreibt sie.
+ var raw = await CopyPresets.load(selectedCopyPreset, campaignCtx, selectedRefId);
  brandCfg = BrandConfig.forPreset(raw);
  /* Der Konfigurationsblock gehoert nicht in den System-Prompt - er wiederholt
     nur, was im Fliesstext daneben steht. Deterministisch entfernt, damit der
@@ -634,6 +680,8 @@ async function generateTitles(feedback) {
  document.getElementById('phase-input').style.display = 'none';
  document.getElementById('phase-titles').style.display = 'block';
  setProgress(2);
+ // Erst jetzt steht campaignCtx - vorher waere die Referenz-Wahl leer.
+ renderRefHint(false);
 
  const btn = document.getElementById('btn-gen-titles');
  const btnHtml = btn ? btn.innerHTML : '';
@@ -1105,7 +1153,9 @@ function confirmHardfacts() {
 
  versions: ToolVersions.stamp({
  preset: selectedCopyPreset || null,
- presetRef: (selectedCopyPreset && CopyPresets.autoRef(selectedCopyPreset, campaignCtx) || {}).id || null
+ /* Die TATSAECHLICH genutzte Referenz, nicht die geratene. */
+ presetRef: selectedRefId || (selectedCopyPreset && CopyPresets.autoRef(selectedCopyPreset, campaignCtx) || {}).id || null,
+ presetRefManuell: !!selectedRefId
  })
  };
 

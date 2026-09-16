@@ -274,7 +274,10 @@ async function laufe(fall, opt) {
         hf, zielgruppe: HardfactsIO.audience(hf), strategie: hf.strategie || '',
         ctxBlock: gemeinsam.ctxBlock, pageMap: gemeinsam.pageMap,
         presetText: ladeReviewPreset(fall.preset),
-        copy: Reviewer.renderCopy(active, sectionData)
+        /* Die Verbotsliste der Marke: Damit meldet der Reviewer nicht, was
+           das Quality Gate ohnehin Wort fuer Wort prueft. */
+        verbote: (brandCfg && brandCfg.verbote) || [],
+        copy: Reviewer.renderCopy(active, sectionData, global.SectionSchemas)
       };
       const body = Reviewer.buildRequest(reqOpt);
       let roh;

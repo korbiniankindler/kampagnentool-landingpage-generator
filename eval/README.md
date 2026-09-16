@@ -58,6 +58,22 @@ Vier Entwurfsentscheidungen, die den Unterschied machen:
   automatisch uebernommen; ein automatischer Rewrite waere eine zweite,
   ungepruefte Generierung.
 
+Er erfaehrt ausserdem, **welche Regeln maschinell geprueft werden**, und soll
+sie nicht noch einmal melden. Im ersten Live-Lauf waren drei von fuenf
+kritischen Reviewer-Befunden "nicht ... sondern" — das findet die Regex im
+Quality Gate bereits, Wort fuer Wort und ohne Kosten. Entscheidend ist dabei
+die genaue Formulierung: nicht "ignoriere diese Regeln", sondern "die
+**woertliche** Form ist abgedeckt, such die **sinngemaesse**". Denn genau dort
+war er stark — er meldete "Statt einer weiteren Erklaerung erlebst Du ...":
+derselbe Korrekturgestus ohne die verbotene Wortfolge, fuer keine Regex
+auffindbar.
+
+Felder, die deterministisch aus dem bestaetigten Briefing gesetzt werden
+(Hero-Titel, Bullets, CTA), sind in der Copy als solche markiert. Ein Befund
+dort richtet sich an den Menschen, der das Briefing verantwortet; einer auf
+generierter Copy an die Generierung. Ohne die Markierung las sich beides
+gleich.
+
 Jeder Befund braucht ein **woertliches Zitat** aus der Copy.
 `Reviewer.pruefeBelege` verwirft anschliessend deterministisch jeden Befund,
 dessen Zitat sich im generierten Text nicht wiederfindet — jedes Feld wird
