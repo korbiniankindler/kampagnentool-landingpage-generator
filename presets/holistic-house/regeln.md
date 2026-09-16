@@ -206,7 +206,7 @@ für die Ausbildung ist kostenlos, die Ausbildung selbst nicht.
   "angleVerboten": {},
   "verbote": [
     {"id": "gedankenstrich", "regex": "\\s[–—]\\s", "hinweis": "Keine Gedankenstriche als Stilmittel.", "quelle": "Abschnitt 6.1"},
-    {"id": "nicht-sondern", "regex": "\\bnicht\\b[^.!?]{1,60}\\bsondern\\b", "hinweis": "Konstruktion wirkt künstlich.", "quelle": "Abschnitt 6.2"},
+    {"id": "nicht-sondern", "regex": "\\b(nicht|kein(e[nmrs]?)?)\\b[^.!?]{1,60}\\bsondern\\b", "hinweis": "Konstruktion wirkt künstlich.", "quelle": "Abschnitt 6.2"},
     {"id": "mehr-als-nur", "regex": "\\bmehr als nur\\b", "hinweis": "Keine künstliche Aufwertung.", "quelle": "Abschnitt 6.4"},
     {"id": "floskeln", "regex": "\\b(Transformation|Potenzial entfalten|nächste[s]? Level|Gamechanger|lebensverändernd|nachhaltig wachsen)\\w*", "hinweis": "Generische Transformationsfloskel.", "quelle": "Abschnitt 6.5"},
     {"id": "ki-satzanfang", "regex": "(In einer Welt, in der|Gerade in der heutigen Zeit|Viele Menschen fragen sich|Vielleicht kennen Sie das|Stellen Sie sich vor|Was wäre, wenn)", "hinweis": "KI-typischer Satzanfang.", "quelle": "Abschnitt 6.9"},

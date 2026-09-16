@@ -202,8 +202,21 @@ diese zwei Laeufe nicht trennen. Um den Reviewer allein zu messen, muesste
 **dieselbe** Copy zweimal bewertet werden. Bis dahin ist die halbe Punkt-Marke
 die Untergrenze, nicht die gemessene Reviewer-Varianz.
 
-Unbelegte Befunde blieben in beiden Laeufen bei **null**: Jedes der 23 Zitate
+Unbelegte Befunde blieben in allen Laeufen bei **null**: Jedes der 35 Zitate
 liess sich in der Copy wiederfinden. Die Belegpflicht traegt.
+
+### Der erste echte Ein-Call-Lauf
+
+`bloeckeGefahren: [9]`, ein Generierungs-Request, 1065 Woerter, **keine
+Truncation, kein Schema-Rueckfall**. Streaming und Structured Outputs
+funktionieren zusammen an der echten API.
+
+Was der Lauf **nicht** beantwortet: ob die Ein-Call-Variante besser ist. Er
+aenderte gegenueber den chunk-Laeufen drei Dinge gleichzeitig — die Variante,
+die Referenz-Copy (b2c statt des faelschlich gewaehlten b2b) und den
+weggefallenen Content-Plan. Sein Review-Schnitt von 4,00 liegt ausserdem
+mitten in der oben gemessenen Streuung. Fuer eine Aussage ueber Varianten
+braucht es Wiederholungen bei sonst gleichen Bedingungen.
 
 ## Vor einem Live-Lauf
 

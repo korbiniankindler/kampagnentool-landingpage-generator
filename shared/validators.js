@@ -297,6 +297,70 @@ var Validators = (function () {
     return f;
   }
 
+  /* Verknappung ohne belegtes Kontingent.
+
+     Die Regelwerke erlauben sie ausdruecklich - aber nur als Information ueber
+     einen realen Sachverhalt ("Eine belegte Frist oder Kapazitaet darf genannt
+     werden, aber als Information, nicht als Alarm"). Der Feldname
+     `scarcityCopy` verlangt sie dagegen strukturell, und das Modell lieferte
+     in zwei aufeinanderfolgenden Live-Laeufen eine erfundene.
+
+     Geprueft wird deshalb nicht die Formulierung, sondern ihr FEHLENDER
+     Beleg: Taucht im Briefing irgendwo eine Kapazitaets- oder Fristangabe
+     auf, gilt die Verknappung als gedeckt und es gibt keinen Befund. */
+  /* Bewusst eng gefasst. "beschraenkt" und "frueh" kommen harmlos vor ("der
+     Blick ist auf das Wesentliche beschraenkt", "je frueher Du kommst") -
+     deshalb zaehlen sie nur im Zusammenhang mit Plaetzen bzw. als
+     "Fruehbucher". Ein Hinweis, der oft danebenliegt, wird uebergangen, und
+     dann auch der, der stimmt. */
+  var KNAPPHEIT = new RegExp(
+    '\\b(' + [
+      /* Zwischentext erlauben, aber nicht ueber ein Satzende hinweg: Der Satz
+         aus dem Live-Lauf lautete "Die Plaetze fuer das Live-Seminar am
+         20.09.2026 sind begrenzt" - ohne diesen Spielraum faellt genau der
+         Fall durch, wegen dem die Pruefung entstanden ist.
+
+         Ein Punkt zwischen Ziffern ist dabei KEIN Satzende: Genau daran
+         scheiterte der erste Versuch, weil das Datum mittendrin steht. */
+      '(plaetze|plätze|teilnehmerzahl|kapazitaet|kapazität)\\w*(?:[^.!?]|\\.(?=\\d)){0,60}\\b(begrenzt|beschraenkt|beschränkt)',
+      '(begrenzte|beschraenkte|beschränkte)\\s+(plaetze|plätze|teilnehmerzahl|anzahl)',
+      'nur noch\\s+\\w*\\s*(plaetze|plätze|tickets)',
+      'restplaetze|restplätze',
+      'letzte[nr]?\\s+(plaetze|plätze|tickets|chance)',
+      'ausgebucht',
+      'kontingent',
+      'solange der vorrat',
+      'anmeldeschluss',
+      'fruehbucher|frühbucher'
+    ].join('|') + ')\\w*', 'i');
+  /* Ein Beleg sieht so aus: eine Zahl in der Naehe eines Platz- oder
+     Fristworts. Ohne Zahl ist es keine Kapazitaetsangabe, sondern selbst nur
+     eine Behauptung. */
+  var BELEG = /\d[\d.,]*\s*(plaetze|plätze|teilnehmer|personen|tickets)|\b(plaetze|plätze|teilnehmer|personen|tickets|kontingent|anmeldeschluss|frist)\b[^.]{0,40}\d/i;
+
+  function pruefeKnappheit(ctx) {
+    var f = [];
+    var hf = ctx.hf || {};
+    var briefing = [hf.beschreibung, hf.offer, hf.live_termin, hf.strategie, ctx.ctxBlock,
+      (hf.angebot || {}).produkt].filter(Boolean).join(' ');
+    if (BELEG.test(briefing)) return f;   // belegt, also zulaessig
+
+    ctx.active.forEach(function (s) {
+      var d = ctx.sectionData[s.id];
+      if (!d) return;
+      textFelder(d).forEach(function (feld) {
+        var treffer = String(feld.text).match(KNAPPHEIT);
+        if (!treffer) return;
+        f.push(befund('hinweis', 'knappheit-ohne-beleg',
+          'Die Copy deutet Knappheit an ("' + treffer[0] + '"), im Briefing steht aber kein ' +
+          'Kontingent und keine Frist. Verknappung ist nur zulaessig, wenn sie real ist - ' +
+          'sonst den Satz als ruhige Einladung mit Termin formulieren.',
+          { section: s.id, feld: feld.path }));
+      });
+    });
+    return f;
+  }
+
   function pruefeAlles(ctx) {
     ctx = ctx || {};
     ctx.sectionData = ctx.sectionData || {};
@@ -309,6 +373,7 @@ var Validators = (function () {
       pruefePreset(ctx),
       pruefeRedundanz(ctx),
       pruefeVertrauensbehauptungen(ctx),
+      pruefeKnappheit(ctx),
       pruefeExport(ctx)
     );
   }

@@ -394,7 +394,7 @@ ausdrücken. `vorlagen` bündelt die üblichen Kombinationen als Bedienkomfort.
     {"id": "webinar", "regex": "\\bWebinar\\w*", "hinweis": "Das Event heißt Live-Seminar oder Online-Seminar.", "quelle": "Abschnitt 6"},
     {"id": "kostenlos", "regex": "\\bkostenlos(e[nmrs]?)?\\b", "hinweis": "Die belegte Formulierung ist kostenfrei.", "quelle": "Abschnitt 3.8"},
     {"id": "gedankenstrich", "regex": "\\s[–—]\\s", "hinweis": "Keine Gedankenstriche im laufenden Text.", "quelle": "Abschnitt 6"},
-    {"id": "nicht-sondern", "regex": "\\bnicht\\b[^.!?]{1,60}\\bsondern\\b", "hinweis": "Perspektivverschiebung fließend formulieren.", "quelle": "Abschnitt 6"},
+    {"id": "nicht-sondern", "regex": "\\b(nicht|kein(e[nmrs]?)?)\\b[^.!?]{1,60}\\bsondern\\b", "hinweis": "Perspektivverschiebung fließend formulieren.", "quelle": "Abschnitt 6"},
     {"id": "familienkonstellation", "regex": "Familienkonstellation", "hinweis": "Der Terminus ist Familienstellen.", "quelle": "Abschnitt 6"},
     {"id": "blinde-liebe", "regex": "blinde[nrs]? Liebe", "hinweis": "Begriff wird nicht verwendet.", "quelle": "Abschnitt 6"},
     {"id": "preis", "regex": "\\d[\\d.,]*\\s?(€|EUR|Euro)", "hinweis": "Keine Preise in der Copy.", "quelle": "Abschnitt 6"},

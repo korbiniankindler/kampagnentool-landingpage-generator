@@ -7,6 +7,7 @@ const path = require('node:path');
 global.SectionSchemas = require('../shared/section-schemas.js');
 global.BrandConfig = require('../shared/brand-config.js');
 const V = require('../shared/validators.js');
+const PromptBuilder = require('../shared/prompt-builder.js');
 const S = global.SectionSchemas;
 const BC = global.BrandConfig;
 
@@ -412,5 +413,94 @@ test('Jeder Befund nennt section und feld nach derselben Konvention', () => {
   befunde.filter(b => b.feld && b.section).forEach((b) => {
     assert.ok(!b.feld.startsWith(b.section + '.'),
       b.id + ': feld "' + b.feld + '" wiederholt die Section "' + b.section + '"');
+  });
+});
+
+/* ---- Verknappung ohne belegtes Kontingent ----
+   Das Feld heisst `scarcityCopy` - und ein Pflichtfeld mit diesem Namen
+   VERLANGT Verknappung, auch wenn es keine gibt. In zwei aufeinanderfolgenden
+   Live-Laeufen erfand das Modell prompt eine. Dasselbe Muster wie beim
+   frueheren Feldnamen "webinarRole", der bei Hellinger das verbotene Wort
+   "Webinar" primte: Der Feldname ist Teil des Prompts und wird gelesen.
+
+   Die Regelwerke ERLAUBEN Verknappung - aber nur als Information ueber einen
+   realen Sachverhalt. Geprueft wird deshalb nicht die Formulierung, sondern
+   ihr fehlender Beleg. */
+
+const kn = (txt, hf) => V.pruefeAlles({
+  active: [{ id: 'finalcta', name: 'Final CTA' }],
+  sectionData: { finalcta: { scarcityCopy: txt } }, hf: hf || {}, lockedFields: {}
+}).filter(b => b.id === 'knappheit-ohne-beleg');
+
+test('Die beiden echten Faelle aus den Live-Laeufen werden gefunden', () => {
+  assert.equal(kn('Die Plaetze fuer das Live-Seminar am 20.09.2026 sind begrenzt.').length, 1);
+  assert.equal(kn('Die Plätze sind begrenzt, damit Raum fuer die Fragerunde bleibt.').length, 1);
+});
+
+test('Ein Datum im Satz bricht die Erkennung nicht ab', () => {
+  /* "20.09.2026" enthaelt Punkte. Behandelt die Regex die als Satzende,
+     faellt genau der Satz durch, wegen dem die Pruefung entstanden ist. */
+  assert.equal(kn('Die Plaetze fuer den Termin am 20.09.2026 um 11 Uhr sind begrenzt.').length, 1);
+});
+
+test('Mit belegtem Kontingent im Briefing gibt es KEINEN Befund', () => {
+  // Die Regelwerke erlauben die Aussage ausdruecklich, wenn sie stimmt.
+  [
+    { beschreibung: 'Live-Seminar mit maximal 500 Teilnehmern.' },
+    { offer: 'Ausbildung, 20 Plaetze pro Jahrgang' },
+    { beschreibung: 'Anmeldeschluss ist der 15.09.2026' }
+  ].forEach((hf) => {
+    assert.deepEqual(kn('Die Plaetze sind begrenzt.', hf), [],
+      'Fehlalarm trotz Beleg: ' + JSON.stringify(hf));
+  });
+});
+
+test('Harmlose Verwendungen loesen keinen Befund aus', () => {
+  // "beschraenkt" und "frueh" kommen im Fliesstext staendig vor. Ein Hinweis,
+  // der oft danebenliegt, wird uebergangen - und dann auch der, der stimmt.
+  [
+    'Der Blick ist auf das Wesentliche beschraenkt geblieben.',
+    'Je frueher Du Dich anmeldest, desto besser.',
+    'Eine begrenzte Sicht auf das eigene Muster.',
+    'Die Plaetze sind frei. Der Blick bleibt begrenzt.',
+    'Am 20.09.2026 um 11 Uhr. Du bist herzlich eingeladen.'
+  ].forEach(t => assert.deepEqual(kn(t), [], 'Fehlalarm bei: ' + t));
+});
+
+test('Der Befund sperrt den Export nicht und sagt, was zu tun ist', () => {
+  const b = kn('Nur noch wenige Plaetze frei.')[0];
+  assert.equal(b.schwere, 'hinweis');
+  assert.match(b.text, /nur zulaessig, wenn sie real ist/);
+  assert.match(b.text, /ruhige Einladung/);
+});
+
+test('Der Prompt erklaert, dass der Feldname keine Verknappung verlangt', () => {
+  const usr = PromptBuilder.buildChunkPrompt({
+    hf: { titel: 'T' }, chunk: [{ id: 'finalcta', name: 'Final CTA', desc: 'x' }],
+    pageMap: '1. Final CTA'
+  });
+  assert.match(usr, /Der Feldname ist historisch, er verlangt KEINE Verknappung/);
+  assert.match(usr, /erfinde keine/);
+});
+
+/* ---- Regex-Luecke, die der Reviewer aufgedeckt hat ---- */
+
+test('"kein ... sondern" gilt wie "nicht ... sondern"', () => {
+  /* Das HH-Regelwerk nennt "Das ist kein X, sondern Y." ausdruecklich als
+     verbotene Form; die Regex deckte nur "nicht" ab. Keine Regelaenderung,
+     sondern eine Luecke in der maschinellen Umsetzung - gefunden vom
+     Reviewer im dritten Live-Lauf. */
+  ['hellinger', 'holistic-house'].forEach((brand) => {
+    const cfg = BC.forPreset(fs.readFileSync(path.join(ROOT, 'presets', brand, 'regeln.md'), 'utf8'));
+    const ids = (t) => BC.pruefeText(cfg, t).map(b => b.id);
+    [
+      'Du bekommst keine weitere Theorie, sondern einen Blick auf die Ordnung',
+      'Das ist kein Vortrag, sondern eine Begegnung',
+      'Es ist nicht Theorie, sondern Erfahrung'
+    ].forEach(t => assert.ok(ids(t).includes('nicht-sondern'), brand + ': ' + t));
+
+    // Getrennte Saetze sind keine Konstruktion.
+    ['Keine Sorge. Sondern Ruhe kehrt ein.', 'Du brauchst kein Vorwissen fuer dieses Seminar']
+      .forEach(t => assert.ok(!ids(t).includes('nicht-sondern'), brand + ' Fehlalarm: ' + t));
   });
 });

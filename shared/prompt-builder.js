@@ -143,6 +143,24 @@ var PromptBuilder = (function () {
       '- Testimonials: ' + S.countRules('social') + ' als Array mit je "quote", "name", "role"\n' +
       '- faq (FAQ): headline + "faqs" als Array, ' + S.countRules('faq') + ', je "question" und "answer". Das ist eine echte Frage-Antwort-Liste, KEIN Fließtext-Block - fasse die Antworten NICHT zu einem Absatz zusammen. Die Fragen sind die, die eine Anmeldung tatsächlich blockieren: Termin und Dauer, Aufzeichnung falls verhindert, technische Voraussetzungen, Vorwissen, Kosten und Verbindlichkeit, für wen es geeignet ist, was danach passiert. Jede Frage in der Sprache des Lesers ("Was, wenn ich am Termin nicht kann?"), nicht in Marketingsprache. Fragezeichen sind hier ausdrücklich richtig, auch wenn das Marken-Preset Fragen an anderer Stelle ausschließt.\n' +
       '- Benefits items: ' + S.countRules('benefits') + ' als Array mit je "title" und "text"\n' +
+      /* Das Feld heisst scarcityCopy - und ein Pflichtfeld mit diesem Namen
+         VERLANGT Verknappung, auch wenn es gar keine gibt. In zwei
+         aufeinanderfolgenden Live-Laeufen erfand das Modell prompt eine:
+         "begrenzt, damit Raum fuer die Fragerunde bleibt" und "Die Plaetze
+         sind begrenzt" - beides ohne jedes Kontingent im Briefing.
+
+         Dasselbe Muster wie beim frueheren Feldnamen "webinarRole", der bei
+         Hellinger das verbotene Wort "Webinar" primte: Der Feldname ist Teil
+         des Prompts und wird gelesen.
+
+         Die Regelwerke erlauben Verknappung ausdruecklich - aber nur als
+         Information ueber einen realen Sachverhalt. */
+      '- finalcta scarcityCopy: Der Feldname ist historisch, er verlangt KEINE Verknappung. ' +
+      'Eine Aussage über begrenzte Plätze, Restkontingente oder Fristen ist nur erlaubt, wenn ' +
+      'im Briefing oder in der Wissensdatenbank tatsächlich ein Kontingent oder eine Frist steht. ' +
+      'Steht dort nichts dergleichen, erfinde keine: Dann ist scarcityCopy ein ruhiger, ' +
+      'einladender Schlusssatz mit Termin und Format - ohne Dringlichkeit, ohne Andeutung von ' +
+      'Knappheit, ohne "nur noch", "sichere Dir", "bevor es zu spät ist".\n' +
       '- Eigene Sections (im Schema mit "Eigene Section ... Beschreibung:" kommentiert): Die Beschreibung gibt die STRUKTUR vor, nicht nur den Inhalt. Nennt sie mehrere gleichartige Elemente (z.B. zwei Columns, drei Karten, vier Schritte), dann liefere dafür ein Array aus Objekten - ein Objekt pro Element mit eigenen Feldern, z.B. "columns": [{"headline":"...","bodyCopy":"..."}, {"headline":"...","bodyCopy":"..."}]. Benenne den Array-Key nach dem, was die Beschreibung beschreibt (columns, cards, steps, ...), und liefere exakt so viele Einträge wie dort verlangt - fasse sie NIEMALS zu einem einzigen Fließtext-Block zusammen. Beschreibt die Beschreibung dagegen einen einzelnen Textblock, genügt {"headline":"...", "bodyCopy":"..."}. Erfinde keine Felder, die die Beschreibung nicht hergibt.\n' +
       '- Alle String-Werte EINZEILIG: keine echten Zeilenumbrüche UND keine \\n-Sequenzen im Text (die erscheinen sonst wörtlich auf der Seite). Brauchst Du mehrere Absätze, nutze ein Array aus Strings statt einem String mit Umbrüchen.\n' +
       '- Innerhalb von Textwerten NIEMALS gerade Anführungszeichen ("...") verwenden - sie beenden den String und zerstören das JSON. Zum Zitieren im Fließtext typografische Anführungszeichen nutzen: „...".\n' +
