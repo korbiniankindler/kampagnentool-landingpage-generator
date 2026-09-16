@@ -1144,7 +1144,14 @@ async function suggestSectionsAI() {
       'Sub-Headline: ' + (HF.sub_headline||'') + '\n' +
       (HF.beschreibung ? 'Beschreibung: ' + HF.beschreibung + '\n' : '') +
       'Zielgruppe: ' + (HardfactsIO.audience(HF) || '(keine Angabe)') + '\n' +
-      'Angebot: ' + (HF.offer || (lpVorlage ? lpVorlage.name : '(keine Angabe)')) + '\n' +
+      /* Bei einem kostenfreien Event darf das Backend-Angebot den
+         Section-Vorschlag nicht praegen - sonst schlaegt das Modell eine
+         Angebots- oder Preis-Section vor, die auf dieser Seite nichts zu
+         suchen hat. */
+      (PromptBuilder.offerIstThema({ lpVorlage })
+        ? 'Angebot: ' + (HF.offer || (lpVorlage ? lpVorlage.name : '(keine Angabe)')) + '\n'
+        : 'Diese Seite bewirbt die Veranstaltung selbst. Ein dahinterliegendes Angebot ist NICHT ' +
+          'ihr Gegenstand - schlage keine Section dafuer vor (kein Preis, kein Produkt, kein Upsell).\n') +
       (hint ? 'Zusätzliche Hinweise: ' + hint + '\n' : '') +
       ctxPromptBlock() + '\n' +
       'Schlage die optimale Section-Struktur für diese Landingpage vor.\n\n' +
@@ -1713,16 +1720,26 @@ function renderReview(active, opts) {
    Feldern ohne jede Fuehrung. Diese drei Funktionen machen daraus eine
    Liste konkreter Punkte mit Fundstelle im Regelwerk. */
 
+/* Angezeigt werden NUR kritische Befunde.
+
+   Hinweise standen daneben und waren in der Praxis Rauschen: Der haeufigste
+   war "Gleiche Wortfolge in hero und finalcta: am 20.09.26 um 11" - der
+   Termin, der dort stehen MUSS. Wer solche Meldungen ueberfliegt, ueberfliegt
+   bald auch die, die zaehlen.
+
+   Erhoben und exportiert werden sie weiterhin: `qualityBefunde` enthaelt sie
+   vollstaendig, der Session-Export auch, und der Eval-Runner misst sie. Was
+   wegfaellt, ist allein ihre Anzeige im Review. */
 function befundeFuer(secId) {
-  return (qualityBefunde || []).filter(function (b) { return b.section === secId; });
+  return (qualityBefunde || []).filter(function (b) {
+    return b.section === secId && b.schwere === 'kritisch';
+  });
 }
 
 function befundBadgeHTML(secId) {
   var b = befundeFuer(secId);
   if (!b.length) return '';
-  var krit = b.filter(function (x) { return x.schwere === 'kritisch'; }).length;
-  var cls = krit ? 'befund-badge kritisch' : 'befund-badge';
-  return '<span class="' + cls + '">' + (krit || b.length) + (krit ? ' zu prüfen' : ' Hinweis' + (b.length > 1 ? 'e' : '')) + '</span>';
+  return '<span class="befund-badge kritisch">' + b.length + ' zu prüfen</span>';
 }
 
 function befundListeHTML(secId) {
@@ -1738,16 +1755,20 @@ function befundListeHTML(secId) {
 
 function befundUebersichtHTML(active) {
   var alle = qualityBefunde || [];
-  if (!alle.length) {
-    return '<div class="gate-ok">Automatische Prüfung bestanden: bestätigte Fakten übernommen, ' +
-      'Feldanzahlen korrekt, keine Regelverstöße gefunden. Inhaltliche Beurteilung bleibt Deine.</div>';
-  }
   var krit = alle.filter(function (x) { return x.schwere === 'kritisch'; }).length;
   var auto = alle.filter(function (x) { return x.id === 'autokorrigiert'; }).length;
-  return '<div class="gate-summary' + (krit ? ' kritisch' : '') + '">' +
-    '<strong>Automatische Prüfung: ' + (krit ? krit + ' Punkt' + (krit === 1 ? '' : 'e') + ' zu prüfen' : 'nur Hinweise') + '</strong>' +
+  if (!krit) {
+    /* Autokorrekturen bleiben sichtbar, auch ohne kritischen Befund: Dort hat
+       das Werkzeug etwas VERAENDERT, und das darf nicht unbemerkt passieren. */
+    return '<div class="gate-ok">Automatische Prüfung bestanden: bestätigte Fakten übernommen, ' +
+      'Feldanzahlen korrekt, keine Regelverstöße gefunden.' +
+      (auto ? ' ' + auto + ' Feld' + (auto === 1 ? '' : 'er') + ' automatisch auf den bestätigten Wert zurückgesetzt.' : '') +
+      ' Inhaltliche Beurteilung bleibt Deine.</div>';
+  }
+  return '<div class="gate-summary kritisch">' +
+    '<strong>Automatische Prüfung: ' + krit + ' Punkt' + (krit === 1 ? '' : 'e') + ' zu prüfen</strong>' +
     (auto ? ' &middot; ' + auto + ' automatisch auf den bestätigten Wert zurückgesetzt' : '') +
-    ' &middot; ' + (alle.length - krit - auto) + ' Hinweis(e). Die Befunde stehen bei der jeweiligen Section.' +
+    ' &middot; Die Befunde stehen bei der jeweiligen Section.' +
     '</div>';
 }
 

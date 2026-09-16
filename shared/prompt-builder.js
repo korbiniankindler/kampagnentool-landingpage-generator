@@ -55,6 +55,29 @@ var PromptBuilder = (function () {
   /* Kampagnen-Kopf: identisch in Erst- und Neugenerierung. Vorher stand in der
      Neugenerierung nur Titel und Zielgruppe - Termin, Offer, Pre-/Sub-Headline
      und die Bulletpoints fehlten dort komplett. */
+  /* Ist das Angebot GEGENSTAND dieser Seite - oder bloss ein Backend-Angebot,
+     das in Modul 1 erfasst wurde, hier aber nichts zu suchen hat?
+
+     Bei einem kostenfreien Live-Seminar oder einem Freebie bewirbt die Seite
+     das EVENT. Worum es geht, steht in Titel und Inhalts-Bullets. Das
+     weiterfuehrende Angebot existiert, ist aber nicht das Thema - es in die
+     Copy zu ziehen verschiebt die ganze Seite: Aus "Was Du im Seminar
+     erlebst" wird "Warum Du die Ausbildung buchen solltest".
+
+     Genau das passierte: "Sichern Sie sich Ihren Platz im Live-Seminar zur
+     Ayurveda Coach Ausbildung" als Final-CTA-Headline, dazu eine Bruecke zum
+     Beratungsgespraech. Die Ausbildung kostet 7.000 Euro und war im Briefing
+     nur als Hardfact hinterlegt.
+
+     Bei einer Salespage, einer Ausbildungs- oder einer Beratungsseite ist das
+     Angebot dagegen der Gegenstand - dort MUSS es in den Prompt. Die
+     Unterscheidung steht in den Regelwerken (offerType). */
+  function offerIstThema(o) {
+    var t = o.lpVorlage && o.lpVorlage.offerType;
+    if (!t) return true;          // ohne Vorlage keine Annahme treffen
+    return t !== 'lead-event' && t !== 'lead-magnet';
+  }
+
   function campaignBlock(o) {
     var hf = o.hf || {};
     var bpList = (hf.bulletpoints || []).map(function (b, i) { return (i + 1) + '. ' + b; }).join('\n');
@@ -63,7 +86,7 @@ var PromptBuilder = (function () {
       line('Pre-Headline', hf.pre_headline) +
       line('Sub-Headline', hf.sub_headline) +
       line('Termin', hf.live_termin) +
-      line('Offer', hf.offer) +
+      (offerIstThema(o) ? line('Offer', hf.offer) : '') +
       (hf.beschreibung ? 'Kampagnen-Beschreibung (Thema, Host/Referent, Besonderheiten): ' + hf.beschreibung + '\n' : '') +
       'Inhalts-Bullets (1:1 für Hero verwenden):\n' + (bpList || '(keine Bulletpoints angegeben)') + '\n' +
       'Zielgruppe: ' + (o.zielgruppe || '(keine Angabe)') + '\n' +
@@ -165,6 +188,15 @@ var PromptBuilder = (function () {
       '- Alle String-Werte EINZEILIG: keine echten Zeilenumbrüche UND keine \\n-Sequenzen im Text (die erscheinen sonst wörtlich auf der Seite). Brauchst Du mehrere Absätze, nutze ein Array aus Strings statt einem String mit Umbrüchen.\n' +
       '- Innerhalb von Textwerten NIEMALS gerade Anführungszeichen ("...") verwenden - sie beenden den String und zerstören das JSON. Zum Zitieren im Fließtext typografische Anführungszeichen nutzen: „...".\n' +
       '- Referent/Host NIEMALS erfinden: Verwende für Authority/Speaker und alle Referenten-Nennungen ausschließlich die Person aus der Kampagnen-Beschreibung bzw. dem Copywriter-Preset (Name, Titel, belegte Fakten). Fehlen Angaben zur Person komplett, schreibe neutral ohne erfundene Namen, Qualifikationen oder Erfahrungsjahre und setze Platzhalter in eckigen Klammern, z.B. [Name Referent].\n' +
+      (offerIstThema(o) ? '' :
+        '- WORUM ES AUF DIESER SEITE GEHT: ausschliesslich um die Veranstaltung selbst - um das, ' +
+        'was in Titel, Sub-Headline und den Inhalts-Bullets steht. Ein weiterfuehrendes, ' +
+        'kostenpflichtiges Angebot (Ausbildung, Kurs, Programm, Beratung) mag dahinterstehen, ist ' +
+        'aber NICHT Gegenstand dieser Seite: nicht benennen, nicht andeuten, keine Bruecke dorthin ' +
+        'bauen, nicht als Grund fuer die Teilnahme anfuehren - auch nicht im Final CTA, in den ' +
+        'Benefits oder in der Referenten-Rolle. Der Nutzen, den die Seite verspricht, liegt ' +
+        'vollstaendig in der Veranstaltung. Der Referent darf mit seiner belegten Vita vorkommen, ' +
+        'aber nicht als Anbieter eines Angebots.\n') +
       '- Alle CTAs fuehren zu: ' + (v ? v.conversionAction : 'anmeldung') +
         '. Wortlaut des Haupt-CTA: "' + (v ? v.ctaText : 'Jetzt kostenfrei anmelden') + '"\n' +
       '- Sprache: Deutsch\n\n';
@@ -222,6 +254,7 @@ var PromptBuilder = (function () {
     buildChunkPrompt: buildChunkPrompt,
     buildRegenPrompt: buildRegenPrompt,
     buildPageMap: buildPageMap,
+    offerIstThema: offerIstThema,
     sectionRegeln: sectionRegeln,
     heroVorgabe: heroVorgabe,
     campaignBlock: campaignBlock

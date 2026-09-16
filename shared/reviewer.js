@@ -271,7 +271,17 @@ var Reviewer = (function () {
       'Titel: ' + (hf.titel || '(kein Titel)'),
       hf.beschreibung ? 'Beschreibung: ' + hf.beschreibung : null,
       'Zielgruppe: ' + (o.zielgruppe || '(keine Angabe)'),
-      hf.offer ? 'Angebot: ' + hf.offer : null,
+      /* Bei einem kostenfreien Event ist ein dahinterliegendes Angebot NICHT
+         Gegenstand der Seite (siehe PromptBuilder.offerIstThema). Wuesste der
+         Reviewer das nicht, meldete er die fehlende Angebots-Nennung als
+         Luecke - und belohnte damit genau den Fehler, den die Generierung
+         nicht machen soll. */
+      (hf.offer && o.offerIstThema !== false) ? 'Angebot: ' + hf.offer : null,
+      (hf.offer && o.offerIstThema === false)
+        ? 'Hinweis: Hinter der Veranstaltung steht ein weiterfuehrendes Angebot. Es ist ' +
+          'BEWUSST nicht Gegenstand dieser Seite. Dass es nicht vorkommt, ist richtig und ' +
+          'kein Befund; kommt es vor, ist DAS der Befund.'
+        : null,
       o.strategie ? 'Strategie: ' + o.strategie : null
     ].filter(Boolean).join('\n');
 

@@ -317,6 +317,7 @@ async function laufe(fall, opt) {
         /* Die Verbotsliste der Marke: Damit meldet der Reviewer nicht, was
            das Quality Gate ohnehin Wort fuer Wort prueft. */
         verbote: (brandCfg && brandCfg.verbote) || [],
+        offerIstThema: PromptBuilder.offerIstThema({ lpVorlage }),
         copy: Reviewer.renderCopy(active, sectionData, global.SectionSchemas)
       };
       const body = Reviewer.buildRequest(reqOpt);
