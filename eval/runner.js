@@ -41,13 +41,30 @@ const PROXY_URL = process.env.PROXY_URL || 'https://claude.korbinian.workers.dev
 const GEN_CHUNK_SIZE = 4;
 
 /* ---------- Argumente ---------- */
+
+/* Die gueltigen Generierungsvarianten. Ein Tippfehler MUSS hier scheitern:
+   Vorher fiel jeder unbekannte Name still in die chunk-Logik und wurde
+   trotzdem unter dem angeforderten Namen ins Ergebnis geschrieben. Ein
+   Ergebnis-JSON sagte dann "variante": "eincall" ueber einen Lauf, der vier
+   Chunk-Requests gemacht hatte - der schlimmstmoegliche Fehler in einem
+   Messwerkzeug, weil er wie ein Messergebnis aussieht. Genau so passiert,
+   als der erste eincall-Lauf gegen eine aeltere Fassung lief, die die
+   Variante noch nicht kannte. */
+const VARIANTEN = ['chunk', 'zweiblock', 'eincall'];
+
 function args() {
   const a = process.argv.slice(2);
   const get = (n, d) => { const i = a.indexOf('--' + n); return i === -1 ? d : a[i + 1]; };
+  const variante = get('variante', 'chunk');
+  if (VARIANTEN.indexOf(variante) === -1) {
+    console.error('Unbekannte Variante "' + variante + '". Moeglich: ' + VARIANTEN.join(', ') + '.\n' +
+      'Kennt diese Fassung die Variante nicht, ist der Arbeitsstand aelter als die Variante - dann zuerst `git pull`.');
+    process.exit(1);
+  }
   return {
     live: a.includes('--live'),
     fall: get('fall', null),
-    variante: get('variante', 'chunk'),      // chunk | zweiblock | eincall
+    variante: variante,
     reviewer: a.includes('--reviewer'),
     wiederholungen: parseInt(get('wiederholungen', '1'), 10),
     out: get('out', path.join(__dirname, 'ergebnisse'))
@@ -327,6 +344,10 @@ async function laufe(fall, opt) {
     fall: fall.id, variante: opt.variante, preset: fall.preset, presetRef: refId,
     versions: ToolVersions.stamp({ preset: fall.preset, presetRef: refId }),
     dauerMs: Date.now() - t0, calls, truncations, planFehler, planVorhanden: !!planText,
+    /* Was tatsaechlich gefahren wurde, nicht nur, was angefordert war. Zwei
+       Ergebnisse mit derselben `variante`, aber unterschiedlicher Blockgroesse
+       sind nicht vergleichbar - und ohne diese Zeile faellt das niemandem auf. */
+    bloeckeGefahren: bloecke.map(b => b.length),
     /* Lehnt der Proxy output_config ab, faellt der Client still auf einen
        Request ohne Schema zurueck. Still darf das nicht bleiben: ohne Schema
        ist die Struktur der Antwort nicht mehr garantiert. */
@@ -424,4 +445,4 @@ async function main() {
 }
 
 if (require.main === module) main().catch(e => { console.error('FEHLER:', e.stack); process.exit(1); });
-module.exports = { laufe, ladePreset, ladeReviewPreset, metriken, mockReview };
+module.exports = { laufe, ladePreset, ladeReviewPreset, metriken, mockReview, VARIANTEN };

@@ -329,3 +329,88 @@ test('Merge protokolliert NICHTS, wenn das Modell sich an die Vorgabe haelt', ()
   }, HF, VORLAGE, prot);
   assert.deepEqual(prot, [], 'sonst waere jeder Lauf voller Rauschen');
 });
+
+/* ---- Vertrauensbehauptungen ----
+   Gefunden in zwei aufeinanderfolgenden Live-Laeufen, beide Male in der
+   Trustbar und jedes Mal anders formuliert. Das Modell fuellt eine leere
+   Vorgabe mit dem, was auf Landingpages ueblich ist - und eine erfundene
+   Presse-Nennung ist rechtlich angreifbar, kein Stilproblem. */
+
+const vb = (sectionData) => V.pruefeAlles({
+  active: Object.keys(sectionData).map(id => ({ id, name: id })),
+  sectionData, hf: {}, lockedFields: {}
+}).filter(b => b.id === 'vertrauensbehauptung');
+
+test('Die beiden echten Faelle aus den Live-Laeufen werden gefunden', () => {
+  const a = vb({ trustbar: { note: 'Bekannt aus etablierten Medien, denen die Arbeit Beachtung wert war' } });
+  assert.equal(a.length, 1);
+  assert.match(a[0].text, /Medien-Nennung/);
+  assert.equal(a[0].feld, 'note');
+
+  const b = vb({ trustbar: { note: 'Die Methode ist international bekannt und wird seit Jahrzehnten oeffentlich referenziert.' } });
+  assert.ok(b.length >= 1, 'zweite Formulierung ebenfalls');
+});
+
+test('Ein Befund sperrt den Export NICHT', () => {
+  /* Das Tool kann nicht wissen, ob die Behauptung belegt ist - die
+     Wissensdatenbank liegt als Fliesstext vor, nicht als Faktenbasis. Ein
+     kritischer Befund waere hier ein Fehlalarm-Generator, und ein Gate, das
+     grundlos sperrt, bringt Nutzer dazu, Befunde generell zu uebergehen. */
+  vb({ trustbar: { note: 'Bekannt aus dem Fernsehen' } })
+    .forEach(b => assert.equal(b.schwere, 'hinweis'));
+});
+
+test('Der Befund sagt, wogegen zu pruefen ist', () => {
+  const b = vb({ trustbar: { note: 'Bekannt aus der Presse' } })[0];
+  assert.match(b.text, /Wissensdatenbank oder im Briefing belegt/);
+  assert.match(b.text, /Ist nichts belegt: streichen/);
+});
+
+test('Belegte und harmlose Formulierungen loesen KEINEN Befund aus', () => {
+  // Wichtiger als die Treffer: Diese Pruefung darf nicht zum naechsten
+  // Fehlalarm-Generator werden.
+  [
+    { note: 'Seit 1999 · ueber 50.000 begleitete Menschen' },
+    { note: 'In Brasilien ist das Familienstellen als alternative Heilmethode anerkannt.' },
+    { headline: 'Sophie Hellinger begleitet weltweit Menschen auf ihrem Weg' },
+    { text: 'Ein international besetztes Seminar mit Teilnehmenden aus acht Laendern' },
+    { text: 'Die Aufzeichnung ist sieben Tage abrufbar.' },
+    { text: 'Du erkennst, welche Ordnung im Hintergrund wirkt.' }
+  ].forEach((sd) => {
+    assert.deepEqual(vb({ x: sd }), [], 'Fehlalarm bei: ' + JSON.stringify(sd));
+  });
+});
+
+test('Die Pruefung greift in jeder Section, nicht nur in der Trustbar', () => {
+  // Im zweiten Lauf stand die Behauptung in der Trustbar; sie kann genauso
+  // in der Authority-Bio oder im Intro landen.
+  const b = vb({ authority: { bioBlock: 'Sie ist Marktfuehrer im Bereich systemische Arbeit.' } });
+  assert.equal(b.length, 1);
+  assert.equal(b[0].section, 'authority');
+});
+
+test('Mehrere Behauptungen in einem Feld werden einzeln gemeldet', () => {
+  const b = vb({ trustbar: { note: 'Bekannt aus den Medien und international anerkannt.' } });
+  assert.ok(b.length >= 2, JSON.stringify(b.map(x => x.text.slice(0, 40))));
+});
+
+test('Jeder Befund nennt section und feld nach derselben Konvention', () => {
+  /* `feld` ist ueberall der Pfad INNERHALB der Section, `section` steht
+     daneben. Ein Befund mit "trustbar.note" statt "note" findet in der
+     Oberflaeche sein Feld nicht - genau das war die erste Fassung der
+     Vertrauensprüfung. */
+  const sectionData = {
+    trustbar: { note: 'Bekannt aus den Medien' },
+    hero: { h1: 'Falscher Titel', h2: '', preHeadline: '', bulletpoints: [], ctaButton: '' },
+    social: { headline: 'x', testimonials: [] }
+  };
+  const befunde = V.pruefeAlles({
+    active: Object.keys(sectionData).map(id => ({ id, name: id })),
+    sectionData, hf: { titel: 'Richtiger Titel', bulletpoints: ['A'] }, lockedFields: {}
+  });
+  assert.ok(befunde.length > 3, 'Testannahme: es entstehen mehrere Befunde');
+  befunde.filter(b => b.feld && b.section).forEach((b) => {
+    assert.ok(!b.feld.startsWith(b.section + '.'),
+      b.id + ': feld "' + b.feld + '" wiederholt die Section "' + b.section + '"');
+  });
+});

@@ -121,6 +121,24 @@ var PromptBuilder = (function () {
       heroVorgabe(o) +
       '- introtext (Intro Text): badge = kurze Pill-Kategorie (max 5 Worte), headline = aufmerksamkeitsstarke H2, paragraphs = Array aus Fließtext-Absätzen, die zusammen eine Kontext-Story aufbauen (Gesamtlänge und Absatzzahl siehe TEXTLAENGEN unten - die Absatzzahl ist bewusst nicht vorgegeben) (gesellschaftlicher Wandel, Warum-jetzt-Narrativ, Marktentwicklung oder ähnliches passend zur Kampagne), closingLine = Brücken-Satz der auf den Referenten und die Veranstaltung leitet. Den Aufhänger der Kontext-Story frisch und spezifisch für DIESE Kampagne wählen: NICHT automatisch das Zeitgeschehen-Ereignis oder den Einstieg der Referenz-Copy übernehmen (z.B. eine bestimmte Reform) - die Referenz zeigt nur, WIE so eine Story erzählt wird, nicht WORÜBER. Belegte Fakten aus der Wissensdatenbank passend zum Kampagnen-Thema auswählen.\n' +
       '- Educational Gap (framework): headline + bodyCopy als erklärenden Fließtext-Block, KEIN Kompass-Prinzip\n' +
+      /* Die Trustbar hatte bisher keinerlei Vorgabe ausser dem Feldnamen. Das
+         Modell fuellte die Luecke mit dem, was auf Landingpages ueblich ist:
+         "Bekannt aus etablierten Medien", "international bekannt und seit
+         Jahrzehnten oeffentlich referenziert". In zwei aufeinanderfolgenden
+         Live-Laeufen jedes Mal, mit unterschiedlichem Wortlaut - also keine
+         Ausreisser, sondern die logische Antwort auf einen Prompt, der nur
+         sagt "hier steht eine Vertrauenszeile".
+
+         Das ist nicht bloss ein Stilproblem: Eine erfundene Presse-Nennung
+         ist eine irrefuehrende geschaeftliche Handlung. */
+      '- trustbar (Trust Bar): "note" ist eine kurze Zeile unter den Presselogo-Platzhaltern. ' +
+      'NIEMALS eine Bekanntheits- oder Medienbehauptung erfinden: kein "Bekannt aus", kein ' +
+      '"international bekannt", kein "wird in den Medien referenziert", keine Auszeichnungen, ' +
+      'keine Mitgliedschaften, keine Zertifizierungen - es sei denn, sie stehen wörtlich in der ' +
+      'Wissensdatenbank oder im Briefing und Du kannst sie von dort zitieren. Liegt nichts Belegtes ' +
+      'vor, nimm eine belegte Zahl oder Jahreszahl der Marke (z.B. Gründungsjahr, Zahl begleiteter ' +
+      'Menschen) oder lass die Zeile schlicht: sie darf auch nur das Format benennen. Dehne einen ' +
+      'belegten Einzelfall NICHT zu einer allgemeinen Aussage aus.\n' +
       '- Problem-Checklist: ' + S.countRules('problem') + ' als Array mit je "title" und "text"\n' +
       '- Testimonials: ' + S.countRules('social') + ' als Array mit je "quote", "name", "role"\n' +
       '- faq (FAQ): headline + "faqs" als Array, ' + S.countRules('faq') + ', je "question" und "answer". Das ist eine echte Frage-Antwort-Liste, KEIN Fließtext-Block - fasse die Antworten NICHT zu einem Absatz zusammen. Die Fragen sind die, die eine Anmeldung tatsächlich blockieren: Termin und Dauer, Aufzeichnung falls verhindert, technische Voraussetzungen, Vorwissen, Kosten und Verbindlichkeit, für wen es geeignet ist, was danach passiert. Jede Frage in der Sprache des Lesers ("Was, wenn ich am Termin nicht kann?"), nicht in Marketingsprache. Fragezeichen sind hier ausdrücklich richtig, auch wenn das Marken-Preset Fragen an anderer Stelle ausschließt.\n' +

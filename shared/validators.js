@@ -248,6 +248,55 @@ var Validators = (function () {
 
   /* ---------------- Gesamtlauf ---------------- */
 
+  /* Vertrauensbehauptungen, die eine Quelle brauchen.
+
+     Gefunden in zwei aufeinanderfolgenden Live-Laeufen, beide Male in der
+     Trustbar und jedes Mal anders formuliert: "Bekannt aus etablierten
+     Medien", "international bekannt und wird seit Jahrzehnten oeffentlich
+     referenziert". Das Modell fuellt eine leere Vorgabe mit dem, was auf
+     Landingpages ueblich ist - und eine erfundene Presse-Nennung ist eine
+     irrefuehrende geschaeftliche Handlung, kein Stilproblem.
+
+     WAS DIESE PRUEFUNG NICHT KANN: Sie weiss nicht, ob die Behauptung belegt
+     ist. Die Wissensdatenbank liegt als Fliesstext vor, nicht als
+     Faktenbasis, gegen die sich etwas abgleichen liesse. Deshalb ist der
+     Befund ein HINWEIS und keine Sperre - er markiert die Stelle und sagt,
+     wogegen zu pruefen ist. Ein kritischer Befund waere hier ein
+     Fehlalarm-Generator, und ein Gate, das grundlos sperrt, bringt Nutzer
+     dazu, Befunde generell zu uebergehen. */
+  var VERTRAUENSBEHAUPTUNGEN = [
+    { id: 'bekannt-aus', re: /\bbekannt aus\b/i, was: 'eine Medien-Nennung' },
+    { id: 'medien', re: /\b(in den medien|medienberichte|presseberichte|pressestimmen|tv-auftritt)\w*/i, was: 'eine Presse-Nennung' },
+    { id: 'international-bekannt', re: /\b(international|weltweit|europaweit)\s+(bekannt|anerkannt|fuehrend|führend)\w*/i, was: 'eine Bekanntheits-Behauptung' },
+    { id: 'referenziert', re: /\boeffentlich referenziert|öffentlich referenziert/i, was: 'eine Referenz-Behauptung' },
+    { id: 'ausgezeichnet', re: /\b(ausgezeichnet mit|preistraeger|preisträger|zertifiziert durch|akkreditiert)\w*/i, was: 'eine Auszeichnung' },
+    { id: 'marktfuehrer', re: /\b(marktfuehrer|marktführer|nummer 1|nr\.? 1|fuehrender anbieter|führender anbieter)\w*/i, was: 'eine Marktstellung' }
+  ];
+
+  function pruefeVertrauensbehauptungen(ctx) {
+    var f = [];
+    /* Pro Section iterieren, nicht ueber die gesamten sectionData: `feld` ist
+       ueberall sonst der Pfad INNERHALB der Section, mit der Section separat
+       in `section`. Ein Befund mit "trustbar.note" statt "note" findet in der
+       Oberflaeche sein Feld nicht. */
+    ctx.active.forEach(function (s) {
+      var d = ctx.sectionData[s.id];
+      if (!d) return;
+      textFelder(d).forEach(function (feld) {
+        VERTRAUENSBEHAUPTUNGEN.forEach(function (v) {
+          var treffer = String(feld.text).match(v.re);
+          if (!treffer) return;
+          f.push(befund('hinweis', 'vertrauensbehauptung',
+            'Die Copy behauptet ' + v.was + ' ("' + treffer[0] + '"). Bitte pruefen, ob das in der ' +
+            'Wissensdatenbank oder im Briefing belegt ist - erfundene Bekanntheits- und ' +
+            'Medienangaben sind rechtlich angreifbar. Ist nichts belegt: streichen.',
+            { section: s.id, feld: feld.path }));
+        });
+      });
+    });
+    return f;
+  }
+
   function pruefeAlles(ctx) {
     ctx = ctx || {};
     ctx.sectionData = ctx.sectionData || {};
@@ -259,6 +308,7 @@ var Validators = (function () {
       pruefeLocks(ctx),
       pruefePreset(ctx),
       pruefeRedundanz(ctx),
+      pruefeVertrauensbehauptungen(ctx),
       pruefeExport(ctx)
     );
   }

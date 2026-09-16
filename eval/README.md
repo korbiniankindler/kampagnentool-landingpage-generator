@@ -22,6 +22,13 @@ node eval/runner.js --live --reviewer            # mit semantischem Reviewer
 **Ohne `--live` geht kein Request an die API.** Der Trockenlauf prueft den
 Runner selbst, die Prompt-Erzeugung und das Gate - nicht die Copy-Qualitaet.
 
+Ein unbekannter Variantenname bricht ab, statt still als `chunk` zu laufen.
+Genau das war passiert: Ein `--variante eincall` gegen eine aeltere Fassung,
+die die Variante noch nicht kannte, fuhr vier Chunk-Requests und schrieb
+trotzdem `"variante": "eincall"` ins Ergebnis. Das Ergebnis-JSON nennt seither
+zusaetzlich `bloeckeGefahren` - die tatsaechliche Aufteilung, nicht nur die
+angeforderte.
+
 ## Varianten
 
 | `--variante` | Bedeutung |
@@ -171,10 +178,32 @@ Naeherungswert, kein Ersatz — er ist selbst ein Sprachmodell und teilt die
 Vorlieben des Generators. Die blinde menschliche Bewertung im Benchmark bleibt
 die entscheidende Messung; die Zahlen hier ordnen nur vor.
 
-Wie belastbar der Reviewer ist, ist selbst noch ungemessen. Die
-naheliegendste Pruefung: dieselbe Seite zweimal bewerten lassen und sehen, wie
-weit die Punkte auseinanderliegen. Solange das nicht gemacht ist, sind
-Unterschiede von unter einem Punkt nicht zu deuten.
+### Gemessene Streuung: mindestens ein halber Punkt
+
+Zwei Live-Laeufe von `hellinger-b2c` unter **identischer** Konfiguration
+(gleiche Variante, gleiche Referenz-Copy, gleiche Prompt-Version) ergaben:
+
+| | Lauf 1 | Lauf 2 |
+|---|---|---|
+| Review-Schnitt | 3,83 | 4,33 |
+| Preset-Verstoesse | 5 | 3 |
+| Reviewer-Befunde kritisch | 5 | 3 |
+| Woerter | 1130 | 1195 |
+| unbelegte Reviewer-Befunde | 0 | 0 |
+
+**Ein halber Punkt Unterschied entsteht ohne jede Aenderung.** Ein
+Variantenvergleich, der auf 0,5 Punkte hinauslaeuft, misst damit nichts. Vor
+jeder Aussage ueber Varianten braucht es Wiederholungen
+(`--wiederholungen 3`) und einen Abstand, der deutlich ueber dieser Streuung
+liegt.
+
+Die Streuung vermischt zwei Quellen - die Generierung und die Bewertung -, die
+diese zwei Laeufe nicht trennen. Um den Reviewer allein zu messen, muesste
+**dieselbe** Copy zweimal bewertet werden. Bis dahin ist die halbe Punkt-Marke
+die Untergrenze, nicht die gemessene Reviewer-Varianz.
+
+Unbelegte Befunde blieben in beiden Laeufen bei **null**: Jedes der 23 Zitate
+liess sich in der Copy wiederfinden. Die Belegpflicht traegt.
 
 ## Vor einem Live-Lauf
 
