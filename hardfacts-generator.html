@@ -1912,12 +1912,12 @@ ausdrücken. `vorlagen` bündelt die üblichen Kombinationen als Bedienkomfort.
     {"id": "webinar", "regex": "\\bWebinar\\w*", "hinweis": "Das Event heißt Live-Seminar oder Online-Seminar.", "quelle": "Abschnitt 6"},
     {"id": "kostenlos", "regex": "\\bkostenlos(e[nmrs]?)?\\b", "hinweis": "Die belegte Formulierung ist kostenfrei.", "quelle": "Abschnitt 3.8"},
     {"id": "gedankenstrich", "regex": "\\s[–—]\\s", "hinweis": "Keine Gedankenstriche im laufenden Text.", "quelle": "Abschnitt 6"},
-    {"id": "nicht-sondern", "regex": "\\bnicht\\b[^.!?]{1,60}\\bsondern\\b", "hinweis": "Perspektivverschiebung fließend formulieren.", "quelle": "Abschnitt 6"},
+    {"id": "nicht-sondern", "regex": "\\b(nicht|kein(e[nmrs]?)?)\\b[^.!?]{1,60}\\bsondern\\b", "hinweis": "Perspektivverschiebung fließend formulieren.", "quelle": "Abschnitt 6"},
     {"id": "familienkonstellation", "regex": "Familienkonstellation", "hinweis": "Der Terminus ist Familienstellen.", "quelle": "Abschnitt 6"},
     {"id": "blinde-liebe", "regex": "blinde[nrs]? Liebe", "hinweis": "Begriff wird nicht verwendet.", "quelle": "Abschnitt 6"},
     {"id": "preis", "regex": "\\d[\\d.,]*\\s?(€|EUR|Euro)", "hinweis": "Keine Preise in der Copy.", "quelle": "Abschnitt 6"},
     {"id": "druck", "regex": "(Nur jetzt|Verpasse es nicht|zu spät)[!]?", "hinweis": "Keine Druck-Sprache.", "quelle": "Abschnitt 6"},
-    {"id": "sie-anrede", "regex": "\\b(Ihnen|Ihre[nmrs]?|Sie sich)\\b", "hinweis": "Durchgängig Du, großgeschrieben.", "quelle": "Abschnitt 2"}
+    {"id": "sie-anrede", "regex": "\\b(Ihnen|Ihre[nmrs]?|Sie sich)\\b", "beachteGross": true, "hinweis": "Durchgängig Du, großgeschrieben.", "quelle": "Abschnitt 2"}
   ],
   "verboteInFeldern": {
     "frage": {
@@ -2766,7 +2766,7 @@ für die Ausbildung ist kostenlos, die Ausbildung selbst nicht.
   "angleVerboten": {},
   "verbote": [
     {"id": "gedankenstrich", "regex": "\\s[–—]\\s", "hinweis": "Keine Gedankenstriche als Stilmittel.", "quelle": "Abschnitt 6.1"},
-    {"id": "nicht-sondern", "regex": "\\bnicht\\b[^.!?]{1,60}\\bsondern\\b", "hinweis": "Konstruktion wirkt künstlich.", "quelle": "Abschnitt 6.2"},
+    {"id": "nicht-sondern", "regex": "\\b(nicht|kein(e[nmrs]?)?)\\b[^.!?]{1,60}\\bsondern\\b", "hinweis": "Konstruktion wirkt künstlich.", "quelle": "Abschnitt 6.2"},
     {"id": "mehr-als-nur", "regex": "\\bmehr als nur\\b", "hinweis": "Keine künstliche Aufwertung.", "quelle": "Abschnitt 6.4"},
     {"id": "floskeln", "regex": "\\b(Transformation|Potenzial entfalten|nächste[s]? Level|Gamechanger|lebensverändernd|nachhaltig wachsen)\\w*", "hinweis": "Generische Transformationsfloskel.", "quelle": "Abschnitt 6.5"},
     {"id": "ki-satzanfang", "regex": "(In einer Welt, in der|Gerade in der heutigen Zeit|Viele Menschen fragen sich|Vielleicht kennen Sie das|Stellen Sie sich vor|Was wäre, wenn)", "hinweis": "KI-typischer Satzanfang.", "quelle": "Abschnitt 6.9"},

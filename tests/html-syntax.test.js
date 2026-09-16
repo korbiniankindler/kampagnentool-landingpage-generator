@@ -10,6 +10,7 @@
 const test = require('node:test');
 const assert = require('node:assert');
 const fs = require('node:fs');
+const { spawnSync } = require('node:child_process');
 const path = require('node:path');
 const vm = require('node:vm');
 
@@ -176,4 +177,22 @@ test('beide Module laden die Marken-Konfiguration', () => {
     const html = fs.readFileSync(path.join(ROOT, file), 'utf8');
     assert.ok(html.includes('src="shared/brand-config.js"'), `${file} bindet brand-config.js nicht ein`);
   }
+});
+
+test('die eingebetteten Preset-Snapshots sind aktuell', () => {
+  /* Die Snapshots sind der file://-Fallback: Wird ein Modul lokal geoeffnet
+     statt vom Server geladen, gilt ausschliesslich der eingebettete Stand.
+     Ein veralteter Snapshot heisst also, dass das Werkzeug mit einem ALTEN
+     Regelwerk arbeitet - Regeln, die man gerade geschaerft hat, wirken dann
+     nicht.
+
+     Das gab es als CI-Schritt (`npm run check:presets`), aber nicht in der
+     Test-Suite. Wer lokal nur `npm test` faehrt, sah den Drift nicht und
+     erfuhr erst nach dem Push davon. Genau so ist es passiert, nachdem
+     beide Regelwerke geaendert wurden. */
+  const r = spawnSync(process.execPath, [path.join(ROOT, 'sync-presets.js'), '--check'],
+    { cwd: ROOT, encoding: 'utf8' });
+  assert.equal(r.status, 0,
+    'Snapshots veraltet - "node sync-presets.js" ausfuehren und die HTMLs mitcommitten.\n' +
+    (r.stdout || '') + (r.stderr || ''));
 });
