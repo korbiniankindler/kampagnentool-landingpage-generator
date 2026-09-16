@@ -405,3 +405,28 @@ test('eine ungueltige Regex in den Keywords legt die Wahl nicht lahm', () => {
   assert.doesNotThrow(() => CopyPresets.pickRefDetail(kaputt, 'irgendein text'));
   assert.equal(CopyPresets.pickRefDetail(kaputt, 'irgendein text').ref.id, 'a');
 });
+
+/* ---- Ein-Call-Variante ---- */
+
+test('Die Ein-Call-Variante buendelt alle Sections in einen Block', () => {
+  const quelle = fs.readFileSync(path.join(ROOT, 'eval/runner.js'), 'utf8');
+  assert.match(quelle, /variante === 'eincall'\s*\n?\s*\? \[active\]/,
+    'ein Block mit allen Sections');
+  assert.match(quelle, /max_tokens: eincall \? 64000 : 16000/,
+    'ungestreamt liegt die Grenze bei 16000 - die ganze Seite braucht mehr');
+  assert.match(quelle, /stream: eincall/, 'ohne Streaming steht die Verbindung minutenlang ohne Daten offen');
+});
+
+test('Die Ein-Call-Variante laeuft ohne Content-Plan', () => {
+  // Ihre These ist, dass ein Modell mit Blick auf die ganze Seite den Bogen
+  // besser baut als vier Chunks entlang eines vorgegebenen Plans. Mit Plan
+  // waere es weder ein Call noch die These.
+  const quelle = fs.readFileSync(path.join(ROOT, 'eval/runner.js'), 'utf8');
+  assert.match(quelle, /if \(opt\.variante !== 'eincall'\) try \{/);
+});
+
+test('Alle drei Benchmark-Varianten sind dokumentiert', () => {
+  const readme = fs.readFileSync(path.join(ROOT, 'eval/README.md'), 'utf8');
+  ['chunk', 'zweiblock', 'eincall'].forEach(v =>
+    assert.match(readme, new RegExp('`' + v + '`'), v + ' fehlt in eval/README.md'));
+});

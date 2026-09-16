@@ -104,8 +104,9 @@ die zweite — das ist keine Eigenheit dieser Bremse, sondern das Limit selbst.
 Vorher aeusserte sich derselbe Engpass als 429 von Anthropic mitten in der
 Generierung.
 
-## Was der Worker weiterhin NICHT tut
+## Streaming
 
-**Streaming auf der Client-Seite.** Der Worker reicht `stream: true` durch,
-aber `shared/api-client.js` liest die Antwort mit `resp.text()` und kann SSE
-noch nicht verarbeiten.
+Der Worker reicht `stream: true` unveraendert durch, und `shared/api-client.js`
+liest SSE seit `sendStream`. Genutzt wird das vom Ein-Call-Benchmark-Arm
+(`node eval/runner.js --variante eincall`), der 25.000 bis 35.000
+Output-Tokens in einem Request erzeugt.

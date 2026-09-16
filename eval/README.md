@@ -28,12 +28,20 @@ Runner selbst, die Prompt-Erzeugung und das Gate - nicht die Copy-Qualitaet.
 |---|---|
 | `chunk` | Ist-Zustand: bis zu 4 Sections je Request, parallel |
 | `zweiblock` | zwei sequenzielle Bloecke; der zweite sieht den echten Text des ersten |
+| `eincall` | die ganze Seite in EINEM gestreamten Request, ohne Content-Plan |
 
-Eine Ein-Call-Variante fehlt noch. Sie war infrastrukturell blockiert, solange
-der Cloudflare Worker die Antwort vollstaendig pufferte; die deployte Fassung
-reicht `stream: true` durch (siehe `docs/proxy-capabilities.md`). Offen ist
-jetzt nur noch die Client-Seite: `shared/api-client.js` kann SSE noch nicht
-lesen.
+Die Ein-Call-Variante war lange blockiert: Der alte Worker pufferte die Antwort
+vollstaendig, und ungestreamt liegt die Obergrenze bei rund 16.000
+Output-Tokens — eine komplette Seite braucht 25.000 bis 35.000. Der deployte
+Worker reicht `stream: true` durch, und `shared/api-client.js` liest jetzt SSE
+(`sendStream`). Damit kann der dritte Benchmark-Arm antreten.
+
+**Ihr Content-Plan entfaellt bewusst.** Ihre These ist, dass ein Modell, das
+die ganze Seite auf einmal schreibt, den Bogen besser baut als vier parallele
+Chunks entlang eines vorgegebenen Plans. Mit Plan waere es weder ein Call noch
+die These. Das macht sie zur teuersten Variante in der Wartezeit (ein langer
+Request statt vier kurzer parallelen) und zur riskantesten: Bricht sie ab, ist
+die ganze Seite weg statt eines Viertels.
 
 ## Semantischer Reviewer (`--reviewer`)
 

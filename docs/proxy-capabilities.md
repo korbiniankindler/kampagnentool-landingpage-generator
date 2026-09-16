@@ -86,7 +86,7 @@ return new Response(JSON.stringify(data), {
 Dazu gehoert `Access-Control-Expose-Headers: request-id, retry-after` in
 `corsHeaders`, sonst sieht der Browser sie trotz allem nicht.
 
-### 3. Streaming war nicht moeglich — behoben
+### 3. Streaming war nicht moeglich — behoben, beide Seiten
 
 `await response.json()` puffert die vollstaendige Antwort. Ein Request mit
 `stream: true` wuerde eine SSE-Antwort liefern, die `response.json()` nicht
@@ -97,10 +97,25 @@ Die deployte Fassung reicht bei `"stream": true` den Body unveraendert durch
 kompletten Landingpage** (~25-35k Output-Tokens) ist damit infrastrukturell
 nicht mehr blockiert und kann als Benchmark-Arm antreten.
 
-Offen bleibt die Client-Seite: `shared/api-client.js` liest die Antwort mit
-`resp.text()` und kann SSE noch nicht verarbeiten. Solange kein Benchmark-Arm
-Streaming braucht, wird das bewusst nicht gebaut — der ungestreamte Pfad mit
-`max_tokens`-abhaengigem Timeout deckt die aktuellen Calls ab.
+**Geloest:** `shared/api-client.js` liest jetzt SSE (`sendStream`). Der
+Ein-Call-Benchmark-Arm (`--variante eincall`) nutzt ihn.
+
+Drei Entscheidungen, die den gestreamten Pfad vom ungestreamten unterscheiden:
+
+* **Inaktivitaets-Timeout statt Gesamt-Timeout.** Ein Stream, der fliesst, darf
+  beliebig lange laufen — genau dafuer ist er da. Abgebrochen wird nur, wenn
+  laengere Zeit nichts mehr ankommt.
+* **Wiederholt wird nur vor dem ersten Token.** Danach waere ein Retry eine
+  vollstaendige zweite Generierung: doppelte Kosten, und der Nutzer sieht
+  seinen Text von vorn beginnen.
+* **Ein Stream ohne `message_stop` ist ein Fehler.** Er enthaelt Text und sieht
+  brauchbar aus — genau deshalb muss er scheitern, statt still als Erfolg
+  durchzugehen. Dasselbe Prinzip wie bei der Truncation-Erkennung in
+  `shared/json-extract.js`.
+
+Warum von Hand und nicht mit dem Anthropic-SDK: Das Tool ist eine statische
+Seite ohne Build-Schritt, ohne npm zur Laufzeit und laeuft auch per `file://`.
+Ein SDK ist hier nicht einsetzbar.
 
 ## Was damit entblockt ist
 

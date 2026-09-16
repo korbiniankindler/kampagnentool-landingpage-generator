@@ -272,6 +272,248 @@ var ClaudeAPI = (function () {
     throw lastErr || apiError('Request fehlgeschlagen' + label);
   }
 
+  /* ---------- Server-Sent Events ----------
+
+     Antworten mit "stream": true kommen als SSE. Der Worker reicht sie seit
+     dem Deploy unveraendert durch (worker/index.js); hier fehlte bisher die
+     Gegenseite.
+
+     Warum von Hand und nicht mit dem Anthropic-SDK: Das Tool ist eine
+     statische Seite ohne Build-Schritt, ohne npm zur Laufzeit und laeuft auch
+     per file://. Ein SDK ist hier nicht einsetzbar - deshalb rohes SSE, aber
+     gekapselt und einzeln getestet.
+
+     Wire-Format (event-Zeile, data-Zeile, Leerzeile als Trenner):
+
+       event: content_block_delta
+       data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"Hallo"}}
+
+     Der Parser ist eine Zustandsmaschine ueber Chunks, weil ein Chunk
+     JEDERZEIT mitten in einer Zeile enden kann - das ist der Normalfall, nicht
+     die Ausnahme, und der haeufigste Fehler in selbstgebauten SSE-Lesern. */
+  function createSSEParser(onEvent) {
+    var puffer = '';
+    return {
+      /* Nimmt ein Stueck Text entgegen und ruft onEvent fuer jedes
+         vollstaendige Event. Unvollstaendiges bleibt im Puffer. */
+      push: function (chunk) {
+        puffer += chunk;
+        /* \r\n normalisieren: SSE erlaubt beide Zeilenenden, und ein
+           Zwischenproxy kann sie umschreiben. */
+        puffer = puffer.replace(/\r\n/g, '\n');
+        var teile = puffer.split('\n\n');
+        puffer = teile.pop();          // der Rest ist angefangen
+        teile.forEach(function (block) {
+          var daten = [];
+          block.split('\n').forEach(function (zeile) {
+            /* Nur das data-Feld traegt Inhalt. Die event-Zeile wiederholt,
+               was ohnehin im JSON unter `type` steht - sie zu ignorieren
+               vermeidet zwei Quellen fuer dieselbe Wahrheit.
+               Ein Kommentar (":" am Zeilenanfang, von manchen Proxys als
+               Keepalive gesendet) wird ebenso uebergangen. */
+            if (zeile.indexOf('data:') !== 0) return;
+            daten.push(zeile.slice(5).replace(/^ /, ''));
+          });
+          if (!daten.length) return;
+          /* Mehrere data-Zeilen gehoeren laut SSE zu EINEM Wert, verbunden
+             mit Zeilenumbruch. Anthropic sendet praktisch immer eine, aber
+             ein Parser, der das annimmt, bricht ohne Vorwarnung. */
+          var roh = daten.join('\n');
+          var ev;
+          try { ev = JSON.parse(roh); } catch (e) { return; }
+          onEvent(ev);
+        });
+      },
+      /* Nach dem Ende des Streams: Bleibt etwas im Puffer, war das Event
+         unvollstaendig - der Stream ist also abgebrochen. */
+      rest: function () { return puffer; }
+    };
+  }
+
+  /* Baut aus den Events wieder eine Antwort in der Form, die send() liefert.
+     Damit funktionieren textOf() und isTruncated() unveraendert und kein
+     Aufrufer muss zwischen gestreamt und ungestreamt unterscheiden. */
+  function createMessageAccumulator() {
+    var nachricht = null;
+    var bloecke = [];
+    var fertig = false;
+    var fehler = null;
+
+    return {
+      handle: function (ev, onText) {
+        if (!ev || !ev.type) return;
+        if (ev.type === 'error') {
+          /* Ein Fehler MITTEN im Stream: Ueberlastung, Timeout serverseitig.
+             HTTP-Status war da laengst 200 - ohne diesen Zweig gaelte die
+             halbe Antwort als vollstaendig. */
+          fehler = (ev.error && (ev.error.message || ev.error.type)) || 'Fehler im Stream';
+          fehler = { message: fehler, type: (ev.error && ev.error.type) || 'api_error' };
+          return;
+        }
+        if (ev.type === 'message_start' && ev.message) {
+          nachricht = Object.assign({}, ev.message);
+          bloecke = [];
+          return;
+        }
+        if (ev.type === 'content_block_start') {
+          bloecke[ev.index] = Object.assign({ text: '' }, ev.content_block || {});
+          return;
+        }
+        if (ev.type === 'content_block_delta' && ev.delta) {
+          var b = bloecke[ev.index] || (bloecke[ev.index] = { type: 'text', text: '' });
+          if (ev.delta.type === 'text_delta') {
+            b.text = (b.text || '') + ev.delta.text;
+            if (onText) onText(ev.delta.text);
+          } else if (ev.delta.type === 'input_json_delta') {
+            b.partial_json = (b.partial_json || '') + ev.delta.partial_json;
+          }
+          return;
+        }
+        if (ev.type === 'message_delta') {
+          if (!nachricht) nachricht = {};
+          if (ev.delta) Object.keys(ev.delta).forEach(function (k) { nachricht[k] = ev.delta[k]; });
+          /* usage kommt hier mit den Output-Tokens; die Input-Tokens standen
+             schon in message_start. Zusammenfuehren statt ersetzen. */
+          if (ev.usage) nachricht.usage = Object.assign({}, nachricht.usage || {}, ev.usage);
+          return;
+        }
+        if (ev.type === 'message_stop') { fertig = true; }
+      },
+      /* Liefert die fertige Antwort - oder wirft, wenn der Stream nicht
+         sauber zu Ende kam. */
+      finish: function (label, restImPuffer) {
+        if (fehler) {
+          throw apiError((fehler.message || 'Fehler im Stream') + label, {
+            status: /rate.?limit|overloaded/i.test(fehler.type + ' ' + fehler.message) ? 429 : 503,
+            streamFehler: true
+          });
+        }
+        /* OHNE message_stop ist die Antwort abgebrochen. Sie enthaelt dann
+           Text und sieht brauchbar aus - genau deshalb muss sie hier
+           scheitern statt still als Erfolg durchzugehen. Dasselbe Prinzip wie
+           bei der Truncation-Erkennung in shared/json-extract.js. */
+        if (!fertig) {
+          throw apiError('Die Antwort brach ab, bevor sie fertig war' + label +
+            '. Bisher empfangen: ' + bloecke.reduce(function (n, b) { return n + ((b && b.text) || '').length; }, 0) +
+            ' Zeichen.' + (restImPuffer ? ' Letztes Ereignis unvollstaendig.' : ''),
+            { status: 0, abgebrochen: true });
+        }
+        var out = nachricht || {};
+        out.content = bloecke.filter(Boolean);
+        out._gestreamt = true;
+        return out;
+      }
+    };
+  }
+
+  /* Ein gestreamter Claude-Request.
+
+     Drei Entscheidungen, die ihn von send() unterscheiden:
+
+     1. INAKTIVITAETS-Timeout statt Gesamt-Timeout. Ein Stream, der fliesst,
+        darf beliebig lange laufen - genau dafuer ist er da. Abgebrochen wird
+        nur, wenn laengere Zeit nichts mehr ankommt. Ein Gesamt-Timeout wuerde
+        den Zweck des Streamings aufheben.
+
+     2. Wiederholt wird nur, solange noch KEIN Text geflossen ist. Danach
+        waere ein Retry eine vollstaendige zweite Generierung - er kostet das
+        Doppelte und verwirft, was der Nutzer schon gesehen hat.
+
+     3. Der Rueckgabewert hat dieselbe Form wie bei send(). */
+  async function sendStream(body, opts) {
+    opts = opts || {};
+    if (!cfg.proxyUrl) throw apiError('ClaudeAPI ist nicht konfiguriert (proxyUrl fehlt).');
+    var maxAttempts = opts.maxAttempts || cfg.maxAttempts;
+    var stilleMs = opts.stilleMs || 120000;
+    var label = opts.label ? ' [' + opts.label + ']' : '';
+    var mitStream = Object.assign({}, body, { stream: true });
+    var lastErr = null;
+
+    for (var attempt = 1; attempt <= maxAttempts; attempt++) {
+      if (attempt > 1) {
+        var delay = retryDelayMs(lastErr && lastErr.status, lastErr && lastErr.retryAfter, attempt - 1);
+        if (opts.onRetry) opts.onRetry(attempt, { reason: lastErr && lastErr.message, waitMs: delay, status: lastErr && lastErr.status });
+        await cfg.sleepImpl(delay);
+      }
+      await throttle();
+
+      var controller = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+      var timer = null;
+      var etwasEmpfangen = false;
+      function stilleNeuStarten() {
+        if (!controller) return;
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(function () { controller.abort(); }, stilleMs);
+      }
+
+      try {
+        stilleNeuStarten();
+        var resp = await cfg.fetchImpl(cfg.proxyUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream' },
+          body: JSON.stringify(mitStream),
+          signal: controller ? controller.signal : undefined
+        });
+        merkeLimitZustand(resp.headers);
+        var requestId = null;
+        try { requestId = resp.headers && resp.headers.get ? resp.headers.get('request-id') : null; } catch (e) {}
+
+        if (!resp.ok) {
+          var text = '';
+          try { text = await resp.text(); } catch (e) {}
+          var detail = '';
+          try { detail = (JSON.parse(text).error || {}).message || ''; } catch (e) {
+            detail = text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 200);
+          }
+          var msg = 'HTTP ' + resp.status + label + (detail ? ': ' + detail : '');
+          var retryAfter = null;
+          try { retryAfter = resp.headers.get('retry-after'); } catch (e) {}
+          lastErr = apiError(withRequestId(msg, requestId), { status: resp.status, requestId: requestId, retryAfter: retryAfter });
+          if (!isRetryableStatus(resp.status) || attempt === maxAttempts) throw lastErr;
+          continue;
+        }
+        if (!resp.body || !resp.body.getReader) {
+          throw apiError('Der Proxy liefert keinen lesbaren Stream' + label + '.', { status: 0 });
+        }
+
+        var acc = createMessageAccumulator();
+        var parser = createSSEParser(function (ev) { acc.handle(ev, opts.onText); });
+        var reader = resp.body.getReader();
+        var decoder = (typeof TextDecoder !== 'undefined') ? new TextDecoder() : null;
+
+        while (true) {
+          var st = await reader.read();
+          if (st.done) break;
+          etwasEmpfangen = true;
+          stilleNeuStarten();
+          parser.push(decoder ? decoder.decode(st.value, { stream: true }) : String(st.value));
+        }
+        var data = acc.finish(label, parser.rest());
+        if (requestId) data._requestId = requestId;
+        if (data.usage) console.log('Claude usage (stream):', JSON.stringify(data.usage));
+        return data;
+
+      } catch (e) {
+        var abgebrochen = e && (e.name === 'AbortError' || /abort/i.test(e.message || ''));
+        if (abgebrochen) {
+          throw apiError('Der Stream lieferte ' + Math.round(stilleMs / 1000) + ' s lang keine Daten mehr' +
+            label + '.', { status: 0, timeout: true, attempts: attempt });
+        }
+        /* Nach dem ersten Token nicht mehr wiederholen (Entscheidung 2). */
+        if (etwasEmpfangen || attempt === maxAttempts || !isRetryableStatus(e.status || 0)) throw e;
+        lastErr = e;
+      } finally {
+        /* In finally, nicht in den einzelnen Zweigen: Der `continue` beim
+           wiederholbaren HTTP-Fehler uebersprang das Aufraeumen, und der
+           Inaktivitaets-Timer lief zwei Minuten weiter - er haette danach
+           einen laengst abgeschlossenen Request abgebrochen. Aufgefallen,
+           weil der Testlauf nicht mehr terminierte. */
+        if (timer) clearTimeout(timer);
+      }
+    }
+    throw lastErr || apiError('Stream fehlgeschlagen' + label);
+  }
+
   /* Text aller Textbloecke einer Antwort, wie beide Module ihn brauchen. */
   function textOf(data) {
     if (!data || !Array.isArray(data.content)) return '';
@@ -317,7 +559,10 @@ var ClaudeAPI = (function () {
   return {
     configure: configure,
     send: send,
+    sendStream: sendStream,
     sendMitSchema: sendMitSchema,
+    _createSSEParser: createSSEParser,
+    _createMessageAccumulator: createMessageAccumulator,
     istSchemaAbgelehnt: istSchemaAbgelehnt,
     textOf: textOf,
     isTruncated: isTruncated,

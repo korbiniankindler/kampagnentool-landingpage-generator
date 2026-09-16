@@ -14,6 +14,7 @@
      node eval/runner.js --dry                 alle Faelle, gemockte Antworten
      node eval/runner.js --fall hellinger-b2c  ein Fall
      node eval/runner.js --variante zweiblock  Generierungsvariante
+     node eval/runner.js --variante eincall    ganze Seite in einem Request
      node eval/runner.js --live                echte API-Calls (kostet Geld)
      node eval/runner.js --wiederholungen 3    fuer die Varianz-Messung
      node eval/runner.js --reviewer            semantischer Reviewer dazu
@@ -46,7 +47,7 @@ function args() {
   return {
     live: a.includes('--live'),
     fall: get('fall', null),
-    variante: get('variante', 'chunk'),      // chunk | zweiblock
+    variante: get('variante', 'chunk'),      // chunk | zweiblock | eincall
     reviewer: a.includes('--reviewer'),
     wiederholungen: parseInt(get('wiederholungen', '1'), 10),
     out: get('out', path.join(__dirname, 'ergebnisse'))
@@ -148,11 +149,22 @@ function mockReview(sectionData) {
    der Runner eine andere Pipeline als die, die die Mitarbeiter benutzen - und
    ein Live-Lauf wuerde Structured Outputs fuer die Generierung gar nicht
    pruefen, obwohl genau das im Tool passiert. */
-async function jsonCall(body, live, label, schemaCfg) {
+async function jsonCall(body, live, label, schemaCfg, opt) {
   if (!live) return { data: mockAntwort(body), truncated: false, mock: true };
-  const d = schemaCfg
-    ? await ClaudeAPI.sendMitSchema(withThinking(body), schemaCfg, { label })
-    : await call(body, { label });
+  opt = opt || {};
+  let d;
+  if (opt.stream) {
+    /* Gestreamt, weil die Ein-Call-Variante 25-35k Output-Tokens erzeugt.
+       Ungestreamt steht die Verbindung dabei minutenlang ohne ein einziges
+       Byte offen - das ist der Grund, warum diese Variante bis zum
+       Worker-Deploy gar nicht antreten konnte. */
+    const mit = schemaCfg ? Object.assign({}, body, { output_config: schemaCfg }) : body;
+    d = await ClaudeAPI.sendStream(withThinking(mit), { label });
+  } else {
+    d = schemaCfg
+      ? await ClaudeAPI.sendMitSchema(withThinking(body), schemaCfg, { label })
+      : await call(body, { label });
+  }
   return {
     data: extractJSON(ClaudeAPI.textOf(d)),
     truncated: ClaudeAPI.isTruncated(d),
@@ -203,9 +215,12 @@ async function laufe(fall, opt) {
     pageMap: PromptBuilder.buildPageMap(active), brandCfg, lpVorlage
   };
 
-  /* Content-Plan */
+  /* Content-Plan. Bei der Ein-Call-Variante entfaellt er bewusst: Ihre These
+     ist, dass ein Modell, das die ganze Seite auf einmal schreibt, den Bogen
+     besser baut als vier parallele Chunks entlang eines vorgegebenen Plans.
+     Mit Plan waere es weder ein Call noch die These. */
   let planText = null, planFehler = null;
-  try {
+  if (opt.variante !== 'eincall') try {
     const planUsr = 'Kampagne:\nTitel: ' + (hf.titel || '') + '\nZielgruppe: ' +
       (HardfactsIO.audience(hf) || '(keine Angabe)') + '\n\nAufbau der Landingpage:\n' +
       gemeinsam.pageMap + '\n\nErstelle einen Content-Plan: eine Kernbotschaft je Section, je ein Satz.\n\n' +
@@ -219,10 +234,12 @@ async function laufe(fall, opt) {
   } catch (e) { planFehler = e.message; }
 
   /* Sections nach Variante */
-  const bloecke = opt.variante === 'zweiblock'
-    ? [active.slice(0, Math.ceil(active.length / 2)), active.slice(Math.ceil(active.length / 2))]
-    : Array.from({ length: Math.ceil(active.length / GEN_CHUNK_SIZE) },
-        (_, i) => active.slice(i * GEN_CHUNK_SIZE, (i + 1) * GEN_CHUNK_SIZE));
+  const bloecke = opt.variante === 'eincall'
+    ? [active]
+    : opt.variante === 'zweiblock'
+      ? [active.slice(0, Math.ceil(active.length / 2)), active.slice(Math.ceil(active.length / 2))]
+      : Array.from({ length: Math.ceil(active.length / GEN_CHUNK_SIZE) },
+          (_, i) => active.slice(i * GEN_CHUNK_SIZE, (i + 1) * GEN_CHUNK_SIZE));
 
   const sectionData = {};
   let truncations = 0, calls = 0, schemaFallbacks = 0;
@@ -235,13 +252,19 @@ async function laufe(fall, opt) {
       nachbarn: vorher || null
     }));
     calls++;
+    const eincall = opt.variante === 'eincall';
     const r = await jsonCall({
-      model: ToolVersions.MODEL, max_tokens: 16000, system: sysBlocks,
+      model: ToolVersions.MODEL,
+      /* 16000 ist die Obergrenze fuer ungestreamte Requests (siehe Modul 2).
+         Gestreamt faellt sie weg - die ganze Seite braucht deutlich mehr. */
+      max_tokens: eincall ? 64000 : 16000,
+      system: sysBlocks,
       messages: [{ role: 'user', content: usr }]
     }, opt.live, block.map(s => s.name).join(', '),
       /* Genau wie in Modul 2: Schema fuer bekannte Sections, keines fuer
          eigene - fuer die gibt es kein Schema. */
-      global.SectionSchemas.outputConfig(block.filter(s => !s.custom)));
+      global.SectionSchemas.outputConfig(block.filter(s => !s.custom)),
+      { stream: eincall });
     if (r.truncated) truncations++;
     if (r.schemaGenutzt === false) schemaFallbacks++;
     return r.data;
