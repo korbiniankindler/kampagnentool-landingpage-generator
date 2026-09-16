@@ -399,7 +399,7 @@ ausdrücken. `vorlagen` bündelt die üblichen Kombinationen als Bedienkomfort.
     {"id": "blinde-liebe", "regex": "blinde[nrs]? Liebe", "hinweis": "Begriff wird nicht verwendet.", "quelle": "Abschnitt 6"},
     {"id": "preis", "regex": "\\d[\\d.,]*\\s?(€|EUR|Euro)", "hinweis": "Keine Preise in der Copy.", "quelle": "Abschnitt 6"},
     {"id": "druck", "regex": "(Nur jetzt|Verpasse es nicht|zu spät)[!]?", "hinweis": "Keine Druck-Sprache.", "quelle": "Abschnitt 6"},
-    {"id": "sie-anrede", "regex": "\\b(Ihnen|Ihre[nmrs]?|Sie sich)\\b", "hinweis": "Durchgängig Du, großgeschrieben.", "quelle": "Abschnitt 2"}
+    {"id": "sie-anrede", "regex": "\\b(Ihnen|Ihre[nmrs]?|Sie sich)\\b", "beachteGross": true, "hinweis": "Durchgängig Du, großgeschrieben.", "quelle": "Abschnitt 2"}
   ],
   "verboteInFeldern": {
     "frage": {

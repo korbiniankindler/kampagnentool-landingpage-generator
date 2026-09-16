@@ -531,7 +531,7 @@ function renderLpVorlagen() {
 /* Preset laden und Konfiguration uebernehmen, ohne einen Prompt zu bauen. */
 async function refreshBrandConfig() {
   if (!selectedCopyPreset) { brandCfg = BrandConfig.GENERIC; lpVorlage = null; renderLpVorlagen(); return; }
-  var raw = await CopyPresets.load(selectedCopyPreset, presetBriefing());
+  var raw = await CopyPresets.load(selectedCopyPreset, presetBriefing(), selectedRefId);
   brandCfg = BrandConfig.forPreset(raw);
   renderLpVorlagen();
 }
@@ -575,11 +575,54 @@ function logPresetUsage(presetText) {
   }
 }
 
+/* Manuell gewählte Referenz-Copy. null = die Heuristik entscheidet. */
+var selectedRefId = null;
+
+function selectRef(id) {
+  selectedRefId = id || null;
+  document.getElementById('copy-preset-hint').innerHTML = copyPresetHintHTML();
+}
+
+/* Zeigt Preset UND gewählte Referenz-Copy.
+
+   Die Referenz-Wahl stand vorher nirgends: sie passierte still in pickRef.
+   Das ist die folgenschwerste unsichtbare Entscheidung im ganzen Werkzeug -
+   die Referenz-Copy steuert Tonalität, Satzbau und Argumentationsform der
+   GESAMTEN Seite. Im ersten Live-Lauf wurde ein B2C-Seminar mit der
+   B2B-Referenz getextet, weil im Briefing das Wort „Coaching" stand. Am
+   Ergebnis hätte das niemand erkannt, weil niemand wusste, wonach zu suchen
+   wäre. Jetzt steht die Wahl da, mit ihrem Grund, und lässt sich ändern. */
 function copyPresetHintHTML() {
   var name = CopyPresets.getName(selectedCopyPreset);
-  return name
-    ? 'Copywriter-Preset: <strong>' + ex(name) + '</strong>'
-    : '<strong>Kein Copywriter-Preset</strong> gewählt - es wird generisch anhand der Hardfacts getextet (Auswahl in Schritt 1).';
+  if (!name) return '<strong>Kein Copywriter-Preset</strong> gewählt - es wird generisch anhand der Hardfacts getextet (Auswahl in Schritt 1).';
+
+  var preset = CopyPresets.CATALOG.find(function(p){ return p.id === selectedCopyPreset; });
+  var html = 'Copywriter-Preset: <strong>' + ex(name) + '</strong>';
+  if (!preset || !(preset.referenzen || []).length) return html;
+
+  var detail = CopyPresets.pickRefDetail(preset, presetBriefing());
+  var aktiv = selectedRefId || (detail && detail.ref.id);
+  var manuell = !!selectedRefId;
+
+  html += '<div style="margin-top:6px">Referenz-Copy: ' +
+    '<select onchange="selectRef(this.value)" style="font-size:12px;padding:2px 4px">' +
+    preset.referenzen.map(function(r){
+      return '<option value="' + ex(r.id) + '"' + (r.id === aktiv ? ' selected' : '') + '>' +
+        ex(r.name) + ' &mdash; ' + ex(r.desc) + '</option>';
+    }).join('') + '</select></div>';
+
+  if (manuell) {
+    html += '<div style="margin-top:4px">Manuell gewählt.</div>';
+  } else if (detail && !detail.sicher) {
+    /* Unsicher heisst: kein Stichwort getroffen oder nur ein einzelnes Wort
+       Vorsprung. Beides ist zu duenn fuer eine Entscheidung dieser
+       Tragweite - also nachfragen statt so tun, als waere es geklaert. */
+    html += '<div class="notice-banner" style="margin-top:6px">' + ex(detail.grund) +
+      ' Bitte kurz prüfen, ob das Register stimmt - die Referenz-Copy prägt den Ton der ganzen Seite.</div>';
+  } else if (detail) {
+    html += '<div style="margin-top:4px">' + ex(detail.grund) + '</div>';
+  }
+  return html;
 }
 
 window.addEventListener('DOMContentLoaded', function() {
@@ -1377,7 +1420,7 @@ var lpVorlage = null;
    Konfigurationsblock aus dem Prompt-Text. Deterministisch, damit der
    Cache-Prefix ueber alle Calls byte-identisch bleibt. */
 async function loadPresetText() {
-  var raw = await CopyPresets.load(selectedCopyPreset, presetBriefing());
+  var raw = await CopyPresets.load(selectedCopyPreset, presetBriefing(), selectedRefId);
   brandCfg = BrandConfig.forPreset(raw);
   lpVorlage = BrandConfig.vorlage(brandCfg, selectedLpVorlage);
   return raw ? BrandConfig.stripFromPrompt(raw) : raw;
@@ -2182,7 +2225,11 @@ function buildSessionExport() {
   return {
     versions: ToolVersions.stamp({
       preset: selectedCopyPreset || null,
-      presetRef: (selectedCopyPreset && CopyPresets.autoRef(selectedCopyPreset, presetBriefing()) || {}).id || null,
+      /* Die TATSAECHLICH genutzte Referenz, nicht die, die die Heuristik
+         gewaehlt haette - sonst steht im Export etwas anderes als im
+         Prompt stand. */
+      presetRef: selectedRefId || (selectedCopyPreset && CopyPresets.autoRef(selectedCopyPreset, presetBriefing()) || {}).id || null,
+      presetRefManuell: !!selectedRefId,
       hardfactsSchema: (HF && HF.versions && HF.versions.schemaVersion) || null
     }),
     hardfacts: HF,

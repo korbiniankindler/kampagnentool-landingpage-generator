@@ -171,3 +171,59 @@ test('jedes Verbot nennt Hinweis und Fundstelle im Regelwerk', () => {
     });
   }
 });
+
+/* ---- Gross-/Kleinschreibung bei der Anrede-Regel ----
+   Gefunden im ersten Live-Lauf: Zwei von fuenf kritischen Befunden waren
+   Fehlalarme. Die Hellinger-Regel zur Du-Anrede lief case-insensitive und
+   traf damit das gewoehnliche Possessivpronomen ("auf ihrem Weg") genauso wie
+   die Sie-Anrede ("auf Ihre Teilnahme"). Im Deutschen unterscheidet genau die
+   Grossschreibung die beiden.
+
+   Ein Gate, das grundlos sperrt, ist teurer als eines, das etwas durchlaesst:
+   Nutzer lernen, Befunde generell zu uebergehen. */
+
+const HEL = () => BC.forPreset(
+  fs.readFileSync(path.join(ROOT, 'presets/hellinger/regeln.md'), 'utf8'));
+const HHC = () => BC.forPreset(
+  fs.readFileSync(path.join(ROOT, 'presets/holistic-house/regeln.md'), 'utf8'));
+const ids = (cfg, t) => BC.pruefeText(cfg, t).map(b => b.id);
+
+test('kleingeschriebenes "ihre" ist kein Verstoss gegen die Du-Anrede', () => {
+  const cfg = HEL();
+  [
+    'Ueber 50.000 Menschen hat sie auf ihrem Weg begleitet.',
+    'dort, wo viele Ansaetze an ihre Grenze kommen',
+    'Die Methode entfaltet ihre Wirkung langsam.',
+    'Eltern und ihre Kinder stehen in einer Ordnung.'
+  ].forEach((t) => {
+    assert.deepEqual(ids(cfg, t).filter(i => i === 'sie-anrede'), [],
+      'Fehlalarm bei: ' + t);
+  });
+});
+
+test('die echte Sie-Anrede wird weiterhin erkannt', () => {
+  const cfg = HEL();
+  [
+    'Bitte pruefen Sie Ihre Angaben.',
+    'Wir freuen uns auf Ihre Teilnahme.',
+    'Melden Sie sich jetzt an.',
+    'Wir schicken Ihnen den Link.'
+  ].forEach((t) => {
+    assert.ok(ids(cfg, t).includes('sie-anrede'), 'nicht erkannt: ' + t);
+  });
+});
+
+test('die Du-Anrede bei Holistic House bleibt case-insensitiv', () => {
+  // Kein Spiegelbild: kleingeschriebenes "dir", "dich", "dein" gibt es im
+  // Deutschen NUR als Anrede. Dort waere eine Gross-Unterscheidung falsch.
+  const cfg = HHC();
+  ['Melde Dich jetzt an.', 'melde dich jetzt an', 'Dein Platz wartet.', 'dein platz wartet']
+    .forEach(t => assert.ok(ids(cfg, t).includes('du-anrede'), 'nicht erkannt: ' + t));
+});
+
+test('beachteGross wirkt nur dort, wo es gesetzt ist', () => {
+  const cfg = HEL();
+  // Das Webinar-Verbot bleibt case-insensitiv - sonst rutscht "webinar" durch.
+  assert.ok(ids(cfg, 'Melde Dich zum webinar an.').includes('webinar'));
+  assert.ok(ids(cfg, 'Melde Dich zum Webinar an.').includes('webinar'));
+});

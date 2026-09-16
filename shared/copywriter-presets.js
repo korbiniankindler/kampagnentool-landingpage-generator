@@ -12,9 +12,14 @@ var CopyPresets = (function () {
      dazu GENAU EINE Referenz-Copy pro Auftrag (Vorgabe im Regelwerk,
      Abschnitt 0: Referenz-Auswahl nach Register). Die Auswahl trifft das
      Tool automatisch anhand der `keywords` gegen das Kampagnen-Briefing
-     (siehe pickRef) - kein manueller Auswahlschritt, keine feste Obergrenze
-     an Referenzen. Der erste Eintrag ist der Default bei unklarem Auftrag
-     und braucht keine Keywords. */
+     (siehe pickRef); der erste Eintrag ist der Default bei unklarem Auftrag
+     und braucht keine Keywords.
+
+     WICHTIG: Diese Wahl steuert den Stil der GESAMTEN Seite und war lange
+     unsichtbar. Im ersten Live-Lauf wurde ein B2C-Seminar mit der
+     B2B-Referenz getextet, weil im Briefing das Wort "Coaching" stand. Seither
+     liefert pickRefDetail mit, wie sicher die Wahl war, und die Module zeigen
+     sie an, statt sie stillschweigend zu treffen. */
   var CATALOG = [
     {id: 'holistic-house', name: 'Holistic House', desc: 'Regelwerk der Brand, Referenz-Copy automatisch nach Auftrag', files: [
       'presets/holistic-house/regeln.md',
@@ -24,6 +29,10 @@ var CopyPresets = (function () {
         file: 'presets/holistic-house/referenzen/webinar-gesundheit-neu-denken-b2c.md'},
       {id: 'b2b', name: 'B2B / Fachpublikum', desc: '„Evolution der Medizin" für Ärzte, Heilpraktiker, Coaches',
         file: 'presets/holistic-house/referenzen/webinar-evolution-der-medizin-b2b.md',
+        /* Anders als bei Hellinger sind das durchweg Berufsbezeichnungen ohne
+           gleichlautende Taetigkeitsform - niemand beschreibt eine
+           B2C-Zielgruppe als "Menschen mit Arzt-Erfahrung". Hier braucht es
+           die Wortgrenzen unten nicht. */
         keywords: ['b2b', 'arzt', 'ärzt', 'heilpraktiker', 'therapeut', 'mediziner', 'fachpublikum', 'fachkreise', 'behandler']},
       {id: 'nem', name: 'Themen-Webinar NEM/DAYA', desc: '„Vom Chaos zum System" mit Produktnähe',
         file: 'presets/holistic-house/referenzen/webinar-supplements-vom-chaos-zum-system.md',
@@ -37,7 +46,13 @@ var CopyPresets = (function () {
         file: 'presets/hellinger/referenzen/webinar-alte-muster-loesen-b2c.md'},
       {id: 'b2b', name: 'B2B / Fachpublikum', desc: '„Coaching löst Symptome, Ordnung löst Ursachen" für Coaches, Therapeuten, Führungskräfte',
         file: 'presets/hellinger/referenzen/webinar-coaching-ordnung-b2b.md',
-        keywords: ['b2b', 'coach', 'therapeut', 'berater', 'beratung', 'führung', 'trainer', 'klient', 'fachpublikum', 'fachkreise', 'mediator', 'unternehmer', 'hr']}
+        /* Wortgrenzen sind hier entscheidend, nicht kosmetisch: "coach" ohne
+           \b trifft auch "Coaching" - und eine B2C-Zielgruppe wird bei dieser
+           Marke fast immer ueber ihre ERFAHRUNG MIT Coaching beschrieben,
+           eine B2B-Zielgruppe ueber den BERUF als Coach. Ohne die Grenze
+           kippte ein einziges Wort im Briefing die Referenzwahl und damit den
+           Stil der ganzen Seite (im ersten Live-Lauf passiert). */
+        keywords: ['b2b', 'coach(es|s|in|innen)?\\b', 'therapeut', 'berater', 'führungskr', 'trainer', 'klient', 'fachpublikum', 'fachkreise', 'mediator', 'unternehmer', '\\bhr\\b']}
     ]}
   ];
 
@@ -69,18 +84,61 @@ var CopyPresets = (function () {
      immer wörtlich drin. Gibt null zurück, wenn das Preset keine Referenzen
      hat. */
   function pickRef(preset, briefing) {
+    var d = pickRefDetail(preset, briefing);
+    return d ? d.ref : null;
+  }
+
+  /* Wie pickRef, liefert aber mit, WIE sicher die Wahl war.
+
+     Das ist noetig, weil die Referenz-Copy den Stil der gesamten Seite
+     steuert und die Wahl bisher unsichtbar passierte. Im ersten Live-Lauf
+     wurde ein B2C-Seminar mit der B2B-Referenz getextet, weil im Briefing
+     das Wort "Coaching" stand - niemand haette das am Ergebnis erkannt.
+
+     `sicher` ist false, wenn gar kein Keyword traf (dann greift schlicht der
+     Default) oder wenn der Vorsprung nur ein einzelner Treffer ist. Der
+     Aufrufer soll das anzeigen, statt es zu verschweigen. */
+  /* Umlaute auf ihre ASCII-Umschrift bringen - auf BEIDEN Seiten des
+     Vergleichs. Briefings kommen aus Word, aus Mails und aus Copy-Paste; mal
+     steht "Führungskräfte" da, mal "Fuehrungskraefte". Ohne diese
+     Vereinheitlichung verpasst die Heuristik jedes umgeschriebene Stichwort
+     und faellt still auf den Default zurueck.
+
+     Anders als bei der Pruefung bestaetigter Fakten (shared/validators.js,
+     wo Umlaute bewusst NICHT normalisiert werden) geht hier nichts verloren:
+     das Ergebnis ist eine Dateiauswahl, kein Text, der veroeffentlicht wird. */
+  function ohneUmlaute(s) {
+    return String(s == null ? '' : s).toLowerCase()
+      .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss');
+  }
+
+  function pickRefDetail(preset, briefing) {
     if (!preset || !preset.referenzen || !preset.referenzen.length) return null;
-    var t = String(briefing || '').toLowerCase();
-    var best = preset.referenzen[0], bestScore = 0;
-    preset.referenzen.forEach(function (r) {
-      var score = 0;
+    var t = ohneUmlaute(briefing);
+    var punkte = preset.referenzen.map(function (r) {
+      var score = 0, woerter = [];
       (r.keywords || []).forEach(function (kw) {
-        var m = t.match(new RegExp('(^|[^a-z0-9äöüß])' + kw, 'g'));
-        if (m) score += m.length;
+        var m;
+        try { m = t.match(new RegExp('(^|[^a-z0-9])' + ohneUmlaute(kw), 'g')); } catch (e) { return; }
+        if (m) { score += m.length; woerter = woerter.concat(m.map(function (x) { return x.trim(); })); }
       });
-      if (score > bestScore) { best = r; bestScore = score; }
+      return { ref: r, score: score, woerter: woerter };
     });
-    return best;
+    var sortiert = punkte.slice().sort(function (a, b) { return b.score - a.score; });
+    var gewinner = sortiert[0].score > 0 ? sortiert[0] : { ref: preset.referenzen[0], score: 0, woerter: [] };
+    var zweiter = sortiert.length > 1 ? sortiert[1].score : 0;
+    return {
+      ref: gewinner.ref,
+      score: gewinner.score,
+      treffer: gewinner.woerter,
+      /* Default ohne jeden Treffer ist eine Annahme, kein Befund. Und ein
+         Vorsprung von einem einzelnen Wort ist zu duenn fuer eine
+         Entscheidung dieser Tragweite. */
+      sicher: gewinner.score > 0 && (gewinner.score - zweiter) > 1,
+      grund: gewinner.score === 0
+        ? 'Kein Stichwort im Briefing - es gilt die Standard-Referenz.'
+        : 'Erkannt an: ' + gewinner.woerter.slice(0, 5).join(', ')
+    };
   }
 
   /* Öffentliche Variante für Anzeige/Diagnose (z.B. Tests, Hinweistexte). */
@@ -118,13 +176,19 @@ var CopyPresets = (function () {
      Referenzen definiert - genau die eine per Briefing-Heuristik gewählte
      Referenz-Copy (ohne Briefing: der Default). Wirft bei Fehlern, statt
      still ohne Markenwissen weiterzumachen. */
-  async function load(id, briefing) {
+  /* `refId` ueberschreibt die Heuristik. Notwendig, weil die Heuristik das
+     Register nicht zuverlaessig trifft (siehe pickRefDetail) und ein Mensch
+     am Briefing in zwei Sekunden sieht, was sie nicht sieht. Eine unbekannte
+     ID wird ignoriert statt zu werfen - eine veraltete Auswahl darf die
+     Generierung nicht verhindern. */
+  async function load(id, briefing, refId) {
     if (!id) return '';
     var preset = CATALOG.find(function (p) { return p.id === id; });
     // Unbekannte IDs sind ein Programmier-/Datenfehler: laut scheitern statt
     // still ohne Markenwissen zu generieren.
     if (!preset) throw new Error('Unbekanntes Copywriter-Preset: "' + id + '" (nicht im CATALOG in shared/copywriter-presets.js)');
-    var ref = pickRef(preset, briefing);
+    var gewaehlt = refId && (preset.referenzen || []).find(function (r) { return r.id === refId; });
+    var ref = gewaehlt || pickRef(preset, briefing);
     var cacheKey = ref ? id + '::' + ref.id : id;
     if (cache[cacheKey] !== undefined) return cache[cacheKey];
     var files = ref ? preset.files.concat([ref.file]) : preset.files;
@@ -132,7 +196,7 @@ var CopyPresets = (function () {
     var text = parts.map(function (p) { return p.text; }).join('\n\n---\n\n');
     var sources = parts.map(function (p) { return p.source; });
     cache[cacheKey] = text;
-    console.log('Copywriter-Preset "' + preset.name + '" geladen: ' + files.length + ' Dateien' + (ref ? ' (Referenz: ' + ref.name + ')' : '') + ', ' + Math.round(text.length / 1024) + ' KB (Quellen: ' + sources.join(', ') + ')');
+    console.log('Copywriter-Preset "' + preset.name + '" geladen: ' + files.length + ' Dateien' + (ref ? ' (Referenz: ' + ref.name + (gewaehlt ? ', manuell gewaehlt' : ', automatisch') + ')' : '') + ', ' + Math.round(text.length / 1024) + ' KB (Quellen: ' + sources.join(', ') + ')');
     return text;
   }
 
@@ -190,7 +254,7 @@ var CopyPresets = (function () {
     ];
   }
 
-  return { CATALOG: CATALOG, getSelected: getSelected, setSelected: setSelected, autoRef: autoRef, load: load, getName: getName, renderPicker: renderPicker, systemBlocks: systemBlocks, pickRef: pickRef };
+  return { CATALOG: CATALOG, getSelected: getSelected, setSelected: setSelected, autoRef: autoRef, load: load, getName: getName, renderPicker: renderPicker, systemBlocks: systemBlocks, pickRef: pickRef, pickRefDetail: pickRefDetail };
 })();
 
 /* Node-Export fuer den Headless-Runner und die Tests. Die DOM-abhaengigen

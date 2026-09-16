@@ -133,13 +133,28 @@ var BrandConfig = (function () {
     return (cfg && cfg.angleVerboten) || {};
   }
 
+  /* Regex-Flags eines Verbots. Standard ist 'gi' - fuer die meisten Verbote
+     ist Gross-/Kleinschreibung egal ("Webinar" wie "webinar").
+
+     Mit "beachteGross": true entfaellt das i. Das ist keine Spitzfindigkeit:
+     Im Deutschen unterscheidet genau die Grossschreibung die Sie-Anrede ("auf
+     Ihre Teilnahme") vom gewoehnlichen Possessivpronomen ("auf ihrem Weg").
+     Ohne diese Unterscheidung meldet die Hellinger-Regel zur Du-Anrede jeden
+     Satz ueber eine dritte Person als kritischen Verstoss - aufgefallen im
+     ersten Live-Lauf, wo zwei von fuenf kritischen Befunden Fehlalarme waren.
+     Ein Gate, das grundlos sperrt, bringt Nutzer dazu, Befunde generell zu
+     uebergehen. */
+  function flagsVon(regel) {
+    return (regel && regel.beachteGross) ? 'g' : 'gi';
+  }
+
   /* Prueft einen Text gegen die Verbotsliste der Marke.
      Liefert [{id, hinweis, quelle, treffer}] - leer heisst sauber. */
   function pruefeText(cfg, text) {
     if (!cfg || !text) return [];
     return (cfg.verbote || []).map(function (v) {
       var re;
-      try { re = new RegExp(v.regex, 'gi'); } catch (e) { return null; }
+      try { re = new RegExp(v.regex, flagsVon(v)); } catch (e) { return null; }
       var hits = String(text).match(re);
       if (!hits) return null;
       /* Doppelte Treffer zusammenfassen - fuenf Gedankenstriche sind ein
@@ -158,7 +173,7 @@ var BrandConfig = (function () {
       var r = regeln[key];
       if (!(r.felder || []).some(function (f) { return feldPfad === f || feldPfad.indexOf(f + '.') === 0; })) return null;
       var re;
-      try { re = new RegExp(r.regex, 'gi'); } catch (e) { return null; }
+      try { re = new RegExp(r.regex, flagsVon(r)); } catch (e) { return null; }
       if (!re.test(String(text))) return null;
       return { id: key, hinweis: r.hinweis, quelle: r.quelle, feld: feldPfad };
     }).filter(Boolean);

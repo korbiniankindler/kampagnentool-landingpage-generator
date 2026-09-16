@@ -327,3 +327,81 @@ test('eigene Sections bekommen kein Schema - fuer sie gibt es keines', () => {
   assert.ok(cfg.format.schema.properties.hero);
   assert.ok(!cfg.format.schema.properties.garantie);
 });
+
+/* ---- Referenz-Wahl ----
+   Die folgenschwerste unsichtbare Entscheidung im Werkzeug: Die Referenz-Copy
+   steuert Tonalitaet, Satzbau und Argumentationsform der GESAMTEN Seite.
+   Im ersten Live-Lauf wurde hellinger-b2c mit der B2B-Referenz getextet, weil
+   im Briefing "Coaching" stand - "coach" ohne Wortgrenze traf mitten im Wort. */
+
+function briefingVon(fall) {
+  const hf = fall.hardfacts;
+  return [hf.kampagnenname, hf.titel, hf.beschreibung, hf.zielgruppe, hf.offer].filter(Boolean).join('\n');
+}
+
+test('ein B2C-Briefing kippt nicht mehr wegen des Wortes "Coaching"', () => {
+  const fall = JSON.parse(fs.readFileSync(path.join(FAELLE, 'hellinger-b2c.json'), 'utf8'));
+  assert.match(fall.hardfacts.zielgruppe, /Coaching/, 'Testannahme: das Briefing nennt Coaching');
+  const d = CopyPresets.pickRefDetail(CopyPresets.CATALOG.find(p => p.id === 'hellinger'), briefingVon(fall));
+  assert.equal(d.ref.id, 'b2c',
+    'die Erfahrung MIT Coaching darf nicht wie der Beruf ALS Coach zaehlen');
+});
+
+test('ein echtes B2B-Briefing waehlt weiterhin die B2B-Referenz', () => {
+  // Gegenprobe: die Wortgrenze darf die Erkennung nicht abwuergen.
+  ['hellinger-b2b', 'hellinger-viele-bullets'].forEach((id) => {
+    const fall = JSON.parse(fs.readFileSync(path.join(FAELLE, id + '.json'), 'utf8'));
+    const d = CopyPresets.pickRefDetail(CopyPresets.CATALOG.find(p => p.id === 'hellinger'), briefingVon(fall));
+    assert.equal(d.ref.id, 'b2b', id);
+    assert.equal(d.sicher, true, id + ': eine klare Berufsnennung muss als sicher gelten');
+  });
+});
+
+test('"Coaching" allein zaehlt nicht, "Coaches" schon', () => {
+  const preset = CopyPresets.CATALOG.find(p => p.id === 'hellinger');
+  const ref = (t) => CopyPresets.pickRefDetail(preset, t);
+  assert.equal(ref('Menschen mit Erfahrung in Coaching und Therapie').ref.id, 'b2c');
+  assert.equal(ref('Fuer Coaches, Therapeutinnen und Beraterinnen').ref.id, 'b2b');
+  assert.equal(ref('Fuer Fuehrungskraefte in Unternehmen').ref.id, 'b2b');
+});
+
+test('eine geratene Wahl wird als unsicher ausgewiesen', () => {
+  // Ohne jeden Treffer greift der Default. Das ist eine Annahme, kein
+  // Befund - und muss als solche sichtbar sein.
+  const preset = CopyPresets.CATALOG.find(p => p.id === 'hellinger');
+  const d = CopyPresets.pickRefDetail(preset, 'Ein Seminar ueber wiederkehrende Muster');
+  assert.equal(d.ref.id, 'b2c', 'der Default gilt');
+  assert.equal(d.sicher, false);
+  assert.match(d.grund, /Kein Stichwort/);
+});
+
+test('pickRefDetail nennt die Woerter, die den Ausschlag gaben', () => {
+  // Ohne Begruendung kann ein Mensch die Wahl nicht beurteilen.
+  const d = CopyPresets.pickRefDetail(
+    CopyPresets.CATALOG.find(p => p.id === 'holistic-house'),
+    'Fortbildung fuer Aerzte und Heilpraktiker');
+  assert.equal(d.ref.id, 'b2b');
+  assert.ok(d.treffer.length >= 2, JSON.stringify(d.treffer));
+  assert.match(d.grund, /Erkannt an/);
+});
+
+test('pickRef bleibt kompatibel zu pickRefDetail', () => {
+  CopyPresets.CATALOG.forEach((p) => {
+    ['', 'Aerzte und Heilpraktiker', 'Coaches und Trainer', 'Menschen mit Coaching-Erfahrung'].forEach((t) => {
+      const a = CopyPresets.pickRef(p, t);
+      const b = CopyPresets.pickRefDetail(p, t);
+      assert.equal(a && a.id, b && b.ref.id, p.id + ' / ' + t);
+    });
+  });
+});
+
+test('eine ungueltige Regex in den Keywords legt die Wahl nicht lahm', () => {
+  // Keywords sind Regex-Fragmente. Ein Tippfehler darf die Generierung nicht
+  // verhindern, sondern nur dieses eine Stichwort wirkungslos machen.
+  const kaputt = { id: 'x', referenzen: [
+    { id: 'a', keywords: [] },
+    { id: 'b', keywords: ['(unbalanciert'] }
+  ]};
+  assert.doesNotThrow(() => CopyPresets.pickRefDetail(kaputt, 'irgendein text'));
+  assert.equal(CopyPresets.pickRefDetail(kaputt, 'irgendein text').ref.id, 'a');
+});
